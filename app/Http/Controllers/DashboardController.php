@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Branch;
-use App\Models\Company;
-use App\Models\Package;
-use App\Models\Payroll;
-use App\Models\Attendance;
-use App\Models\Leave;
+use App\Models\Core\User;
+use App\Models\Admin\Branch;
+use App\Models\Admin\Company;
+use App\Models\SuperAdmin\Package;
+use App\Models\Admin\Payroll;
+use App\Models\Admin\Attendance;
+use App\Models\Admin\Leave;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
