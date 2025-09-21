@@ -13,7 +13,7 @@
                 <ul class="space-y-2">
                     <li><a href="{{ route('dashboard') }}" class="block py-2 px-4 rounded hover:bg-gray-700 {{ request()->routeIs('dashboard') ? 'bg-gray-700' : '' }}">Dashboard</a></li>
                     <li><a href="{{ route('admin.companies') }}" class="block py-2 px-4 rounded hover:bg-gray-700">Companies</a></li>
-                    <li><a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Branches</a></li>
+                    <li><a href="{{ route('admin.branches') }}" class="block py-2 px-4 rounded hover:bg-gray-700">Branches</a></li>
                     <li><a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Users</a></li>
                     <li><a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Packages</a></li>
                     <li><a href="#" class="block py-2 px-4 rounded hover:bg-gray-700">Payrolls</a></li>

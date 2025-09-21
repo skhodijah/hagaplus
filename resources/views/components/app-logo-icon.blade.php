@@ -1,0 +1,1 @@
+<img src="{{ asset('images/Haga.png') }}" alt="Haga+ Logo" class="h-7 w-auto">
