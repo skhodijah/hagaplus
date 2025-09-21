@@ -22,6 +22,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/admin/companies/{company}/edit', [DashboardController::class, 'editCompany'])->name('admin.companies.edit');
     Route::put('/admin/companies/{company}', [DashboardController::class, 'updateCompany'])->name('admin.companies.update');
     Route::delete('/admin/companies/{company}', [DashboardController::class, 'deleteCompany'])->name('admin.companies.delete');
+
+    Route::get('/admin/branches', [DashboardController::class, 'branches'])->name('admin.branches');
+    Route::get('/admin/branches/create', [DashboardController::class, 'createBranch'])->name('admin.branches.create');
+    Route::post('/admin/branches', [DashboardController::class, 'storeBranch'])->name('admin.branches.store');
+    Route::get('/admin/branches/{branch}/edit', [DashboardController::class, 'editBranch'])->name('admin.branches.edit');
+    Route::put('/admin/branches/{branch}', [DashboardController::class, 'updateBranch'])->name('admin.branches.update');
+    Route::delete('/admin/branches/{branch}', [DashboardController::class, 'deleteBranch'])->name('admin.branches.delete');
 });
 
 require __DIR__ . '/auth.php';
