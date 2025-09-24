@@ -1,5 +1,4 @@
-<div class="bg-white dark:bg-gray-900 rounded-lg shadow p-4 mb-10">
-    <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Notifications Center</h3>
+<x-section-card title="Notifications Center" class="mb-10">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="rounded-md bg-gray-50 dark:bg-gray-800 p-3">
             <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Subscription Expiring & Payment Overdue</p>
@@ -12,8 +11,7 @@
                     @foreach($recentNotifications as $n)
                         <li class="flex items-start justify-between gap-3">
                             <span class="truncate">{{ $n->title }}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ 
-                                
+                            <span class="text-xs text-gray-500 dark:text-gray-400">{{
                                 \Carbon\Carbon::parse($n->created_at)->diffForHumans() }}</span>
                         </li>
                     @endforeach
@@ -23,4 +21,4 @@
             @endif
         </div>
     </div>
-</div> 
+</x-section-card>

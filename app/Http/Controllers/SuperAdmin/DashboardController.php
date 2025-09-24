@@ -84,9 +84,9 @@ class DashboardController extends Controller
 
         // Monthly subscription counts in selected period
         $monthlySubscriptionCounts = Subscription::select(
-                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as ym'),
-                DB::raw('count(*) as total')
-            )
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as ym'),
+            DB::raw('count(*) as total')
+        )
             ->where('created_at', '>=', $since)
             ->groupBy('ym')
             ->orderBy('ym')
@@ -148,6 +148,76 @@ class DashboardController extends Controller
             'overduePayments',
             'recentSubscriptionLogs',
             'recentNotifications'
+        ));
+    }
+
+    public function analytics(Request $request)
+    {
+        $period = $request->get('period', '30d');
+        $since = match ($period) {
+            '7d' => now()->subDays(7),
+            '90d' => now()->subDays(90),
+            '1y' => now()->subYear(),
+            default => now()->subDays(30),
+        };
+
+        // Package distribution among active subscriptions
+        $packageDistribution = Subscription::select('package_id', DB::raw('count(*) as total'))
+            ->where('status', 'active')
+            ->groupBy('package_id')
+            ->with('package')
+            ->get();
+
+        // Monthly subscription counts in selected period
+        $monthlySubscriptionCounts = Subscription::select(
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as ym'),
+            DB::raw('count(*) as total')
+        )
+            ->where('created_at', '>=', $since)
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get();
+
+        return view('superadmin.analytics.index', compact(
+            'packageDistribution',
+            'monthlySubscriptionCounts'
+        ));
+    }
+
+    public function financial(Request $request)
+    {
+        // Financial summaries
+        $pendingPayments = Schema::hasTable('subscription_history')
+            ? DB::table('subscription_history')->where('payment_status', 'pending')->count()
+            : 0;
+        $outstandingInvoicesAmount = Schema::hasTable('subscription_history')
+            ? DB::table('subscription_history')->where('payment_status', 'pending')->sum('amount')
+            : 0;
+        $outstandingInvoicesAmountFormatted = $outstandingInvoicesAmount > 0 ? 'Rp ' . number_format($outstandingInvoicesAmount, 0, ',', '.') : '—';
+        $revenueForecast = Subscription::where('status', 'active')->sum('price');
+        $revenueForecastFormatted = $revenueForecast > 0 ? 'Rp ' . number_format($revenueForecast, 0, ',', '.') : '—';
+
+        return view('superadmin.financial.index', compact(
+            'pendingPayments',
+            'outstandingInvoicesAmountFormatted',
+            'revenueForecastFormatted'
+        ));
+    }
+
+    public function systemHealth(Request $request)
+    {
+        return view('superadmin.system.health');
+    }
+
+    public function reportsActivities(Request $request)
+    {
+        // Activities & notifications
+        $recentSubscriptionLogs = Schema::hasTable('subscription_history')
+            ? DB::table('subscription_history')->latest()->take(10)->get()
+            : collect();
+
+        return view('superadmin.reports.activities', compact(
+            'recentSubscriptionLogs'
         ));
     }
 }

@@ -16,14 +16,14 @@
     @php
         $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.subscriptions.*');
         $isPackagesActive = request()->routeIs('superadmin.packages.*');
-        $isFinancialActive = false;
-        $isReportsActive = false;
-        $isSystemActive = false;
+        $isFinancialActive = request()->routeIs('superadmin.financial.*');
+        $isReportsActive = request()->routeIs('superadmin.analytics.*') || request()->routeIs('superadmin.reports.*');
+        $isSystemActive = request()->routeIs('superadmin.system.*');
     @endphp
     <div class="flex h-screen overflow-hidden">
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
 
-        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 flex-shrink-0 w-72 lg:w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-colors duration-300 sidebar-transition sidebar-closed lg:transform-none">
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 flex-shrink-0 w-72 lg:w-80 bg-white dark:bg-gray-800 shadow-xl transition-colors duration-300 sidebar-transition sidebar-closed lg:transform-none">
             <div class="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700">
                 <a href="{{ route('superadmin.dashboard') }}" class="flex items-center space-x-3">
                     <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-8 h-8">
@@ -40,7 +40,7 @@
                 <x-layout.sidebar-accordion icon="fa-solid fa-building" label="Instansi Management" :open="$isInstansiActive" target="menu-instansi">
                     <x-layout.sidebar-subitem :href="route('superadmin.instansi.index')" label="All Instansi" :active="request()->routeIs('superadmin.instansi.*')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="Subscription Status" :active="request()->routeIs('superadmin.subscriptions.*')" />
-                    <x-layout.sidebar-subitem href="#" label="Usage Monitoring" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.instansi.monitoring')" label="Usage Monitoring" :active="request()->routeIs('superadmin.instansi.monitoring')" />
                     <x-layout.sidebar-subitem href="#" label="Support Requests" />
                 </x-layout.sidebar-accordion>
 
@@ -51,21 +51,22 @@
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-sack-dollar" label="Financial" :open="$isFinancialActive" target="menu-financial">
-                    <x-layout.sidebar-subitem href="#" label="Revenue Overview" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.financial.index')" label="Revenue Overview" :active="request()->routeIs('superadmin.financial.index')" />
                     <x-layout.sidebar-subitem href="#" label="Payment Tracking" />
                     <x-layout.sidebar-subitem href="#" label="Invoice Management" />
                     <x-layout.sidebar-subitem href="#" label="Financial Reports" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-chart-line" label="Reports" :open="$isReportsActive" target="menu-reports">
-                    <x-layout.sidebar-subitem href="#" label="Analytics Dashboard" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.analytics.index')" label="Analytics Dashboard" :active="request()->routeIs('superadmin.analytics.index')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.reports.activities')" label="Recent Activities" :active="request()->routeIs('superadmin.reports.activities')" />
                     <x-layout.sidebar-subitem href="#" label="Usage Statistics" />
                     <x-layout.sidebar-subitem href="#" label="Performance Reports" />
                     <x-layout.sidebar-subitem href="#" label="Export Data" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">
-                    <x-layout.sidebar-subitem href="#" label="System Health" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.system.health')" label="System Health" :active="request()->routeIs('superadmin.system.health')" />
                     <x-layout.sidebar-subitem href="#" label="User Logs" />
                     <x-layout.sidebar-subitem href="#" label="Settings" />
                     <a href="#" data-logout class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">Logout</a>
@@ -75,7 +76,7 @@
         </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
-            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+            <header class="bg-white dark:bg-gray-800  transition-colors duration-300">
                 <div class="flex items-center justify-between px-4 sm:px-6 h-16">
                     <div class="flex items-center space-x-3">
                         <!-- logo small screen -->
@@ -91,7 +92,7 @@
                                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
                                 </div>
-                                <input type="search" placeholder="Search or type command..." class="block w-full sm:w-80 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-haga-2)] focus:border-transparent">
+                                <input type="search" placeholder="Search or type command..." class="block w-full sm:w-80 pl-10 pr-3 py-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-haga-2)] focus:border-transparent">
                             </div>
                         </div>
                     </div>
@@ -129,8 +130,11 @@
                 </div>
             </header>
 
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            @include('partials.breadcrumbs')
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
                 <div class="mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
+                    
                     {{ $slot }}
                 </div>
             </main>

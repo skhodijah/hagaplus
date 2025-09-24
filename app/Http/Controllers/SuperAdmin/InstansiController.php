@@ -7,6 +7,8 @@ use App\Models\SuperAdmin\Instansi;
 use App\Models\SuperAdmin\Package;
 use App\Models\SuperAdmin\Subscription;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -22,7 +24,7 @@ class InstansiController extends Controller
         $instansis = Instansi::latest()->paginate(10);
         return view('superadmin.instansi.index', compact('instansis'));
     }
-    
+
     /**
      * Show the form for creating a new resource.
      */
@@ -31,7 +33,7 @@ class InstansiController extends Controller
         $packages = Package::where('is_active', true)->get();
         return view('superadmin.instansi.create', compact('packages'));
     }
-    
+
     /**
      * Store a newly created resource in storage.
      */
@@ -56,16 +58,16 @@ class InstansiController extends Controller
             'tanggal_akhir_langganan' => 'required|date|after:tanggal_mulai_langganan',
             'catatan' => 'nullable|string',
         ]);
-        
+
         // Handle file upload
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('public/instansi/logos');
             $validated['logo'] = Storage::url($path);
         }
-        
+
         // Create new instansi
         $instansi = Instansi::create($validated);
-        
+
         // Create subscription record
         $instansi->subscriptions()->create([
             'package_id' => $validated['package_id'],
@@ -74,11 +76,11 @@ class InstansiController extends Controller
             'status' => $validated['status_langganan'],
             'price' => Package::find($validated['package_id'])->price,
         ]);
-        
+
         return redirect()->route('superadmin.instansi.index')
             ->with('success', 'Instansi berhasil ditambahkan.');
     }
-    
+
     /**
      * Display the specified resource.
      */
@@ -87,7 +89,7 @@ class InstansiController extends Controller
         $instansi->load(['subscriptions.package', 'users', 'karyawans']);
         return view('superadmin.instansi.show', compact('instansi'));
     }
-    
+
     /**
      * Show the form for editing the specified resource.
      */
@@ -97,7 +99,7 @@ class InstansiController extends Controller
         $instansi->load('subscriptions');
         return view('superadmin.instansi.edit', compact('instansi', 'packages'));
     }
-    
+
     /**
      * Update the specified resource in storage.
      */
@@ -132,7 +134,7 @@ class InstansiController extends Controller
             'tanggal_akhir_langganan' => 'required|date|after:tanggal_mulai_langganan',
             'catatan' => 'nullable|string',
         ]);
-        
+
         // Handle file upload
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
@@ -140,14 +142,14 @@ class InstansiController extends Controller
                 $oldLogo = str_replace('/storage', 'public', $instansi->logo);
                 Storage::delete($oldLogo);
             }
-            
+
             $path = $request->file('logo')->store('public/instansi/logos');
             $validated['logo'] = Storage::url($path);
         }
-        
+
         // Update instansi
         $instansi->update($validated);
-        
+
         // Update or create subscription
         $instansi->subscriptions()->updateOrCreate(
             ['instansi_id' => $instansi->id],
@@ -159,11 +161,11 @@ class InstansiController extends Controller
                 'price' => Package::find($validated['package_id'])->price,
             ]
         );
-        
+
         return redirect()->route('superadmin.instansi.index')
             ->with('success', 'Data instansi berhasil diperbarui.');
     }
-    
+
     /**
      * Remove the specified resource from storage.
      */
@@ -171,11 +173,11 @@ class InstansiController extends Controller
     {
         // Soft delete the instansi
         $instansi->delete();
-        
+
         return redirect()->route('superadmin.instansi.index')
             ->with('success', 'Instansi berhasil dihapus (masuk ke arsip).');
     }
-    
+
     /**
      * Display a listing of the trashed resources.
      */
@@ -184,7 +186,7 @@ class InstansiController extends Controller
         $instansis = Instansi::onlyTrashed()->latest()->paginate(10);
         return view('superadmin.instansi.trash', compact('instansis'));
     }
-    
+
     /**
      * Restore the specified resource from trash.
      */
@@ -192,28 +194,37 @@ class InstansiController extends Controller
     {
         $instansi = Instansi::onlyTrashed()->findOrFail($id);
         $instansi->restore();
-        
+
         return redirect()->route('superadmin.instansi.trash')
             ->with('success', 'Instansi berhasil dipulihkan.');
     }
-    
+
     /**
      * Permanently delete the specified resource.
      */
     public function forceDelete($id)
     {
         $instansi = Instansi::onlyTrashed()->findOrFail($id);
-        
+
         // Delete logo if exists
         if ($instansi->logo) {
             $logo = str_replace('/storage', 'public', $instansi->logo);
             Storage::delete($logo);
         }
-        
+
         // Permanently delete
         $instansi->forceDelete();
-        
+
         return redirect()->route('superadmin.instansi.trash')
             ->with('success', 'Instansi berhasil dihapus permanen.');
+    }
+
+    public function monitoring()
+    {
+        $overduePayments = Schema::hasTable('subscription_history')
+            ? DB::table('subscription_history')->where('payment_status', 'pending')->latest()->take(10)->get()
+            : collect();
+
+        return view('superadmin.instansi.monitoring', compact('overduePayments'));
     }
 }
