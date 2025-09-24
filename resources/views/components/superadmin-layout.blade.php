@@ -1,108 +1,139 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Laravel') }} - Super Admin</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-    <!-- Scripts -->
+    <title>HagaPlus - Super Admin</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/8c8ccf764d.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-Sl1fL0x2y5m0mXQmZs7q8w9mK3Yk8wVqf9VQf8lYp4mDk8Qxg3m6Jrj0D7n6o2o1g7l5xj5m1n9m0z2yXb7aYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-<body class="font-sans antialiased bg-gray-100 dark:bg-gray-900">
-    <div class="min-h-screen">
-        <!-- Sidebar -->
-        <aside class="hidden md:flex md:w-64 flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 fixed inset-y-0 left-0 z-20">
-            <div class="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
-                <a href="{{ route('superadmin.dashboard') }}" class="flex items-center space-x-2">
-                    <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="h-8 w-auto">
-                    <span class="font-semibold text-gray-900 dark:text-gray-100">Haga+</span>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    @php
+        $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.subscriptions.*');
+        $isPackagesActive = request()->routeIs('superadmin.packages.*');
+        $isFinancialActive = false;
+        $isReportsActive = false;
+        $isSystemActive = false;
+    @endphp
+    <div class="flex h-screen overflow-hidden">
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
+
+        <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 flex-shrink-0 w-72 lg:w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-colors duration-300 sidebar-transition sidebar-closed lg:transform-none">
+            <div class="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+                <a href="{{ route('superadmin.dashboard') }}" class="flex items-center space-x-3">
+                    <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-8 h-8">
+                    <span class="text-xl font-semibold text-gray-900 dark:text-white">Haga+</span>
                 </a>
+                <button id="sidebar-close" class="ml-auto lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" aria-label="Close sidebar">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <nav class="flex-1 p-4 space-y-1">
-                <a href="{{ route('superadmin.dashboard') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.dashboard') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Dashboard</a>
-                <a href="{{ route('superadmin.instansi.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.instansi.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Instansi</a>
-                <a href="{{ route('superadmin.packages.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.packages.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Packages</a>
-                <a href="{{ route('superadmin.subscriptions.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.subscriptions.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Subscriptions</a>
+
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <x-layout.sidebar-link :href="route('superadmin.dashboard')" icon="fa-solid fa-gauge" label="Dashboard" :active="request()->routeIs('superadmin.dashboard')" />
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-building" label="Instansi Management" :open="$isInstansiActive" target="menu-instansi">
+                    <x-layout.sidebar-subitem :href="route('superadmin.instansi.index')" label="All Instansi" :active="request()->routeIs('superadmin.instansi.*')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="Subscription Status" :active="request()->routeIs('superadmin.subscriptions.*')" />
+                    <x-layout.sidebar-subitem href="#" label="Usage Monitoring" />
+                    <x-layout.sidebar-subitem href="#" label="Support Requests" />
+                </x-layout.sidebar-accordion>
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">
+                    <x-layout.sidebar-subitem :href="route('superadmin.packages.index')" label="Manage Packages" :active="request()->routeIs('superadmin.packages.*')" />
+                    <x-layout.sidebar-subitem href="#" label="Feature Configuration" />
+                    <x-layout.sidebar-subitem href="#" label="Pricing Settings" />
+                </x-layout.sidebar-accordion>
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-sack-dollar" label="Financial" :open="$isFinancialActive" target="menu-financial">
+                    <x-layout.sidebar-subitem href="#" label="Revenue Overview" />
+                    <x-layout.sidebar-subitem href="#" label="Payment Tracking" />
+                    <x-layout.sidebar-subitem href="#" label="Invoice Management" />
+                    <x-layout.sidebar-subitem href="#" label="Financial Reports" />
+                </x-layout.sidebar-accordion>
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-chart-line" label="Reports" :open="$isReportsActive" target="menu-reports">
+                    <x-layout.sidebar-subitem href="#" label="Analytics Dashboard" />
+                    <x-layout.sidebar-subitem href="#" label="Usage Statistics" />
+                    <x-layout.sidebar-subitem href="#" label="Performance Reports" />
+                    <x-layout.sidebar-subitem href="#" label="Export Data" />
+                </x-layout.sidebar-accordion>
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">
+                    <x-layout.sidebar-subitem href="#" label="System Health" />
+                    <x-layout.sidebar-subitem href="#" label="User Logs" />
+                    <x-layout.sidebar-subitem href="#" label="Settings" />
+                    <a href="#" data-logout class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">Logout</a>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
+                </x-layout.sidebar-accordion>
             </nav>
         </aside>
 
-        <!-- Main Content Area -->
-        <div class="md:pl-64 flex flex-col min-h-screen">
-            <!-- Header -->
-            <header class="h-16 flex items-center justify-between px-4 md:px-6 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-950/60 sticky top-0 z-10">
-                <div class="flex items-center gap-3">
-                    <!-- Mobile sidebar trigger -->
-                    <button type="button" x-data="{}" @click="document.getElementById('mobileSidebar').classList.remove('hidden')" class="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                    </button>
-                    <a href="{{ route('superadmin.dashboard') }}" class="flex items-center space-x-2 md:hidden">
-                        <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="h-8 w-auto">
-                        <span class="font-semibold text-gray-900 dark:text-gray-100">Haga+</span>
-                    </a>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <!-- Theme toggle -->
-                    <button type="button" onclick="window.toggleTheme()" class="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800" aria-label="Toggle theme">
-                        <svg class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21.752 15.002A9.718 9.718 0 0112 21.75 9.75 9.75 0 1118.998 2.248a.75.75 0 01.073 1.393 7.5 7.5 0 102.288 10.968.75.75 0 01.393.393z"/></svg>
-                        <svg class="h-5 w-5 dark:hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 18a6 6 0 100-12 6 6 0 000 12z"/><path fill-rule="evenodd" d="M12 2.25a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zm0 16.5a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5a.75.75 0 01.75-.75zM4.72 4.72a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06L4.72 5.78a.75.75 0 010-1.06zm12.38 12.38a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM2.25 12a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5H3a.75.75 0 01-.75-.75zm16.5 0a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5a.75.75 0 01-.75-.75zM4.72 19.28a.75.75 0 010-1.06l1.06-1.06a.75.75 0 111.06 1.06L5.78 19.28a.75.75 0 01-1.06 0zm12.38-12.38a.75.75 0 010-1.06l1.06-1.06a.75.75 0 111.06 1.06l-1.06 1.06a.75.75 0 01-1.06 0z" clip-rule="evenodd"/></svg>
-                    </button>
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 transition-colors duration-300">
+                <div class="flex items-center justify-between px-4 sm:px-6 h-16">
+                    <div class="flex items-center space-x-3">
+                        <!-- logo small screen -->
+                         
+                        <button id="sidebar-toggle" class="lg:hidden p-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Open sidebar">
+                            <i class="fa-solid fa-bars"></i>
+                        </button>
+                        <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-8 h-8 lg:hidden">
 
-                    <!-- User & Logout -->
-                    <div class="hidden sm:flex items-center space-x-4">
-                        <div class="flex items-center space-x-2">
-                            <span class="text-sm text-gray-700 dark:text-gray-300">{{ Auth::user()->name }}</span>
-                            <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded">{{ ucfirst(Auth::user()->role) }}</span>
+                        <!-- logo large screen -->
+                        <div class="hidden sm:block">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                                </div>
+                                <input type="search" placeholder="Search or type command..." class="block w-full sm:w-80 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[var(--color-haga-2)] focus:border-transparent">
+                            </div>
                         </div>
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm">{{ __('Logout') }}</button>
-                        </form>
+                    </div>
+
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <button data-theme-toggle class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Toggle Theme">
+                            <span class="block dark:hidden"><i class="fa-solid fa-moon"></i></span>
+                            <span class="hidden dark:block"><i class="fa-solid fa-sun"></i></span>
+                        </button>
+
+                        <div class="relative">
+                            <button data-notification-btn class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 relative" title="Notifications">
+                                <i class="fa-solid fa-bell"></i>
+                                <span class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                            </button>
+                            <div data-notification-panel class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center justify-between">
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                                        <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                </div>
+                                <div class="p-4 space-y-3 text-sm text-gray-700 dark:text-gray-300">
+                                    <div class="flex items-start space-x-3"><i class="fa-solid fa-circle-info text-haga-2 mt-1"></i><div>Subscription renewal pending for 2 instansi</div></div>
+                                    <div class="flex items-start space-x-3"><i class="fa-solid fa-wrench text-amber-500 mt-1"></i><div>System maintenance scheduled tonight</div></div>
+                                    <div class="flex items-start space-x-3"><i class="fa-solid fa-envelope text-green-500 mt-1"></i><div>New support request received</div></div>
+                                </div>
+                                <div class="p-4"><button class="w-full text-center text-sm text-haga-2 hover:opacity-80 transition-colors duration-200">View All Notifications</button></div>
+                            </div>
+                        </div>
+
+                        <a href="#" class="hidden sm:inline-flex p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Recent Activities"><i class="fa-solid fa-clock"></i></a>
+                        <a href="#" class="hidden sm:inline-flex p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Profile Settings"><i class="fa-solid fa-user"></i></a>
                     </div>
                 </div>
             </header>
 
-            <!-- Content -->
-            <main class="p-4 md:p-6">
-                {{ $slot }}
-            </main>
-        </div>
-    </div>
-
-    <!-- Mobile Sidebar -->
-    <div id="mobileSidebar" class="fixed inset-0 z-20 hidden" x-data="{}">
-        <div class="absolute inset-0 bg-black/50" @click="$el.parentElement.classList.add('hidden')"></div>
-        <div class="relative h-full w-72 bg-white dark:bg-gray-950 border-r border-gray-200 dark:border-gray-800 p-4">
-            <div class="flex items-center justify-between h-12">
-                <a href="{{ route('superadmin.dashboard') }}" class="flex items-center space-x-2">
-                    <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="h-7 w-auto">
-                    <span class="font-semibold text-gray-900 dark:text-gray-100">Haga+</span>
-                </a>
-                <button class="p-2 rounded-md text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800" @click="$el.closest('#mobileSidebar').classList.add('hidden')">
-                    <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
-            </div>
-            <nav class="mt-4 space-y-1">
-                <a href="{{ route('superadmin.dashboard') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.dashboard') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Dashboard</a>
-                <a href="{{ route('superadmin.instansi.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.instansi.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Instansi</a>
-                <a href="{{ route('superadmin.packages.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.packages.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Packages</a>
-                <a href="{{ route('superadmin.subscriptions.index') }}" class="block px-3 py-2 rounded-md text-sm font-medium {{ request()->routeIs('superadmin.subscriptions.*') ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white' : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800' }}">Subscriptions</a>
-                <div class="pt-4 border-t border-gray-200 dark:border-gray-800 mt-4">
-                    <button type="button" onclick="window.toggleTheme()" class="w-full inline-flex items-center justify-between rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <span>Toggle Theme</span>
-                        <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 18a6 6 0 100-12 6 6 0 000 12z"/></svg>
-                    </button>
-                    <form method="POST" action="{{ route('logout') }}" class="mt-3">
-                        @csrf
-                        <button type="submit" class="w-full bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded text-sm">{{ __('Logout') }}</button>
-                    </form>
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
+                <div class="mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
+                    {{ $slot }}
                 </div>
-            </nav>
+            </main>
         </div>
     </div>
 </body>
