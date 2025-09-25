@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PublicRegistrationController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -28,6 +29,10 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('employee.dashboard');
     })->name('dashboard');
 });
+
+// Public Instansi Registration
+Route::get('/register-instansi', [PublicRegistrationController::class, 'create'])->name('public.register.instansi.create');
+Route::post('/register-instansi', [PublicRegistrationController::class, 'store'])->name('public.register.instansi.store');
 
 // Include role-based route files
 require __DIR__ . '/auth.php';

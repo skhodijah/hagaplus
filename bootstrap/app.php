@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Console\Scheduling\Schedule;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -16,6 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
             'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        // Send expiration warnings daily at 9 AM
+        $schedule->command('app:send-expiration-warnings')
+            ->dailyAt('09:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -20,8 +20,13 @@ class InstansiController extends Controller
      */
     public function index()
     {
-        // Get all non-deleted instansi with pagination
-        $instansis = Instansi::latest()->paginate(10);
+        // Get all non-deleted instansi with their latest subscription and package info
+        $instansis = Instansi::with([
+            'package',
+            'subscriptions' => function ($query) {
+                $query->orderByDesc('end_date')->limit(1);
+            },
+        ])->latest()->paginate(10);
         return view('superadmin.instansi.index', compact('instansis'));
     }
 
@@ -42,43 +47,21 @@ class InstansiController extends Controller
         $validated = $request->validate([
             'nama_instansi' => 'required|string|max:255',
             'subdomain' => 'required|string|max:50|unique:instansis,subdomain',
-            'email' => 'required|email|max:255|unique:instansis,email',
-            'phone' => 'required|string|max:20',
-            'alamat' => 'required|string',
-            'kota' => 'required|string|max:100',
-            'provinsi' => 'required|string|max:100',
-            'kode_pos' => 'required|string|max:10',
-            'negara' => 'required|string|max:100',
-            'website' => 'nullable|url|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:active,inactive,suspended',
-            'status_langganan' => 'required|in:trial,active,expired,canceled',
-            'package_id' => 'required|exists:packages,id',
-            'tanggal_mulai_langganan' => 'required|date',
-            'tanggal_akhir_langganan' => 'required|date|after:tanggal_mulai_langganan',
-            'catatan' => 'nullable|string',
+            'email' => 'nullable|email|max:255|unique:instansis,email',
+            'phone' => 'nullable|string|max:20',
         ]);
 
-        // Handle file upload
-        if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('public/instansi/logos');
-            $validated['logo'] = Storage::url($path);
-        }
-
-        // Create new instansi
-        $instansi = Instansi::create($validated);
-
-        // Create subscription record
-        $instansi->subscriptions()->create([
-            'package_id' => $validated['package_id'],
-            'start_date' => $validated['tanggal_mulai_langganan'],
-            'end_date' => $validated['tanggal_akhir_langganan'],
-            'status' => $validated['status_langganan'],
-            'price' => Package::find($validated['package_id'])->price,
+        // Create new instansi without subscription details
+        $instansi = Instansi::create([
+            'nama_instansi' => $validated['nama_instansi'],
+            'subdomain' => $validated['subdomain'],
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'is_active' => true,
         ]);
 
         return redirect()->route('superadmin.instansi.index')
-            ->with('success', 'Instansi berhasil ditambahkan.');
+            ->with('success', 'Instansi berhasil ditambahkan. Silakan buat subscription di menu Subscriptions.');
     }
 
     /**
@@ -86,7 +69,7 @@ class InstansiController extends Controller
      */
     public function show(Instansi $instansi)
     {
-        $instansi->load(['subscriptions.package', 'users', 'karyawans']);
+        $instansi->load(['subscriptions.package', 'package.features']);
         return view('superadmin.instansi.show', compact('instansi'));
     }
 
@@ -95,8 +78,8 @@ class InstansiController extends Controller
      */
     public function edit(Instansi $instansi)
     {
-        $packages = Package::where('is_active', true)->get();
-        $instansi->load('subscriptions');
+        $packages = Package::where('is_active', true)->with('features')->get();
+        $instansi->load(['subscriptions', 'package.features']);
         return view('superadmin.instansi.edit', compact('instansi', 'packages'));
     }
 
@@ -114,56 +97,31 @@ class InstansiController extends Controller
                 Rule::unique('instansis', 'subdomain')->ignore($instansi->id),
             ],
             'email' => [
-                'required',
+                'nullable',
                 'email',
                 'max:255',
                 Rule::unique('instansis', 'email')->ignore($instansi->id),
             ],
-            'phone' => 'required|string|max:20',
-            'alamat' => 'required|string',
-            'kota' => 'required|string|max:100',
-            'provinsi' => 'required|string|max:100',
-            'kode_pos' => 'required|string|max:10',
-            'negara' => 'required|string|max:100',
-            'website' => 'nullable|url|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:active,inactive,suspended',
-            'status_langganan' => 'required|in:trial,active,expired,canceled',
-            'package_id' => 'required|exists:packages,id',
-            'tanggal_mulai_langganan' => 'required|date',
-            'tanggal_akhir_langganan' => 'required|date|after:tanggal_mulai_langganan',
-            'catatan' => 'nullable|string',
+            'phone' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
+            'is_active' => 'required|boolean',
         ]);
 
-        // Handle file upload
-        if ($request->hasFile('logo')) {
-            // Delete old logo if exists
-            if ($instansi->logo) {
-                $oldLogo = str_replace('/storage', 'public', $instansi->logo);
-                Storage::delete($oldLogo);
-            }
-
-            $path = $request->file('logo')->store('public/instansi/logos');
-            $validated['logo'] = Storage::url($path);
-        }
+        // Map form fields to database columns
+        $updateData = [
+            'nama_instansi' => $validated['nama_instansi'],
+            'subdomain' => $validated['subdomain'],
+            'email' => $validated['email'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'address' => $validated['alamat'] ?? null,
+            'is_active' => $validated['is_active'],
+        ];
 
         // Update instansi
-        $instansi->update($validated);
-
-        // Update or create subscription
-        $instansi->subscriptions()->updateOrCreate(
-            ['instansi_id' => $instansi->id],
-            [
-                'package_id' => $validated['package_id'],
-                'start_date' => $validated['tanggal_mulai_langganan'],
-                'end_date' => $validated['tanggal_akhir_langganan'],
-                'status' => $validated['status_langganan'],
-                'price' => Package::find($validated['package_id'])->price,
-            ]
-        );
+        $instansi->update($updateData);
 
         return redirect()->route('superadmin.instansi.index')
-            ->with('success', 'Data instansi berhasil diperbarui.');
+            ->with('success', 'Instansi berhasil diperbarui.');
     }
 
     /**
@@ -219,12 +177,54 @@ class InstansiController extends Controller
             ->with('success', 'Instansi berhasil dihapus permanen.');
     }
 
+
     public function monitoring()
     {
-        $overduePayments = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->where('payment_status', 'pending')->latest()->take(10)->get()
-            : collect();
+        $overduePayments = [];
+        
+        if (Schema::hasTable('subscription_history')) {
+            $overduePayments = DB::table('subscription_history')
+                ->where('payment_status', 'pending')
+                ->where('due_date', '<', now())
+                ->latest()
+                ->take(10)
+                ->get()
+                ->map(function ($payment) {
+                    $instansi = Instansi::find($payment->instansi_id);
+                    return (object) [
+                        'id' => $payment->id,
+                        'instansi_name' => $instansi ? $instansi->nama_instansi : 'N/A',
+                        'amount' => $payment->amount,
+                        'due_date' => $payment->due_date,
+                        'payment_status' => $payment->payment_status,
+                        'created_at' => $payment->created_at,
+                    ];
+                });
+        }
 
-        return view('superadmin.instansi.monitoring', compact('overduePayments'));
+        // Get active instansis with their subscription status
+        $instansis = Instansi::with(['package', 'subscriptions' => function($query) {
+            $query->latest()->first();
+        }])->get();
+
+        return view('superadmin.instansi.monitoring', compact('overduePayments', 'instansis'));
+    }
+
+    /**
+     * Toggle the status of the specified instansi.
+     */
+    public function toggleStatus(Instansi $instansi)
+    {
+        $instansi->update([
+            'is_active' => !$instansi->is_active
+        ]);
+
+        $statusText = $instansi->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Status instansi berhasil ' . $statusText,
+            'is_active' => $instansi->is_active
+        ]);
     }
 }

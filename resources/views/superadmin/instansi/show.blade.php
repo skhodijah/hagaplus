@@ -1,110 +1,96 @@
 <x-superadmin-layout>
-    <div class="py-12">
+    <div class="py-2">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="mb-8 flex justify-between items-center">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">{{ $instansi->nama_instansi }}</h1>
-                    <p class="mt-2 text-gray-600">Instansi Details</p>
-                </div>
+            <x-page-header
+                title="{{ $instansi->nama_instansi }}"
+                subtitle="Detail lengkap instansi dan informasi perusahaan"
+                :show-period-filter="false"
+            />
+
+            <div class="flex justify-end mb-6">
                 <div class="flex space-x-3">
-                    <a href="{{ route('superadmin.instansi.edit', $instansi) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                        Edit
+                    <a href="{{ route('superadmin.instansi.edit', $instansi) }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                        <i class="fa-solid fa-edit mr-2"></i>Edit Instansi
                     </a>
-                    <a href="{{ route('superadmin.instansi.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                        Back to List
+                    <a href="{{ route('superadmin.instansi.index') }}" class="bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                        <i class="fa-solid fa-arrow-left mr-2"></i>Kembali ke Daftar
                     </a>
                 </div>
             </div>
 
-            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                <div class="px-4 py-5 sm:p-6">
-                    <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Nama Instansi</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $instansi->nama_instansi }}</dd>
-                        </div>
-                        
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Subdomain</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $instansi->subdomain }}.hagaplus.com</dd>
-                        </div>
-                        
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Status Langganan</dt>
-                            <dd class="mt-1">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                    @if($instansi->status_langganan == 'active') bg-green-100 text-green-800
-                                    @elseif($instansi->status_langganan == 'inactive') bg-gray-100 text-gray-800
-                                    @else bg-red-100 text-red-800 @endif">
-                                    {{ ucfirst($instansi->status_langganan) }}
-                                </span>
-                            </dd>
-                        </div>
-                        
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Created At</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $instansi->created_at->format('M d, Y H:i') }}</dd>
-                        </div>
-                        
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">Updated At</dt>
-                            <dd class="mt-1 text-sm text-gray-900">{{ $instansi->updated_at->format('M d, Y H:i') }}</dd>
-                        </div>
-                    </dl>
-                </div>
-            </div>
+            <!-- Company Information -->
+            <x-section-card title="Informasi Perusahaan" class="mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Nama Instansi</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white font-medium">{{ $instansi->nama_instansi }}</dd>
+                    </div>
 
-            <!-- Subscriptions for this Instansi -->
-            <div class="mt-8">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Subscriptions</h3>
-                <div class="bg-white shadow overflow-hidden sm:rounded-md">
-                    <div class="px-4 py-5 sm:p-6">
-                        @if($instansi->subscriptions->count() > 0)
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
-                                        @foreach($instansi->subscriptions as $subscription)
-                                            <tr>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {{ $subscription->package->name ?? 'N/A' }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap">
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                        @if($subscription->status == 'active') bg-green-100 text-green-800
-                                                        @elseif($subscription->status == 'inactive') bg-gray-100 text-gray-800
-                                                        @else bg-red-100 text-red-800 @endif">
-                                                        {{ ucfirst($subscription->status) }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {{ $subscription->start_date->format('M d, Y') }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {{ $subscription->end_date->format('M d, Y') }}
-                                                </td>
-                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    Rp {{ number_format($subscription->price) }}
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @else
-                            <p class="text-gray-500 text-sm">No subscriptions found for this instansi.</p>
-                        @endif
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Subdomain</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->subdomain }}.hagaplus.com</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Email</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->email ?? '-' }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Telepon</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->phone ?? '-' }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Alamat</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->address ?? '-' }}</dd>
+                    </div>
+
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Status Aktif</dt>
+                        <dd class="mt-1">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                @if($instansi->is_active) bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
+                                @else bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300 @endif">
+                                {{ $instansi->is_active ? 'Aktif' : 'Tidak Aktif' }}
+                            </span>
+                        </dd>
+                    </div>
+
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Dibuat Pada</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->created_at->format('d M Y H:i') }}</dd>
+                    </div>
+
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Diupdate Pada</dt>
+                        <dd class="text-sm text-gray-900 dark:text-white">{{ $instansi->updated_at->format('d M Y H:i') }}</dd>
                     </div>
                 </div>
-            </div>
+            </x-section-card>
+
+
+            <!-- Additional Information -->
+            @if($instansi->settings)
+                <x-section-card title="Pengaturan & Konfigurasi" class="mb-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                        <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-3">Konfigurasi Sistem</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            @if(isset($instansi->settings['currency']))
+                                <div><span class="font-medium">Mata Uang:</span> {{ $instansi->settings['currency'] }}</div>
+                            @endif
+                            @if(isset($instansi->settings['timezone']))
+                                <div><span class="font-medium">Timezone:</span> {{ $instansi->settings['timezone'] }}</div>
+                            @endif
+                            @if(isset($instansi->settings['date_format']))
+                                <div><span class="font-medium">Format Tanggal:</span> {{ $instansi->settings['date_format'] }}</div>
+                            @endif
+                        </div>
+                    </div>
+                </x-section-card>
+            @endif
         </div>
     </div>
 </x-superadmin-layout>
