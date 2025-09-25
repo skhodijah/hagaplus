@@ -180,34 +180,44 @@ class InstansiController extends Controller
 
     public function monitoring()
     {
-        $overduePayments = [];
-        
-        if (Schema::hasTable('subscription_history')) {
-            $overduePayments = DB::table('subscription_history')
-                ->where('payment_status', 'pending')
-                ->where('due_date', '<', now())
-                ->latest()
-                ->take(10)
-                ->get()
-                ->map(function ($payment) {
-                    $instansi = Instansi::find($payment->instansi_id);
-                    return (object) [
-                        'id' => $payment->id,
-                        'instansi_name' => $instansi ? $instansi->nama_instansi : 'N/A',
-                        'amount' => $payment->amount,
-                        'due_date' => $payment->due_date,
-                        'payment_status' => $payment->payment_status,
-                        'created_at' => $payment->created_at,
-                    ];
-                });
-        }
+        $instansis = Instansi::with([
+            'package',
+            'subscriptions' => function ($q) {
+                $q->orderByDesc('end_date')->limit(1);
+            }
+        ])->get();
 
-        // Get active instansis with their subscription status
-        $instansis = Instansi::with(['package', 'subscriptions' => function($query) {
-            $query->latest()->first();
-        }])->get();
+        $data = $instansis->map(function ($instansi) {
+            $latest = $instansi->subscriptions->first();
+            $endDate = $latest?->end_date; // Carbon|DateTime|null
+            $daysRemaining = $endDate ? now()->diffInDays($endDate, false) : null;
+            $employeesCount = \Illuminate\Support\Facades\DB::table('employees')
+                ->where('instansi_id', $instansi->id)
+                ->count();
 
-        return view('superadmin.instansi.monitoring', compact('overduePayments', 'instansis'));
+            return (object) [
+                'id' => $instansi->id,
+                'nama_instansi' => $instansi->nama_instansi,
+                'subdomain' => $instansi->subdomain,
+                'is_active' => (bool) $instansi->is_active,
+                'package_name' => $instansi->package->name ?? '-',
+                'subscription_status' => $latest?->current_status ?? null,
+                'subscription_end' => $endDate ? $endDate->format('Y-m-d') : null,
+                'days_remaining' => $daysRemaining,
+                'employees_count' => $employeesCount,
+                'max_employees' => $instansi->max_employees,
+            ];
+        });
+
+        return view('superadmin.instansi.monitoring', [
+            'items' => $data,
+            'counts' => [
+                'total' => $data->count(),
+                'active' => $data->where('is_active', true)->count(),
+                'expired' => $data->where('subscription_status', 'expired')->count(),
+                'expiring_7' => $data->filter(function ($i) { return isset($i->days_remaining) && $i->days_remaining <= 7 && $i->days_remaining >= 0; })->count(),
+            ],
+        ]);
     }
 
     /**

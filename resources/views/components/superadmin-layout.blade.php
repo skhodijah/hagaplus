@@ -14,7 +14,8 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     @php
-        $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.subscriptions.*');
+        $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.support_requests.*');
+        $isSubscriptionsActive = request()->routeIs('superadmin.subscriptions.*');
         $isPackagesActive = request()->routeIs('superadmin.packages.*');
         $isFinancialActive = request()->routeIs('superadmin.financial.*');
         $isReportsActive = request()->routeIs('superadmin.analytics.*') || request()->routeIs('superadmin.reports.*');
@@ -38,10 +39,15 @@
                 <x-layout.sidebar-link :href="route('superadmin.dashboard')" icon="fa-solid fa-gauge" label="Dashboard" :active="request()->routeIs('superadmin.dashboard')" />
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-building" label="Instansi Management" :open="$isInstansiActive" target="menu-instansi">
-                    <x-layout.sidebar-subitem :href="route('superadmin.instansi.index')" label="All Instansi" :active="request()->routeIs('superadmin.instansi.*')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="Subscription Status" :active="request()->routeIs('superadmin.subscriptions.*')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.instansi.index')" label="All Instansi" :active="request()->routeIs('superadmin.instansi.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.instansi.monitoring')" label="Usage Monitoring" :active="request()->routeIs('superadmin.instansi.monitoring')" />
-                    <x-layout.sidebar-subitem href="#" label="Support Requests" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.support_requests.index')" label="Support Requests" :active="request()->routeIs('superadmin.support_requests.*')" />
+                </x-layout.sidebar-accordion>
+
+                <x-layout.sidebar-accordion icon="fa-solid fa-receipt" label="Subscription Management" :open="$isSubscriptionsActive" target="menu-subscriptions">
+                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="All Subscriptions" :active="request()->routeIs('superadmin.subscriptions.*')" />
+                    <x-layout.sidebar-subitem href="#" label="Subscription Analytics" />
+                    <x-layout.sidebar-subitem href="#" label="Payment History" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">
@@ -50,19 +56,12 @@
                     <x-layout.sidebar-subitem href="#" label="Pricing Settings" />
                 </x-layout.sidebar-accordion>
 
-                <x-layout.sidebar-accordion icon="fa-solid fa-sack-dollar" label="Financial" :open="$isFinancialActive" target="menu-financial">
-                    <x-layout.sidebar-subitem :href="route('superadmin.financial.index')" label="Revenue Overview" :active="request()->routeIs('superadmin.financial.index')" />
-                    <x-layout.sidebar-subitem href="#" label="Payment Tracking" />
-                    <x-layout.sidebar-subitem href="#" label="Invoice Management" />
-                    <x-layout.sidebar-subitem href="#" label="Financial Reports" />
-                </x-layout.sidebar-accordion>
-
                 <x-layout.sidebar-accordion icon="fa-solid fa-chart-line" label="Reports" :open="$isReportsActive" target="menu-reports">
                     <x-layout.sidebar-subitem :href="route('superadmin.analytics.index')" label="Analytics Dashboard" :active="request()->routeIs('superadmin.analytics.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.reports.activities')" label="Recent Activities" :active="request()->routeIs('superadmin.reports.activities')" />
-                    <x-layout.sidebar-subitem href="#" label="Usage Statistics" />
-                    <x-layout.sidebar-subitem href="#" label="Performance Reports" />
-                    <x-layout.sidebar-subitem href="#" label="Export Data" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.reports.usage')" label="Usage Statistics" :active="request()->routeIs('superadmin.reports.usage')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.reports.performance')" label="Performance Reports" :active="request()->routeIs('superadmin.reports.performance')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.reports.export')" label="Export Data" :active="request()->routeIs('superadmin.reports.export')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">

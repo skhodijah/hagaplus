@@ -4,6 +4,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\InstansiController;
 use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
+use App\Http\Controllers\SuperAdmin\SupportRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
@@ -36,4 +37,14 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::patch('/subscriptions/{subscription}', [SubscriptionController::class, 'update'])->name('subscriptions.update');
     Route::patch('/subscriptions/{subscription}/extend', [SubscriptionController::class, 'extend'])->name('subscriptions.extend');
     Route::resource('subscriptions', SubscriptionController::class)->except(['create', 'store']);
+
+    // Support Requests
+    Route::get('/support-requests', [SupportRequestController::class, 'index'])->name('support_requests.index');
+    Route::get('/support-requests/{id}', [SupportRequestController::class, 'show'])->name('support_requests.show');
+    Route::patch('/support-requests/{id}', [SupportRequestController::class, 'update'])->name('support_requests.update');
+
+    // Reports extras
+    Route::get('/reports/usage', function() { return view('superadmin.reports.usage'); })->name('reports.usage');
+    Route::get('/reports/performance', function() { return view('superadmin.reports.performance'); })->name('reports.performance');
+    Route::get('/reports/export', function() { return view('superadmin.reports.export'); })->name('reports.export');
 });
