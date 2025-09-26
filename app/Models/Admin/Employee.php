@@ -41,10 +41,6 @@ class Employee extends BaseModel
         return $this->belongsTo(Branch::class);
     }
 
-    public function attendances()
-    {
-        return $this->hasMany(Attendance::class);
-    }
 
     public function payrolls()
     {

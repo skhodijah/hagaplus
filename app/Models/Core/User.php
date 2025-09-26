@@ -78,4 +78,20 @@ class User extends Authenticatable
     {
         return $this->hasOne(\App\Models\Admin\Employee::class);
     }
+
+    /**
+     * Get the attendances for the user
+     */
+    public function attendances()
+    {
+        return $this->hasMany(\App\Models\Admin\Attendance::class);
+    }
+
+    /**
+     * Get the payrolls for the user
+     */
+    public function payrolls()
+    {
+        return $this->hasMany(\App\Models\Admin\Payroll::class);
+    }
 }

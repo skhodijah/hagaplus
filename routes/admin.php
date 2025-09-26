@@ -16,6 +16,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Attendance management
     Route::resource('attendance', AttendanceController::class);
+    Route::get('attendance/employee/{userId}', [AttendanceController::class, 'employeeAttendance'])->name('attendance.employee');
 
     // Payroll management
     Route::resource('payroll', PayrollController::class);
@@ -26,4 +27,5 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
 });
