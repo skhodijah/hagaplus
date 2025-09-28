@@ -56,6 +56,10 @@ class User extends Authenticatable
      */
     public function initials(): string
     {
+        if (!$this->name) {
+            return 'U'; // Default initial for users without names
+        }
+
         return Str::of($this->name)
             ->explode(' ')
             ->take(2)

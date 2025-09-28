@@ -52,8 +52,8 @@ class SettingsController extends Controller
 
         // Get existing settings
         $settings = Setting::where('instansi_id', $instansiId)
-                          ->pluck('value', 'key')
-                          ->toArray();
+            ->pluck('value', 'key')
+            ->toArray();
 
         // Merge with defaults
         $allSettings = [];
@@ -141,8 +141,8 @@ class SettingsController extends Controller
             } else {
                 // Remove setting if null (reset to default)
                 Setting::where('instansi_id', $instansiId)
-                      ->where('key', $key)
-                      ->delete();
+                    ->where('key', $key)
+                    ->delete();
             }
         }
 
@@ -169,13 +169,13 @@ class SettingsController extends Controller
 
         if ($request->category) {
             // Reset specific category
-            $categoryKeys = array_filter($this->defaultSettings, function($config) use ($request) {
+            $categoryKeys = array_filter($this->defaultSettings, function ($config) use ($request) {
                 return $config['category'] === $request->category;
             });
 
             Setting::where('instansi_id', $instansiId)
-                  ->whereIn('key', array_keys($categoryKeys))
-                  ->delete();
+                ->whereIn('key', array_keys($categoryKeys))
+                ->delete();
         } else {
             // Reset all settings
             Setting::where('instansi_id', $instansiId)->delete();

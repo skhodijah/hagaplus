@@ -7,11 +7,12 @@ use App\Models\Core\BaseModel;
 class Package extends BaseModel
 {
     protected $table = 'packages';
-    
+
     protected $fillable = [
         'name',
         'description',
         'price',
+        'duration_days',
         'features',
         'max_employees',
         'max_branches',
@@ -54,6 +55,11 @@ class Package extends BaseModel
         return $this->belongsToMany(Feature::class, 'package_features')
             ->withPivot(['is_enabled', 'limits', 'config_override'])
             ->withTimestamps();
+    }
+
+    public function packageFeatures()
+    {
+        return $this->hasMany(PackageFeature::class);
     }
 
     public function discounts()

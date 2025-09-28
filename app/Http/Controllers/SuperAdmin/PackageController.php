@@ -73,4 +73,108 @@ class PackageController extends Controller
         $package->delete();
         return redirect()->route('superadmin.packages.index')->with('success', 'Package berhasil dihapus.');
     }
+
+    /**
+     * Show feature configuration page
+     */
+    public function featureConfiguration()
+    {
+        $packages = \App\Models\SuperAdmin\Package::with('packageFeatures.feature')->get();
+        $features = \App\Models\SuperAdmin\Feature::orderBy('category')->orderBy('sort_order')->get();
+
+        return view('superadmin.packages.feature-configuration', compact('packages', 'features'));
+    }
+
+    /**
+     * Update feature configuration for a package
+     */
+    public function updateFeatureConfiguration(Request $request)
+    {
+        $validated = $request->validate([
+            'package_id' => 'required|exists:packages,id',
+            'features' => 'array',
+        ]);
+
+        $packageId = $validated['package_id'];
+
+        // Delete existing package features
+        \App\Models\SuperAdmin\PackageFeature::where('package_id', $packageId)->delete();
+
+        // Process each feature
+        if (isset($validated['features'])) {
+            foreach ($validated['features'] as $featureId => $featureData) {
+                // Check if feature is enabled
+                $isEnabled = isset($featureData['enabled']) && $featureData['enabled'] == '1';
+
+                if ($isEnabled) {
+                    // Build limits array from form inputs
+                    $limits = [];
+                    if (isset($featureData['limits'])) {
+                        $limits = $featureData['limits'];
+                        // Convert checkbox values to boolean
+                        foreach ($limits as $key => $value) {
+                            if ($value === '1' || $value === '0') {
+                                $limits[$key] = $value === '1';
+                            }
+                        }
+                    }
+
+                    // Build config array if present
+                    $config = [];
+                    if (isset($featureData['config'])) {
+                        $config = $featureData['config'];
+                    }
+
+                    \App\Models\SuperAdmin\PackageFeature::create([
+                        'package_id' => $packageId,
+                        'feature_id' => $featureId,
+                        'is_enabled' => true,
+                        'limits' => !empty($limits) ? $limits : null,
+                        'config_override' => !empty($config) ? $config : null,
+                    ]);
+                }
+            }
+        }
+
+        return redirect()->back()->with('success', 'Feature configuration updated successfully.');
+    }
+
+    /**
+     * Show pricing settings page
+     */
+    public function pricingSettings()
+    {
+        $packages = \App\Models\SuperAdmin\Package::all();
+        $discounts = \App\Models\SuperAdmin\Discount::where('is_active', true)->get();
+
+        return view('superadmin.packages.pricing-settings', compact('packages', 'discounts'));
+    }
+
+    /**
+     * Update pricing settings
+     */
+    public function updatePricingSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'packages' => 'required|array',
+            'packages.*.id' => 'required|exists:packages,id',
+            'packages.*.price' => 'required|numeric|min:0',
+            'packages.*.duration_days' => 'required|integer|min:1',
+            'packages.*.max_employees' => 'required|integer|min:1',
+            'packages.*.max_branches' => 'required|integer|min:1',
+            'packages.*.is_active' => 'boolean',
+        ]);
+
+        foreach ($validated['packages'] as $packageData) {
+            \App\Models\SuperAdmin\Package::where('id', $packageData['id'])->update([
+                'price' => $packageData['price'],
+                'duration_days' => $packageData['duration_days'],
+                'max_employees' => $packageData['max_employees'],
+                'max_branches' => $packageData['max_branches'],
+                'is_active' => $packageData['is_active'] ?? false,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Pricing settings updated successfully.');
+    }
 }

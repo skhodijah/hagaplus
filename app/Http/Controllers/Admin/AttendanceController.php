@@ -21,12 +21,19 @@ class AttendanceController extends Controller
             ->where('instansi_id', $instansiId)
             ->get();
 
-        $attendances = Attendance::whereHas('user', function($query) use ($instansiId) {
+        $attendances = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
         })
-        ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
-        ->get()
-        ->groupBy(['user_id', 'attendance_date']);
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->get()
+            ->groupBy(['user_id', 'attendance_date'])
+            ->map(function ($userAttendances) {
+                return $userAttendances->map(function ($dateAttendances) {
+                    // Since we have unique constraint on user_id + attendance_date,
+                    // there should only be one attendance per user per date
+                    return $dateAttendances->first();
+                });
+            });
 
         return view('admin.attendance.index', compact('employees', 'attendances', 'month'));
     }
@@ -69,7 +76,7 @@ class AttendanceController extends Controller
     public function show($id)
     {
         $instansiId = auth()->user()->instansi_id;
-        $attendance = Attendance::whereHas('user', function($query) use ($instansiId) {
+        $attendance = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
@@ -79,7 +86,7 @@ class AttendanceController extends Controller
     public function edit($id)
     {
         $instansiId = auth()->user()->instansi_id;
-        $attendance = Attendance::whereHas('user', function($query) use ($instansiId) {
+        $attendance = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
@@ -93,7 +100,7 @@ class AttendanceController extends Controller
     public function update(Request $request, $id)
     {
         $instansiId = auth()->user()->instansi_id;
-        $attendance = Attendance::whereHas('user', function($query) use ($instansiId) {
+        $attendance = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
@@ -122,7 +129,7 @@ class AttendanceController extends Controller
     public function destroy($id)
     {
         $instansiId = auth()->user()->instansi_id;
-        $attendance = Attendance::whereHas('user', function($query) use ($instansiId) {
+        $attendance = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 

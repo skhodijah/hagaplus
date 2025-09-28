@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Sorter SQL Insert</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            textarea {
+                width: 100%;
+                height: 200px;
+                margin-bottom: 10px;
+                font-family: monospace;
+            }
+            button {
+                padding: 8px 15px;
+                margin-top: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <h3>Masukkan SQL Insert:</h3>
+        <textarea
+            id="inputSql"
+            placeholder="Paste query INSERT INTO di sini..."
+        ></textarea>
+        <br />
+        <button onclick="sortSQL()">Urutkan</button>
+        <h3>Hasil Urut:</h3>
+        <textarea id="outputSql" readonly></textarea>
+
+        <script>
+            function sortSQL() {
+                // urutan tabel
+                const tableOrder = [
+                    "packages",
+                    "features",
+                    "migrations", // level 0
+                    "instansis",
+                    "users", // level 1
+                    "branches",
+                    "attendance_policies",
+                    "company_themes",
+                    "settings",
+                    "subscriptions",
+                    "package_features", // level 2
+                    "employees",
+                    "employee_schedules",
+                    "qr_codes",
+                    "notifications", // level 3
+                    "attendances",
+                    "leaves",
+                    "subscription_history",
+                    "support_requests", // level 4
+                    "payrolls", // level 5
+                    "activity_logs", // level 6
+                ];
+
+                // ambil input (pecah berdasarkan ;)
+                const raw = document.getElementById("inputSql").value;
+                const queries = raw
+                    .split(/;\s*\n/) // pecah berdasarkan tanda ;
+                    .map((q) => q.trim())
+                    .filter((q) => q.toLowerCase().startsWith("insert into"));
+
+                // urutkan sesuai tabel
+                queries.sort((a, b) => {
+                    const tableA = tableOrder.findIndex((t) =>
+                        a
+                            .toLowerCase()
+                            .includes("insert into `" + t.toLowerCase() + "`")
+                    );
+                    const tableB = tableOrder.findIndex((t) =>
+                        b
+                            .toLowerCase()
+                            .includes("insert into `" + t.toLowerCase() + "`")
+                    );
+                    return tableA - tableB;
+                });
+
+                // gabungkan kembali + tambahkan ;
+                const output = queries.map((q) => q + ";").join("\n\n");
+                document.getElementById("outputSql").value = output;
+            }
+        </script>
+    </body>
+</html>

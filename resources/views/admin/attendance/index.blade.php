@@ -63,7 +63,8 @@
                             @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
                                 @php
                                     $date = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d');
-                                    $attendance = $attendances->get($employee->id, collect())->get($date);
+                                    $dateWithTime = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d 00:00:00');
+                                    $attendance = $attendances->get($employee->id, collect())->get($dateWithTime);
                                 @endphp
                                 <td class="px-2 py-4 text-center">
                                     @if($attendance)
@@ -118,43 +119,7 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Month navigation
-            const prevMonthBtn = document.getElementById('prev-month');
-            const nextMonthBtn = document.getElementById('next-month');
-            const currentMonthSpan = document.getElementById('current-month');
-
-            if (prevMonthBtn && nextMonthBtn && currentMonthSpan) {
-                prevMonthBtn.addEventListener('click', function() {
-                    changeMonth(-1);
-                });
-
-                nextMonthBtn.addEventListener('click', function() {
-                    changeMonth(1);
-                });
-            }
-
-            function changeMonth(direction) {
-                const currentMonth = currentMonthSpan.textContent;
-                const [monthName, year] = currentMonth.split(' ');
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                                   'July', 'August', 'September', 'October', 'November', 'December'];
-                const monthIndex = monthNames.indexOf(monthName);
-                let newMonthIndex = monthIndex + direction;
-                let newYear = parseInt(year);
-
-                if (newMonthIndex < 0) {
-                    newMonthIndex = 11;
-                    newYear--;
-                } else if (newMonthIndex > 11) {
-                    newMonthIndex = 0;
-                    newYear++;
-                }
-
-                const newMonth = `${newYear}-${String(newMonthIndex + 1).padStart(2, '0')}`;
-                window.location.href = `{{ route('admin.attendance.index') }}?month=${newMonth}`;
-            }
-        });
-    </script>
+    @push('scripts')
+    <script src="{{ asset('js/attendance.js') }}"></script>
+    @endpush
 </x-admin-layout>

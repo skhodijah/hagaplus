@@ -7,8 +7,10 @@ use App\Models\SuperAdmin\Instansi;
 use App\Models\SuperAdmin\Package;
 use App\Models\SuperAdmin\Subscription;
 use App\Models\Core\User;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -123,6 +125,16 @@ class DashboardController extends Controller
                 ->get()
             : collect();
 
+        // Get notifications for the current user
+        $notifications = Notification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $unreadCount = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
         return view('superadmin.dashboard.index', compact(
             'period',
             'totalActiveCompanies',
@@ -147,7 +159,9 @@ class DashboardController extends Controller
             'instansiWithStatus',
             'overduePayments',
             'recentSubscriptionLogs',
-            'recentNotifications'
+            'recentNotifications',
+            'notifications',
+            'unreadCount'
         ));
     }
 
