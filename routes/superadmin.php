@@ -6,7 +6,8 @@ use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\SupportRequestController;
 use App\Http\Controllers\SuperAdmin\NotificationController;
-use App\Http\Controllers\SuperAdmin\ChatController;
+use App\Http\Controllers\SuperAdmin\UserLogController;
+use App\Http\Controllers\SuperAdmin\SettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
@@ -73,10 +74,27 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/notifications/count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::get('/api/employees', [NotificationController::class, 'getEmployees'])->name('api.employees');
 
-    // Chat
-    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-    Route::post('/chat/start', [ChatController::class, 'startChat'])->name('chat.start');
-    Route::get('/chat/{chat}', [ChatController::class, 'show'])->name('chat.show');
-    Route::get('/chat/{chat}/messages', [ChatController::class, 'getMessages'])->name('chat.messages');
-    Route::post('/chat/{chat}/messages', [ChatController::class, 'sendMessage'])->name('chat.send-message');
+    // Settings
+    Route::get('/settings/profile', [DashboardController::class, 'settingsProfile'])->name('settings.profile');
+    Route::patch('/settings/profile', [DashboardController::class, 'updateSettingsProfile'])->name('settings.profile.update');
+    Route::post('/settings/validate-password', [DashboardController::class, 'validateCurrentPassword'])->name('settings.validate-password');
+    Route::get('/settings/notifications', [DashboardController::class, 'settingsNotifications'])->name('settings.notifications');
+    Route::patch('/settings/notifications', [DashboardController::class, 'updateSettingsNotifications'])->name('settings.notifications.update');
+
+    // System Management
+    Route::prefix('system')->name('system.')->group(function () {
+        // User Logs
+        Route::resource('user-logs', UserLogController::class)->except(['create', 'store', 'edit', 'update']);
+        Route::post('user-logs/bulk-delete', [UserLogController::class, 'bulkDelete'])->name('user-logs.bulk-delete');
+        Route::post('user-logs/clear-old', [UserLogController::class, 'clearOld'])->name('user-logs.clear-old');
+        Route::get('user-logs-export', [UserLogController::class, 'export'])->name('user-logs.export');
+
+        // Settings
+        Route::resource('settings', SettingController::class);
+        Route::post('settings/bulk-update', [SettingController::class, 'bulkUpdate'])->name('settings.bulk-update');
+        Route::get('settings-export', [SettingController::class, 'export'])->name('settings.export');
+        Route::post('settings-import', [SettingController::class, 'import'])->name('settings.import');
+        Route::get('settings/{key}/value', [SettingController::class, 'getValue'])->name('settings.get-value');
+        Route::post('settings/{key}/value', [SettingController::class, 'setValue'])->name('settings.set-value');
+    });
 });

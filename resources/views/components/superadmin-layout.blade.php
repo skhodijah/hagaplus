@@ -12,6 +12,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
     <script src="https://kit.fontawesome.com/8c8ccf764d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-Sl1fL0x2y5m0mXQmZs7q8w9mK3Yk8wVqf9VQf8lYp4mDk8Qxg3m6Jrj0D7n6o2o1g7l5xj5m1n9m0z2yXb7aYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
     @php
@@ -65,16 +66,15 @@
                     <x-layout.sidebar-subitem :href="route('superadmin.reports.export')" label="Export Data" :active="request()->routeIs('superadmin.reports.export')" />
                 </x-layout.sidebar-accordion>
 
-                <x-layout.sidebar-accordion icon="fa-solid fa-bell" label="Communication" :open="request()->routeIs('superadmin.notifications.*') || request()->routeIs('superadmin.chat.*')" target="menu-communication">
+                <x-layout.sidebar-accordion icon="fa-solid fa-bell" label="Communication" :open="request()->routeIs('superadmin.notifications.*')" target="menu-communication">
                     <x-layout.sidebar-subitem :href="route('superadmin.notifications.index')" label="Notifications" :active="request()->routeIs('superadmin.notifications.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.notifications.bulk')" label="Bulk Notifications" :active="request()->routeIs('superadmin.notifications.bulk')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.chat.index')" label="Customer Service Chat" :active="request()->routeIs('superadmin.chat.*')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">
                     <x-layout.sidebar-subitem :href="route('superadmin.system.health')" label="System Health" :active="request()->routeIs('superadmin.system.health')" />
-                    <x-layout.sidebar-subitem href="#" label="User Logs" />
-                    <x-layout.sidebar-subitem href="#" label="Settings" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.system.user-logs.index')" label="User Logs" :active="request()->routeIs('superadmin.system.user-logs.*')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.system.settings.index')" label="Settings" :active="request()->routeIs('superadmin.system.settings.*')" />
                 </x-layout.sidebar-accordion>
             </nav>
         </aside>
@@ -352,9 +352,13 @@
                                 <!-- Profile Info -->
                                 <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                                            <i class="fa-solid fa-user text-white"></i>
-                                        </div>
+                                        @if(Auth::user()->avatar)
+                                            <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="Profile Picture" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600">
+                                        @else
+                                            <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                                {{ Auth::user()->initials() }}
+                                            </div>
+                                        @endif
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{{ Auth::user()->name }}</p>
                                             <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ Auth::user()->email }}</p>
@@ -365,21 +369,13 @@
 
                                 <!-- Menu Items -->
                                 <div class="py-1">
-                                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <a href="{{ route('superadmin.settings.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         <i class="fa-solid fa-user-cog mr-3 text-gray-400"></i>
-                                        Profile Settings
+                                        Profile & Account Settings
                                     </a>
-                                    <a href="#" onclick="alert('Account Settings feature coming soon!')" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                                        <i class="fa-solid fa-cog mr-3 text-gray-400"></i>
-                                        Account Settings
-                                    </a>
-                                    <a href="#" onclick="alert('Notification Settings feature coming soon!')" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
+                                    <a href="{{ route('superadmin.settings.notifications') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         <i class="fa-solid fa-bell mr-3 text-gray-400"></i>
                                         Notification Settings
-                                    </a>
-                                    <a href="#" onclick="alert('Help & Support feature coming soon!')" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
-                                        <i class="fa-solid fa-question-circle mr-3 text-gray-400"></i>
-                                        Help & Support
                                     </a>
                                 </div>
 

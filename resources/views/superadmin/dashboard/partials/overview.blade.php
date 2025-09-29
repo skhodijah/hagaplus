@@ -1,43 +1,76 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+<!-- Key Metrics Overview -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
     <x-stat-card
-        title="Instansi Aktif"
-        :value="$totalActiveCompanies"
+        title="Total Instansi"
+        :value="$totalInstansi"
+        subtitle="Semua perusahaan terdaftar"
         icon="fas fa-building"
         color="blue"
+        :trend="$instansiGrowth"
+        trend-label="dari bulan lalu"
+    />
+
+    <x-stat-card
+        title="Instansi Aktif"
+        :value="$totalActiveInstansi"
+        subtitle="Sedang berlangganan"
+        icon="fas fa-check-circle"
+        color="green"
+        :trend="$activeInstansiGrowth"
+        trend-label="dari bulan lalu"
     />
 
     <x-stat-card
         title="Revenue Bulan Ini"
         :value="$thisMonthRevenueFormatted"
+        subtitle="Total pendapatan"
         icon="fas fa-money-bill-wave"
-        color="green"
+        color="emerald"
+        :trend="$revenueGrowth"
+        trend-label="dari bulan lalu"
     />
 
     <x-stat-card
-        title="Instansi Baru (7 hari)"
+        title="Support Aktif"
+        :value="$openSupportRequests"
+        subtitle="Tiket terbuka"
+        icon="fas fa-headset"
+        color="orange"
+        trend=""
+    />
+</div>
+
+<!-- Secondary Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+    <x-stat-card
+        title="Instansi Baru"
         :value="$newCompanies7d"
+        subtitle="7 hari terakhir"
         icon="fas fa-plus-circle"
         color="purple"
     />
 
     <x-stat-card
-        title="Akan Berakhir (30 hari)"
+        title="Akan Berakhir"
         :value="$expiring30d"
+        subtitle="dalam 30 hari"
         icon="fas fa-exclamation-triangle"
-        color="orange"
+        color="yellow"
     />
 
     <x-stat-card
-        title="Pengguna Aktif"
-        :value="$activeUsers"
-        icon="fas fa-users"
-        color="cyan"
+        title="Paket Populer"
+        :value="$mostPopularPackage"
+        subtitle="{{ $mostPopularPackageCount }} pengguna"
+        icon="fas fa-crown"
+        color="indigo"
     />
 
     <x-stat-card
-        title="Pertumbuhan MRR"
-        :value="$mrrGrowthPct"
+        title="Rata-rata MRR"
+        :value="$avgMrrFormatted"
+        subtitle="per instansi"
         icon="fas fa-chart-line"
-        color="pink"
+        color="teal"
     />
 </div>

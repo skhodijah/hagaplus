@@ -24,6 +24,11 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
+        // Check if we're coming from superadmin settings
+        if ($request->is('superadmin/*')) {
+            return redirect()->route('superadmin.settings.profile')->with('status', 'password-updated');
+        }
+
         return back()->with('status', 'password-updated');
     }
 }

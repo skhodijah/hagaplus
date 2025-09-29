@@ -14,11 +14,15 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            // Core system data
             PackageSeeder::class,
-            SuperAdminSeeder::class,
-            CompanySeeder::class,
-            BranchSeeder::class,
+            InstansiSeeder::class,
             UserSeeder::class,
+            SubscriptionSeeder::class,
+            SupportRequestSeeder::class,
+            SettingsSeeder::class,
+
+            // Existing seeders (keeping for compatibility)
             AttendancePolicySeeder::class,
             WorkShiftSeeder::class,
             EmployeeScheduleSeeder::class,
@@ -27,9 +31,7 @@ class DatabaseSeeder extends Seeder
             LeaveSeeder::class,
             PayrollSeeder::class,
             AllowanceDeductionSeeder::class,
-            CompanyThemeSeeder::class,
             QRCodeSeeder::class,
-            SystemSettingSeeder::class,
         ]);
     }
 }

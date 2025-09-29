@@ -26,6 +26,7 @@ class User extends Authenticatable
         'password',
         'role',
         'instansi_id',
+        'avatar',
     ];
 
     /**
