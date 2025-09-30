@@ -4,7 +4,6 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Notification;
-use App\Models\BulkNotificationLog;
 use App\Models\Core\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -103,11 +102,18 @@ class NotificationController extends Controller
      */
     public function bulk()
     {
-        $logs = BulkNotificationLog::with('sender')
+        // Get bulk notification history by grouping notifications with same title/message sent by current user
+        $bulkHistory = \DB::table('notifications')
+            ->select('title', 'message', 'type', \DB::raw('MAX(created_at) as created_at'), \DB::raw('COUNT(*) as total_sent'), \DB::raw('SUM(CASE WHEN is_read = 1 THEN 1 ELSE 0 END) as read_count'))
+            ->where('user_id', '!=', Auth::id()) // Only notifications sent to others
+            ->whereRaw('created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)') // Last 30 days
+            ->groupBy('title', 'message', 'type') // Group by content
+            ->having('total_sent', '>', 1) // Only show bulk sends (more than 1 recipient)
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->limit(20)
+            ->get();
 
-        return view('superadmin.notifications.bulk', compact('logs'));
+        return view('superadmin.notifications.bulk', compact('bulkHistory'));
     }
 
     /**
@@ -154,21 +160,6 @@ class NotificationController extends Controller
                 'is_read' => false,
             ]);
         }
-
-        // Log the bulk notification
-        BulkNotificationLog::create([
-            'title' => $request->title,
-            'message' => $request->message,
-            'type' => $request->type,
-            'target_type' => $request->target_type,
-            'target_ids' => match ($request->target_type) {
-                'all_admins', 'all_employees' => null,
-                'specific_admins' => $request->admin_ids,
-                'specific_employees' => $request->user_ids,
-            },
-            'total_sent' => $users->count(),
-            'sent_by' => Auth::id(),
-        ]);
 
         return redirect()->back()->with('success', 'Bulk notifications sent successfully to ' . $users->count() . ' users.');
     }

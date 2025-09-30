@@ -99,15 +99,11 @@
                                 <!-- Features Summary -->
                                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                                     <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                                        Features Included
+                                        Features Configuration
                                     </h4>
-                                    <div class="flex flex-wrap gap-1">
-                                        @if($package->packageFeatures)
-                                            @foreach($package->packageFeatures->where('is_enabled', true) as $packageFeature)
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                                                    {{ $packageFeature->feature->name }}
-                                                </span>
-                                            @endforeach
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                                        @if($package->features)
+                                            <pre class="bg-gray-50 dark:bg-gray-800 p-2 rounded text-xs overflow-x-auto">{{ json_encode($package->features, JSON_PRETTY_PRINT) }}</pre>
                                         @else
                                             <span class="text-sm text-gray-500 dark:text-gray-400">No features configured</span>
                                         @endif
@@ -130,48 +126,6 @@
                     @endforeach
                 </div>
 
-                <!-- Discounts Section -->
-                <div class="bg-white dark:bg-gray-900 rounded-lg shadow mb-8">
-                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Active Discounts</h3>
-                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            Current discount codes and promotions
-                        </p>
-                    </div>
-
-                    <div class="p-6">
-                        @if($discounts->count() > 0)
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                @foreach($discounts as $discount)
-                                    <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                        <div class="flex items-center justify-between mb-2">
-                                            <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                {{ $discount->name }}
-                                            </h4>
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                         {{ $discount->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
-                                                {{ $discount->is_active ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </div>
-
-                                        <div class="space-y-1 text-xs text-gray-600 dark:text-gray-400">
-                                            <div>Code: <span class="font-mono font-medium">{{ $discount->code }}</span></div>
-                                            <div>Type: {{ ucfirst(str_replace('_', ' ', $discount->type)) }}</div>
-                                            <div>Value: {{ $discount->type === 'percentage' ? $discount->value . '%' : 'Rp ' . number_format($discount->value, 0, ',', '.') }}</div>
-                                            <div>Valid: {{ $discount->valid_from->format('d/m/Y') }} - {{ $discount->valid_until->format('d/m/Y') }}</div>
-                                            <div>Usage: {{ $discount->used_count }} / {{ $discount->usage_limit ?: 'Unlimited' }}</div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="text-center py-8">
-                                <i class="fa-solid fa-tags text-gray-400 text-3xl mb-4"></i>
-                                <p class="text-gray-500 dark:text-gray-400">No active discounts</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
 
                 <!-- Save Button -->
                 <div class="flex justify-end">

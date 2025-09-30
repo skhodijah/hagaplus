@@ -79,10 +79,11 @@ class PackageController extends Controller
      */
     public function featureConfiguration()
     {
-        $packages = \App\Models\SuperAdmin\Package::with('packageFeatures.feature')->get();
-        $features = \App\Models\SuperAdmin\Feature::orderBy('category')->orderBy('sort_order')->get();
+        $packages = \App\Models\SuperAdmin\Package::all();
 
-        return view('superadmin.packages.feature-configuration', compact('packages', 'features'));
+        // Since features are now stored as JSON in packages table,
+        // we'll show a simplified feature configuration
+        return view('superadmin.packages.feature-configuration', compact('packages'));
     }
 
     /**
@@ -96,45 +97,15 @@ class PackageController extends Controller
         ]);
 
         $packageId = $validated['package_id'];
+        $package = \App\Models\SuperAdmin\Package::findOrFail($packageId);
 
-        // Delete existing package features
-        \App\Models\SuperAdmin\PackageFeature::where('package_id', $packageId)->delete();
+        // Since features are now stored as JSON in packages table,
+        // we'll store the features directly in the package
+        $features = isset($validated['features']) ? $validated['features'] : [];
 
-        // Process each feature
-        if (isset($validated['features'])) {
-            foreach ($validated['features'] as $featureId => $featureData) {
-                // Check if feature is enabled
-                $isEnabled = isset($featureData['enabled']) && $featureData['enabled'] == '1';
-
-                if ($isEnabled) {
-                    // Build limits array from form inputs
-                    $limits = [];
-                    if (isset($featureData['limits'])) {
-                        $limits = $featureData['limits'];
-                        // Convert checkbox values to boolean
-                        foreach ($limits as $key => $value) {
-                            if ($value === '1' || $value === '0') {
-                                $limits[$key] = $value === '1';
-                            }
-                        }
-                    }
-
-                    // Build config array if present
-                    $config = [];
-                    if (isset($featureData['config'])) {
-                        $config = $featureData['config'];
-                    }
-
-                    \App\Models\SuperAdmin\PackageFeature::create([
-                        'package_id' => $packageId,
-                        'feature_id' => $featureId,
-                        'is_enabled' => true,
-                        'limits' => !empty($limits) ? $limits : null,
-                        'config_override' => !empty($config) ? $config : null,
-                    ]);
-                }
-            }
-        }
+        $package->update([
+            'features' => $features
+        ]);
 
         return redirect()->back()->with('success', 'Feature configuration updated successfully.');
     }
@@ -145,9 +116,9 @@ class PackageController extends Controller
     public function pricingSettings()
     {
         $packages = \App\Models\SuperAdmin\Package::all();
-        $discounts = \App\Models\SuperAdmin\Discount::where('is_active', true)->get();
 
-        return view('superadmin.packages.pricing-settings', compact('packages', 'discounts'));
+        // Since discounts table was dropped, we'll just show packages
+        return view('superadmin.packages.pricing-settings', compact('packages'));
     }
 
     /**

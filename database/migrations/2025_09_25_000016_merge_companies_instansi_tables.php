@@ -81,13 +81,15 @@ return new class extends Migration
             SET b.company_id = i.id
         ");
 
-        // Update company_themes
-        DB::statement("
-            UPDATE company_themes ct
-            INNER JOIN companies c ON ct.company_id = c.id
-            INNER JOIN instansis i ON c.id = i.id
-            SET ct.company_id = i.id
-        ");
+        // Update company_themes (only if table exists)
+        if (Schema::hasTable('company_themes')) {
+            DB::statement("
+                UPDATE company_themes ct
+                INNER JOIN companies c ON ct.company_id = c.id
+                INNER JOIN instansis i ON c.id = i.id
+                SET ct.company_id = i.id
+            ");
+        }
 
         // Update subscription_history
         DB::statement("
@@ -106,9 +108,11 @@ return new class extends Migration
             $table->dropForeign(['company_id']);
         });
 
-        Schema::table('company_themes', function (Blueprint $table) {
-            $table->dropForeign(['company_id']);
-        });
+        if (Schema::hasTable('company_themes')) {
+            Schema::table('company_themes', function (Blueprint $table) {
+                $table->dropForeign(['company_id']);
+            });
+        }
 
         Schema::table('subscription_history', function (Blueprint $table) {
             $table->dropForeign(['company_id']);
@@ -123,9 +127,11 @@ return new class extends Migration
             $table->foreign('company_id')->references('id')->on('instansis')->onDelete('cascade');
         });
 
-        Schema::table('company_themes', function (Blueprint $table) {
-            $table->foreign('company_id')->references('id')->on('instansis')->onDelete('cascade');
-        });
+        if (Schema::hasTable('company_themes')) {
+            Schema::table('company_themes', function (Blueprint $table) {
+                $table->foreign('company_id')->references('id')->on('instansis')->onDelete('cascade');
+            });
+        }
 
         Schema::table('subscription_history', function (Blueprint $table) {
             $table->foreign('company_id')->references('id')->on('instansis')->onDelete('cascade');

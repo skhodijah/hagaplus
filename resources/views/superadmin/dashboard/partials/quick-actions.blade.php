@@ -41,8 +41,8 @@
             <div class="text-left">Laporan Keuangan</div>
         </x-action-button>
         
-        <x-action-button 
-            href="{{ route('superadmin.settings.index') }}" 
+        <x-action-button
+            href="{{ route('superadmin.system.settings.index') }}"
             color="gray"
             icon="fas fa-cog"
         >
