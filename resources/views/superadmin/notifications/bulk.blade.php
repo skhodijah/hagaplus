@@ -137,43 +137,63 @@
 <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
     <div class="p-6 border-b border-gray-200 dark:border-gray-700">
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Bulk Notification History</h3>
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Recent bulk notifications sent to multiple recipients</p>
     </div>
 
     <div class="divide-y divide-gray-200 dark:divide-gray-700">
-        @forelse($logs ?? [] as $log)
+        @forelse($bulkHistory ?? [] as $bulk)
             <div class="p-6 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200">
                 <div class="flex items-start">
                     <div class="flex-shrink-0 pt-0.5">
-                        <div class="h-10 w-10 rounded-full flex items-center justify-center {{ $log->type_badge_class }} dark:bg-opacity-20">
-                            <i class="fas {{ $log->icon }}"></i>
+                        <div class="h-10 w-10 rounded-full flex items-center justify-center
+                            @if($bulk->type === 'success') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                            @elseif($bulk->type === 'error') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
+                            @elseif($bulk->type === 'warning') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                            @elseif($bulk->type === 'system') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300
+                            @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
+                            @endif">
+                            <i class="fas
+                                @if($bulk->type === 'success') fa-check-circle
+                                @elseif($bulk->type === 'error') fa-times-circle
+                                @elseif($bulk->type === 'warning') fa-exclamation-triangle
+                                @elseif($bulk->type === 'system') fa-cog
+                                @else fa-info-circle
+                                @endif"></i>
                         </div>
                     </div>
                     <div class="ml-4 flex-1">
                         <div class="flex items-center justify-between">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">
-                                {{ $log->title }}
+                                {{ $bulk->title }}
                             </p>
                             <div class="flex items-center space-x-2">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $log->type_badge_class }} dark:bg-opacity-20">
-                                    {{ ucfirst($log->type) }}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    @if($bulk->type === 'success') bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300
+                                    @elseif($bulk->type === 'error') bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300
+                                    @elseif($bulk->type === 'warning') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300
+                                    @elseif($bulk->type === 'system') bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300
+                                    @else bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300
+                                    @endif">
+                                    {{ ucfirst($bulk->type) }}
                                 </span>
                                 <span class="text-xs text-gray-500 dark:text-gray-400">
-                                    {{ $log->total_sent }} recipients
+                                    {{ $bulk->total_sent }} sent • {{ $bulk->read_count }} read
                                 </span>
                             </div>
                         </div>
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                            {{ $log->message }}
+                            {{ $bulk->message }}
                         </p>
                         <div class="mt-2 flex items-center justify-between">
                             <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                                <span>Sent by {{ $log->sender->name }}</span>
+                                <span>Bulk notification</span>
                                 <span class="mx-2">•</span>
-                                <span>{{ $log->formatted_target_type }}</span>
-                                <span class="mx-2">•</span>
-                                <time datetime="{{ $log->created_at->toIso8601String() }}" title="{{ $log->created_at->format('M j, Y g:i A') }}">
-                                    {{ $log->created_at->diffForHumans() }}
+                                <time datetime="{{ $bulk->created_at }}" title="{{ \Carbon\Carbon::parse($bulk->created_at)->format('M j, Y g:i A') }}">
+                                    {{ \Carbon\Carbon::parse($bulk->created_at)->diffForHumans() }}
                                 </time>
+                            </div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ round(($bulk->read_count / $bulk->total_sent) * 100) }}% read rate
                             </div>
                         </div>
                     </div>
@@ -187,12 +207,6 @@
             </div>
         @endforelse
     </div>
-
-    @if(isset($logs) && $logs->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            {{ $logs->links() }}
-        </div>
-    @endif
 </div>
 
 <script>

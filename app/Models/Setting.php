@@ -7,13 +7,13 @@ use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
-    protected $table = 'system_settings';
+    protected $table = 'settings';
 
     protected $fillable = [
         'key',
         'value',
         'type',
-        'group',
+        'category',
         'description',
         'is_public',
     ];
@@ -43,14 +43,14 @@ class Setting extends Model
     /**
      * Set a setting value
      */
-    public static function set(string $key, $value, string $type = 'string', string $group = 'general', ?string $description = null): self
+    public static function set(string $key, $value, string $type = 'string', string $category = 'general', ?string $description = null): self
     {
         $setting = static::updateOrCreate(
             ['key' => $key],
             [
                 'value' => static::prepareValue($value, $type),
                 'type' => $type,
-                'group' => $group,
+                'category' => $category,
                 'description' => $description,
             ]
         );
@@ -67,7 +67,7 @@ class Setting extends Model
     public static function getGroup(string $group): array
     {
         return Cache::rememberForever("settings_group_{$group}", function () use ($group) {
-            return static::where('group', $group)
+            return static::where('category', $group)
                 ->get()
                 ->mapWithKeys(function ($setting) {
                     return [$setting->key => static::castValue($setting->value, $setting->type)];
@@ -110,13 +110,13 @@ class Setting extends Model
         $settings = static::all();
         foreach ($settings as $setting) {
             Cache::forget("setting_{$setting->key}");
-            Cache::forget("settings_group_" . ($setting->group ?? 'general'));
+            Cache::forget("settings_group_" . ($setting->category ?? 'general'));
         }
     }
 
     public function scopeByGroup($query, string $group)
     {
-        return $query->where('group', $group);
+        return $query->where('category', $group);
     }
 
     public function scopePublic($query)

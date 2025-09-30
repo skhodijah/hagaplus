@@ -73,7 +73,6 @@
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">
                     <x-layout.sidebar-subitem :href="route('superadmin.system.health')" label="System Health" :active="request()->routeIs('superadmin.system.health')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.system.user-logs.index')" label="User Logs" :active="request()->routeIs('superadmin.system.user-logs.*')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.system.settings.index')" label="Settings" :active="request()->routeIs('superadmin.system.settings.*')" />
                 </x-layout.sidebar-accordion>
             </nav>

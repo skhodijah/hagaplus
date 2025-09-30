@@ -27,10 +27,57 @@ return new class extends Migration
         Schema::dropIfExists('theme_settings');
 
         // Simplify settings table - merge system_settings into settings
+        // Check if foreign key exists before dropping
+        $foreignKeyExists = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'settings'
+            AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+            AND CONSTRAINT_NAME LIKE '%instansi_id%'
+        ");
+
+        // Check if unique constraint exists
+        $uniqueConstraintExists = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'settings'
+            AND CONSTRAINT_TYPE = 'UNIQUE'
+            AND CONSTRAINT_NAME LIKE '%instansi_id%key%'
+        ");
+
+        Schema::table('settings', function (Blueprint $table) use ($foreignKeyExists, $uniqueConstraintExists) {
+            // Drop foreign key constraint first (only if it exists)
+            if (!empty($foreignKeyExists)) {
+                $table->dropForeign(['instansi_id']);
+            }
+
+            // Make instansi_id nullable for global settings
+            $table->foreignId('instansi_id')->nullable()->change();
+
+            // Drop the unique constraint that includes instansi_id (only if it exists)
+            if (!empty($uniqueConstraintExists)) {
+                $table->dropUnique(['instansi_id', 'key']);
+            }
+
+            if (!Schema::hasColumn('settings', 'category')) {
+                $table->string('category')->default('general')->after('type');
+            }
+            if (!Schema::hasColumn('settings', 'description')) {
+                $table->text('description')->nullable()->after('category');
+            }
+            if (!Schema::hasColumn('settings', 'is_public')) {
+                $table->boolean('is_public')->default(false)->after('description');
+            }
+            // Add new unique constraint on key only (for global settings)
+            $table->unique('key');
+        });
+
         if (Schema::hasTable('system_settings')) {
             // Migrate system settings to main settings table
             DB::statement("
-                INSERT INTO settings (key, value, type, category, created_at, updated_at)
+                INSERT INTO settings (`key`, `value`, `type`, `category`, `created_at`, `updated_at`)
                 SELECT
                     CONCAT('system.', `key`) as `key`,
                     `value`,
@@ -40,7 +87,7 @@ return new class extends Migration
                     updated_at
                 FROM system_settings
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM settings WHERE settings.key = CONCAT('system.', system_settings.key)
+                    SELECT 1 FROM settings WHERE settings.`key` = CONCAT('system.', system_settings.`key`)
                 )
             ");
 
@@ -84,9 +131,9 @@ return new class extends Migration
 
         // Simplify subscriptions table - make it cleaner
         Schema::table('subscriptions', function (Blueprint $table) {
-            if (!Schema::hasColumn('subscriptions', 'status')) {
-                $table->enum('status', ['pending_verification', 'active', 'expired', 'cancelled'])->default('pending_verification')->after('package_id');
-            }
+            // Modify existing status enum to include more values
+            DB::statement("ALTER TABLE subscriptions MODIFY COLUMN status ENUM('pending_verification', 'active', 'inactive', 'expired', 'cancelled') DEFAULT 'pending_verification'");
+
             if (!Schema::hasColumn('subscriptions', 'payment_method')) {
                 $table->string('payment_method')->default('transfer')->after('price');
             }

@@ -3,10 +3,14 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PublicRegistrationController;
+use App\Http\Controllers\PricingController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
+
+// Pricing Page
+Route::get('/pricing', [PricingController::class, 'index'])->name('pricing');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

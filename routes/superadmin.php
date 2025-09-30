@@ -6,7 +6,6 @@ use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\SupportRequestController;
 use App\Http\Controllers\SuperAdmin\NotificationController;
-use App\Http\Controllers\SuperAdmin\UserLogController;
 use App\Http\Controllers\SuperAdmin\SettingController;
 use Illuminate\Support\Facades\Route;
 
@@ -83,12 +82,6 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
     // System Management
     Route::prefix('system')->name('system.')->group(function () {
-        // User Logs
-        Route::resource('user-logs', UserLogController::class)->except(['create', 'store', 'edit', 'update']);
-        Route::post('user-logs/bulk-delete', [UserLogController::class, 'bulkDelete'])->name('user-logs.bulk-delete');
-        Route::post('user-logs/clear-old', [UserLogController::class, 'clearOld'])->name('user-logs.clear-old');
-        Route::get('user-logs-export', [UserLogController::class, 'export'])->name('user-logs.export');
-
         // Settings
         Route::resource('settings', SettingController::class);
         Route::post('settings/bulk-update', [SettingController::class, 'bulkUpdate'])->name('settings.bulk-update');
