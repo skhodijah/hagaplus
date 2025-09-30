@@ -158,12 +158,8 @@ class Instansi extends Model
             return $override->is_enabled;
         }
 
-        // Check package features
-        return $this->package
-            ->features()
-            ->where('slug', $featureSlug)
-            ->wherePivot('is_enabled', true)
-            ->exists();
+        // Check package features (now stored as JSON array)
+        return $this->package && is_array($this->package->features) && in_array($featureSlug, $this->package->features);
     }
 
     public function getFeatureLimit(string $featureSlug, string $limitKey)
@@ -180,13 +176,13 @@ class Instansi extends Model
             return $override->custom_limits[$limitKey];
         }
 
-        // Get from package feature
-        $packageFeature = $this->package
-            ->features()
-            ->where('slug', $featureSlug)
-            ->first();
-
-        return $packageFeature?->pivot->limits[$limitKey] ?? null;
+        // For now, return package limits directly since features are stored as JSON
+        // In the future, this could be expanded to include feature-specific limits
+        return match($limitKey) {
+            'max_employees' => $this->package?->max_employees,
+            'max_branches' => $this->package?->max_branches,
+            default => null,
+        };
     }
 
     public function isEligibleForUpgrade(): bool

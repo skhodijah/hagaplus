@@ -73,11 +73,11 @@
                         <label for="basic_salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary *</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 dark:text-gray-400">Rp</span>
+                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
                             </div>
                             <input type="number" id="basic_salary" name="basic_salary" value="{{ old('basic_salary') }}"
-                                   class="w-full pl-12 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('basic_salary') border-red-500 @enderror"
-                                   min="0" step="0.01" required>
+                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('basic_salary') border-red-500 @enderror"
+                                   min="0" step="0.01" required placeholder="0">
                         </div>
                         @error('basic_salary')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -88,11 +88,11 @@
                         <label for="overtime_amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overtime Amount</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 dark:text-gray-400">Rp</span>
+                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
                             </div>
                             <input type="number" id="overtime_amount" name="overtime_amount" value="{{ old('overtime_amount') }}"
-                                   class="w-full pl-12 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('overtime_amount') border-red-500 @enderror"
-                                   min="0" step="0.01">
+                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('overtime_amount') border-red-500 @enderror"
+                                   min="0" step="0.01" placeholder="0">
                         </div>
                         @error('overtime_amount')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -108,10 +108,10 @@
                                        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 dark:text-gray-400">Rp</span>
+                                        <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
                                     </div>
-                                    <input type="number" name="allowances[]" placeholder="Amount" min="0" step="0.01"
-                                           class="w-full pl-12 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white allowance-amount">
+                                    <input type="number" name="allowances[]" placeholder="0" min="0" step="0.01"
+                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white allowance-amount">
                                 </div>
                             </div>
                         </div>
@@ -129,10 +129,10 @@
                                        class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 dark:text-gray-400">Rp</span>
+                                        <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
                                     </div>
-                                    <input type="number" name="deductions[]" placeholder="Amount" min="0" step="0.01"
-                                           class="w-full pl-12 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white deduction-amount">
+                                    <input type="number" name="deductions[]" placeholder="0" min="0" step="0.01"
+                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white deduction-amount">
                                 </div>
                             </div>
                         </div>

@@ -44,6 +44,10 @@ class SettingsController extends Controller
         'payroll_calculation_method' => ['type' => 'select', 'label' => 'Payroll Calculation Method', 'default' => 'monthly', 'options' => ['monthly' => 'Monthly', 'weekly' => 'Weekly', 'biweekly' => 'Bi-weekly'], 'category' => 'payroll'],
         'overtime_rate_multiplier' => ['type' => 'number', 'label' => 'Overtime Rate Multiplier', 'default' => '1.5', 'step' => '0.1', 'category' => 'payroll'],
         'tax_calculation_enabled' => ['type' => 'boolean', 'label' => 'Tax Calculation Enabled', 'default' => '1', 'category' => 'payroll'],
+
+        // Appearance Settings
+        'logo_path' => ['type' => 'file', 'label' => 'Company Logo', 'default' => '', 'category' => 'appearance', 'accept' => 'image/*'],
+        'company_name_display' => ['type' => 'text', 'label' => 'Display Name', 'default' => 'Haga+', 'category' => 'appearance'],
     ];
 
     public function index()
@@ -72,6 +76,7 @@ class SettingsController extends Controller
             'notifications' => 'Notifications',
             'security' => 'Security Settings',
             'payroll' => 'Payroll Settings',
+            'appearance' => 'Appearance & Branding',
         ];
 
         return view('admin.settings.index', compact('allSettings', 'categories'));
@@ -118,12 +123,26 @@ class SettingsController extends Controller
                     $fieldRules[] = 'nullable';
                     $fieldRules[] = 'date_format:H:i';
                     break;
+                case 'file':
+                    $fieldRules[] = 'nullable';
+                    $fieldRules[] = 'file';
+                    $fieldRules[] = 'mimes:jpeg,png,jpg,gif,svg';
+                    $fieldRules[] = 'max:2048'; // 2MB
+                    break;
             }
 
             $rules[$key] = $fieldRules;
         }
 
         $validated = $request->validate($rules);
+
+        // Handle file uploads
+        if ($request->hasFile('logo_path')) {
+            $file = $request->file('logo_path');
+            $filename = 'logo_' . $instansiId . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('logos', $filename, 'public');
+            $validated['logo_path'] = $path;
+        }
 
         // Update or create settings
         foreach ($validated as $key => $value) {
@@ -162,6 +181,7 @@ class SettingsController extends Controller
                 'notifications' => 'Notifications',
                 'security' => 'Security Settings',
                 'payroll' => 'Payroll Settings',
+                'appearance' => 'Appearance & Branding',
             ]))
         ]);
 

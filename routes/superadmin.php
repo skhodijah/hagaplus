@@ -32,8 +32,6 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     // Package management
     Route::get('/packages/feature-configuration', [PackageController::class, 'featureConfiguration'])->name('packages.feature-configuration');
     Route::post('/packages/feature-configuration', [PackageController::class, 'updateFeatureConfiguration'])->name('packages.update-feature-configuration');
-    Route::get('/packages/pricing-settings', [PackageController::class, 'pricingSettings'])->name('packages.pricing-settings');
-    Route::post('/packages/pricing-settings', [PackageController::class, 'updatePricingSettings'])->name('packages.update-pricing-settings');
     Route::resource('packages', PackageController::class);
 
     // Subscription management

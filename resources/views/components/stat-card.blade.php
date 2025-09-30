@@ -3,7 +3,9 @@
     'value',
     'icon' => 'fas fa-chart-bar',
     'color' => 'blue',
-    'href' => null
+    'href' => null,
+    'trend' => null,
+    'trendLabel' => null
 ])
 
 @php
@@ -72,6 +74,12 @@
         <div>
             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ $title }}</p>
             <p class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">{{ $value }}</p>
+            @if($trend)
+                <p class="mt-1 text-xs {{ $trend[0] === '+' ? 'text-green-600 dark:text-green-400' : ($trend[0] === '-' ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400') }}">
+                    <i class="fas {{ $trend[0] === '+' ? 'fa-arrow-up' : ($trend[0] === '-' ? 'fa-arrow-down' : 'fa-minus') }} mr-1"></i>
+                    {{ $trend }} {{ $trendLabel ?? '' }}
+                </p>
+            @endif
         </div>
         <div class="w-12 h-12 {{ $classes['bg'] }} rounded-lg flex items-center justify-center">
             <i class="{{ $icon }} {{ $classes['text'] }} text-xl"></i>
