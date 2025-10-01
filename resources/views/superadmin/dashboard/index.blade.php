@@ -29,16 +29,16 @@
             <!-- Quick Actions -->
             @include('superadmin.dashboard.partials.quick-actions')
 
-            <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="mt-8 grid grid-cols-1 gap-6">
                 <!-- Charts Section -->
                 <div class="lg:col-span-2">
                     @include('superadmin.dashboard.partials.charts')
                 </div>
                 
                 <!-- Recent Activities -->
-                <div class="space-y-6">
+                <div class="grid lg:grid-cols-2 gap-6">
                     <!-- Recent Instansi -->
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="bg-white col-span-1 dark:bg-gray-800 overflow-hidden h-full shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                                 Instansi Terbaru
@@ -65,7 +65,7 @@
                     </div>
 
                     <!-- Recent Subscriptions -->
-                    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="bg-white col-span-1 dark:bg-gray-800 overflow-hidden h-full shadow-sm sm:rounded-lg">
                         <div class="p-6">
                             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">
                                 Langganan Terbaru

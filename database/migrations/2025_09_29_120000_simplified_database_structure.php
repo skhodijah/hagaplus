@@ -47,7 +47,18 @@ return new class extends Migration
             AND CONSTRAINT_NAME LIKE '%instansi_id%key%'
         ");
 
-        Schema::table('settings', function (Blueprint $table) use ($foreignKeyExists, $uniqueConstraintExists) {
+        // Check if key unique constraint exists
+        $keyUniqueConstraintExists = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'settings'
+            AND CONSTRAINT_TYPE = 'UNIQUE'
+            AND CONSTRAINT_NAME LIKE '%key%'
+            AND CONSTRAINT_NAME NOT LIKE '%instansi_id%'
+        ");
+
+        Schema::table('settings', function (Blueprint $table) use ($foreignKeyExists, $uniqueConstraintExists, $keyUniqueConstraintExists) {
             // Drop foreign key constraint first (only if it exists)
             if (!empty($foreignKeyExists)) {
                 $table->dropForeign(['instansi_id']);

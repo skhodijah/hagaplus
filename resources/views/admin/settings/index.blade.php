@@ -18,7 +18,7 @@
             </p>
         </div>
 
-        <form id="settings-form" method="POST" action="{{ route('admin.settings.update') }}">
+        <form id="settings-form" method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -104,6 +104,21 @@
                                                     @case('time')
                                                         <input type="time" id="{{ $key }}" name="{{ $key }}" value="{{ $setting['value'] }}"
                                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                                        @break
+
+                                                    @case('file')
+                                                        <div class="space-y-2">
+                                                            @if($setting['value'])
+                                                                <div class="flex items-center space-x-2">
+                                                                    <img src="{{ asset('storage/' . $setting['value']) }}" alt="Current logo" class="w-12 h-12 object-cover rounded">
+                                                                    <span class="text-sm text-gray-600 dark:text-gray-400">Current logo</span>
+                                                                </div>
+                                                            @endif
+                                                            <input type="file" id="{{ $key }}" name="{{ $key }}"
+                                                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                                                   {{ isset($setting['config']['accept']) ? 'accept="' . $setting['config']['accept'] . '"' : '' }}>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Upload a new logo (JPEG, PNG, JPG, GIF, SVG - Max 2MB)</p>
+                                                        </div>
                                                         @break
 
                                                     @default

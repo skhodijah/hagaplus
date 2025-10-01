@@ -50,17 +50,6 @@ class Package extends BaseModel
         return $this->hasMany(SubscriptionTransition::class, 'to_package_id');
     }
 
-    public function features()
-    {
-        return $this->belongsToMany(Feature::class, 'package_features')
-            ->withPivot(['is_enabled', 'limits', 'config_override'])
-            ->withTimestamps();
-    }
-
-    public function packageFeatures()
-    {
-        return $this->hasMany(PackageFeature::class);
-    }
 
     public function discounts()
     {

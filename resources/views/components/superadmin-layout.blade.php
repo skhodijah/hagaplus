@@ -6,6 +6,147 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>HagaPlus - Super Admin</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <style>
+        /* Base Loader Styles */
+        #page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(249, 250, 251, 0.98) 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s, transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        
+        .dark #page-loader {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.98) 0%, rgba(31, 41, 55, 0.98) 100%);
+        }
+        
+        #page-loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+
+        #page-loader.showing {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+        
+        /* Loader Container */
+        .loader-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        /* Logo Styles */
+        .loader-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loader-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        
+        /* Text Styles */
+        .loader-text {
+            color: #4b5563;
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 1.5rem 0 0.5rem;
+            position: relative;
+            display: inline-block;
+            min-height: 1.5rem;
+            width: 100%;
+        }
+        
+        .loader-text::after {
+            content: '...';
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: dots 1.5s steps(4, end) infinite;
+            width: auto;
+            overflow: visible;
+        }
+        
+        .dark .loader-text {
+            color: #d1d5db;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+        }
+        
+        .dark .progress-bar {
+            background-color: #374151;
+        }
+        
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #e1ffaa, #10c875);
+            transition: width 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes dots {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,8 +154,203 @@
     <script src="https://kit.fontawesome.com/8c8ccf764d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-Sl1fL0x2y5m0mXQmZs7q8w9mK3Yk8wVqf9VQf8lYp4mDk8Qxg3m6Jrj0D7n6o2o1g7l5xj5m1n9m0z2yXb7aYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global loader management
+        window.PageLoader = {
+            loader: null,
+            progressBar: null,
+            loadingText: null,
+            progress: 0,
+            loadingInterval: null,
+            activeRequests: 0,
+            isPageLoading: true,
+
+            init() {
+                this.loader = document.getElementById('page-loader');
+                this.progressBar = document.querySelector('.progress');
+                this.loadingText = document.querySelector('.loader-text');
+
+                // Show loader immediately for page refresh/reload
+                this.show('Memuat Halaman...');
+
+                this.setupEventListeners();
+            },
+
+            setupEventListeners() {
+                // Handle navigation between pages
+                document.addEventListener('click', (e) => {
+                    // Find the closest anchor element
+                    let target = e.target.closest('a');
+
+                    // If no anchor element or it's an external link, return
+                    if (!target ||
+                        target.target === '_blank' ||
+                        target.hostname !== window.location.hostname ||
+                        target.getAttribute('href')?.startsWith('#') ||
+                        target.getAttribute('data-dropdown-toggle') ||
+                        target.getAttribute('data-drawer-target') ||
+                        target.getAttribute('data-modal-target') ||
+                        target.classList.contains('no-loader')) {
+                        return;
+                    }
+
+                    this.show('Memuat Halaman...');
+                    e.preventDefault();
+
+                    // Navigate to the new page after a short delay
+                    setTimeout(() => {
+                        window.location.href = target.href;
+                    }, 150);
+                }, true);
+
+                // Handle form submissions
+                document.addEventListener('submit', (e) => {
+                    const form = e.target;
+                    if (form.classList.contains('no-loader')) return;
+
+                    this.show('Memproses...');
+                });
+
+                // Handle page load completion
+                window.addEventListener('load', () => {
+                    // Small delay to ensure everything is rendered
+                    setTimeout(() => {
+                        window.PageLoader.isPageLoading = false;
+                        if (window.PageLoader.activeRequests === 0) {
+                            window.PageLoader.hide();
+                        }
+                    }, 100);
+                });
+
+                // Intercept XMLHttpRequest for AJAX requests
+                const originalOpen = XMLHttpRequest.prototype.open;
+                XMLHttpRequest.prototype.open = function(method, url) {
+                    this.addEventListener('loadstart', () => {
+                        window.PageLoader.activeRequests++;
+                        if (!window.PageLoader.isPageLoading) {
+                            window.PageLoader.show('Memuat Data...');
+                        }
+                    });
+
+                    this.addEventListener('loadend', () => {
+                        window.PageLoader.activeRequests--;
+                        if (window.PageLoader.activeRequests === 0 && !window.PageLoader.isPageLoading) {
+                            setTimeout(() => {
+                                window.PageLoader.hide();
+                            }, 200);
+                        }
+                    });
+
+                    return originalOpen.apply(this, arguments);
+                };
+
+                // Intercept fetch requests
+                const originalFetch = window.fetch;
+                window.fetch = function(...args) {
+                    window.PageLoader.activeRequests++;
+                    if (!window.PageLoader.isPageLoading) {
+                        window.PageLoader.show('Memuat Data...');
+                    }
+
+                    return originalFetch.apply(this, args).finally(() => {
+                        window.PageLoader.activeRequests--;
+                        if (window.PageLoader.activeRequests === 0 && !window.PageLoader.isPageLoading) {
+                            setTimeout(() => {
+                                window.PageLoader.hide();
+                            }, 200);
+                        }
+                    });
+                };
+            },
+
+            show(message = 'Memuat...') {
+                if (!this.loader) return;
+
+                // Clear any existing interval
+                if (this.loadingInterval) {
+                    clearInterval(this.loadingInterval);
+                }
+
+                // Prevent flickering by checking if already visible
+                if (!this.loader.classList.contains('hidden')) {
+                    // Just update the message if already visible
+                    if (this.loadingText) {
+                        this.loadingText.textContent = message;
+                    }
+                    return;
+                }
+
+                this.progress = 0;
+                if (this.progressBar) {
+                    this.progressBar.style.width = '0%';
+                }
+                if (this.loadingText) {
+                    this.loadingText.textContent = message;
+                }
+
+                // Show loader with smooth transition
+                this.loader.classList.remove('hidden');
+                this.loader.classList.add('showing');
+
+                // Start progress animation with smoother increments
+                this.loadingInterval = setInterval(() => {
+                    this.progress += Math.random() * 8 + 2; // Slower, more consistent progress
+                    if (this.progress > 90) {
+                        this.progress = 90; // Don't go to 100% until actually complete
+                    }
+                    if (this.progressBar) {
+                        this.progressBar.style.width = this.progress + '%';
+                    }
+                }, 300); // Slower interval for smoother animation
+            },
+
+            hide() {
+                if (!this.loader || this.loader.classList.contains('hidden')) return;
+
+                // Clear the progress interval
+                if (this.loadingInterval) {
+                    clearInterval(this.loadingInterval);
+                    this.loadingInterval = null;
+                }
+
+                // Complete the progress bar smoothly
+                this.progress = 100;
+                if (this.progressBar) {
+                    this.progressBar.style.width = '100%';
+                }
+                if (this.loadingText) {
+                    this.loadingText.textContent = 'Selesai!';
+                }
+
+                // Hide with longer delay for smooth transition
+                setTimeout(() => {
+                    if (this.loader && this.activeRequests === 0 && !this.isPageLoading) {
+                        this.loader.classList.remove('showing');
+                        this.loader.classList.add('hidden');
+                    }
+                }, 500); // Longer delay for smoother transition
+            }
+        };
+
+        // Initialize loader when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            window.PageLoader.init();
+        });
+    </script>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Enhanced Page Loader -->
+    <div id="page-loader">
+        <div class="loader-container">
+            <div class="loader-logo">
+                <img src="{{ asset('favicon.svg') }}" alt="HagaPlus" style="width: 60px; height: 60px;">
+            </div>
+            <div class="loader-text">Memuat...</div>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+        </div>
+    </div>
     @php
         $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.support_requests.*');
         $isSubscriptionsActive = request()->routeIs('superadmin.subscriptions.*');
@@ -55,7 +391,6 @@
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">
                     <x-layout.sidebar-subitem :href="route('superadmin.packages.index')" label="Manage Packages" :active="request()->routeIs('superadmin.packages.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.packages.feature-configuration')" label="Feature Configuration" :active="request()->routeIs('superadmin.packages.feature-configuration')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.packages.pricing-settings')" label="Pricing Settings" :active="request()->routeIs('superadmin.packages.pricing-settings')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-chart-line" label="Reports" :open="$isReportsActive" target="menu-reports">

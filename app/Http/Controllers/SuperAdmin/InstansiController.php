@@ -69,7 +69,7 @@ class InstansiController extends Controller
      */
     public function show(Instansi $instansi)
     {
-        $instansi->load(['subscriptions.package', 'package.features']);
+        $instansi->load(['subscriptions.package']);
         return view('superadmin.instansi.show', compact('instansi'));
     }
 
@@ -78,8 +78,8 @@ class InstansiController extends Controller
      */
     public function edit(Instansi $instansi)
     {
-        $packages = Package::where('is_active', true)->with('features')->get();
-        $instansi->load(['subscriptions', 'package.features']);
+        $packages = Package::where('is_active', true)->get();
+        $instansi->load(['subscriptions']);
         return view('superadmin.instansi.edit', compact('instansi', 'packages'));
     }
 

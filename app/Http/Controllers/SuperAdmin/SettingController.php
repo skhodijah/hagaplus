@@ -60,7 +60,7 @@ class SettingController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'key' => 'required|string|max:255|unique:settings,key',
+            'key' => 'required|string|max:255|unique:system_settings,key',
             'value' => 'nullable',
             'type' => 'required|in:string,integer,boolean,float,json',
             'group' => 'required|string|max:255',
@@ -103,7 +103,7 @@ class SettingController extends Controller
     public function update(Request $request, Setting $setting): RedirectResponse
     {
         $request->validate([
-            'key' => ['required', 'string', 'max:255', Rule::unique('settings')->ignore($setting->id)],
+            'key' => ['required', 'string', 'max:255', Rule::unique('system_settings')->ignore($setting->id)],
             'value' => 'nullable',
             'type' => 'required|in:string,integer,boolean,float,json',
             'group' => 'required|string|max:255',
@@ -142,7 +142,7 @@ class SettingController extends Controller
     {
         $request->validate([
             'settings' => 'required|array',
-            'settings.*.id' => 'required|integer|exists:settings,id',
+            'settings.*.id' => 'required|integer|exists:system_settings,id',
             'settings.*.value' => 'nullable',
         ]);
 

@@ -139,34 +139,29 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function resetSettings(category = null) {
-        const formData = new FormData();
+        // Create a form to submit the reset request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/admin/settings/reset'; // Hardcoded path since this is a JS file
+
+        // Add CSRF token
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        form.appendChild(csrfToken);
+
+        // Add category if provided
         if (category) {
-            formData.append('category', category);
+            const categoryInput = document.createElement('input');
+            categoryInput.type = 'hidden';
+            categoryInput.name = 'category';
+            categoryInput.value = category;
+            form.appendChild(categoryInput);
         }
 
-        fetch(`{{ route('admin.settings.reset') }}`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showNotification(data.message || 'Settings reset successfully', 'success');
-                // Reload page after 2 seconds
-                setTimeout(() => {
-                    window.location.reload();
-                }, 2000);
-            } else {
-                showNotification(data.message || 'Failed to reset settings', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error resetting settings:', error);
-            showNotification('An error occurred while resetting settings', 'error');
-        });
+        document.body.appendChild(form);
+        form.submit();
     }
 
     function showNotification(message, type = 'info') {

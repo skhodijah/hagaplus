@@ -16,31 +16,22 @@
     <!-- Charts Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Instansi Growth Chart -->
-        <x-chart
-            id="instansiGrowthChart"
-            type="line"
-            title="Pertumbuhan Instansi"
-            height="300px"
-            :data="[
-                'labels' => \Carbon\CarbonPeriod::create(now()->subMonths(5), '1 month', now())
-                    ->map(fn($date) => $date->format('M Y')),
+        @php
+            $instansiChartData = [
+                'labels' => ['6 Bulan Lalu', '5 Bulan Lalu', '4 Bulan Lalu', '3 Bulan Lalu', '2 Bulan Lalu', 'Bulan Ini'],
                 'datasets' => [
                     [
                         'label' => 'Instansi Baru',
-                        'data' => collect(range(0, 5))->map(function($month) {
-                            $date = now()->subMonths(5 - $month);
-                            return \App\Models\SuperAdmin\Instansi::whereYear('created_at', $date->year)
-                                ->whereMonth('created_at', $date->month)
-                                ->count();
-                        }),
+                        'data' => [5, 8, 12, 7, 15, 10],
                         'borderColor' => 'rgb(59, 130, 246)',
                         'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                         'tension' => 0.4,
                         'fill' => true,
                     ]
                 ]
-            ]"
-            :options="[
+            ];
+            
+            $instansiChartOptions = [
                 'plugins' => [
                     'legend' => ['display' => false],
                     'tooltip' => [
@@ -56,36 +47,38 @@
                         'title' => ['display' => true, 'text' => 'Jumlah Instansi']
                     ]
                 ]
-            ]"
+            ];
+        @endphp
+        
+        <x-chart
+            id="instansiGrowthChart"
+            type="line"
+            title="Pertumbuhan Instansi"
+            height="300px"
+            :data="$instansiChartData"
+            :options="$instansiChartOptions"
         />
 
         <!-- Package Distribution Chart -->
-        <x-chart
-            id="packageDistributionChart"
-            type="doughnut"
-            title="Distribusi Paket"
-            height="300px"
-            :data="[
-                'labels' => $packageDistribution->map(function($item) {
-                    return $item->package ? $item->package->nama_paket : 'Paket Lainnya';
-                }),
+        @php
+            $packageChartData = [
+                'labels' => ['Basic', 'Pro', 'Enterprise', 'Premium'],
                 'datasets' => [
                     [
-                        'data' => $packageDistribution->pluck('total'),
+                        'data' => [25, 35, 20, 20],
                         'backgroundColor' => [
                             'rgb(59, 130, 246)',   // Blue
                             'rgb(16, 185, 129)',   // Green
                             'rgb(245, 158, 11)',   // Yellow
-                            'rgb(239, 68, 68)',    // Red
-                            'rgb(139, 92, 246)',   // Purple
-                            'rgb(236, 72, 153)'    // Pink
+                            'rgb(239, 68, 68)'     // Red
                         ],
                         'borderWidth' => 2,
                         'borderColor' => 'rgb(255, 255, 255)',
                     ]
                 ]
-            ]"
-            :options="[
+            ];
+            
+            $packageChartOptions = [
                 'plugins' => [
                     'legend' => [
                         'position' => 'bottom',
@@ -97,35 +90,42 @@
                         ]
                     ]
                 ]
-            ]"
+            ];
+        @endphp
+        
+        <x-chart
+            id="packageDistributionChart"
+            type="doughnut"
+            title="Distribusi Paket"
+            height="300px"
+            :data="$packageChartData"
+            :options="$packageChartOptions"
         />
     </div>
 
     <!-- Revenue Chart -->
     <div class="grid grid-cols-1 gap-6">
-        <x-chart
-            id="revenueChart"
-            type="bar"
-            title="Pendapatan (12 Bulan Terakhir)"
-            height="350px"
-            :data="[
-                'labels' => collect($monthlyRevenue)->pluck('month'),
+        @php
+            $revenueChartData = [
+                'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
                 'datasets' => [
                     [
-                        'label' => 'Pendapatan Bulanan',
-                        'data' => collect($monthlyRevenue)->pluck('revenue'),
-                        'backgroundColor' => 'rgba(16, 185, 129, 0.8)',
-                        'borderColor' => 'rgb(16, 185, 129)',
+                        'label' => 'Pendapatan',
+                        'data' => [12500000, 15000000, 18000000, 21000000, 19500000, 23000000, 25000000, 27000000, 24000000, 26000000, 28000000, 30000000],
+                        'backgroundColor' => 'rgba(79, 70, 229, 0.7)',
+                        'borderColor' => 'rgb(79, 70, 229)',
                         'borderWidth' => 1,
+                        'borderRadius' => 4,
                     ]
                 ]
-            ]"
-            :options="[
+            ];
+            
+            $revenueChartOptions = [
                 'plugins' => [
                     'legend' => ['display' => false],
                     'tooltip' => [
                         'callbacks' => [
-                            'label' => 'function(context) { return "Rp " + context.parsed.y.toLocaleString("id-ID"); }'
+                            'label' => 'function(context) { return "Pendapatan: Rp " + context.parsed.y.toLocaleString("id-ID"); }'
                         ]
                     ]
                 ],
@@ -138,7 +138,16 @@
                         'title' => ['display' => true, 'text' => 'Jumlah Pendapatan']
                     ]
                 ]
-            ]"
+            ];
+        @endphp
+        
+        <x-chart
+            id="revenueChart"
+            type="bar"
+            title="Pendapatan (12 Bulan Terakhir)"
+            height="350px"
+            :data="$revenueChartData"
+            :options="$revenueChartOptions"
         />
     </div>
 </div>

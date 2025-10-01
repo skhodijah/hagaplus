@@ -93,15 +93,22 @@ class PackageController extends Controller
     {
         $validated = $request->validate([
             'package_id' => 'required|exists:packages,id',
-            'features' => 'array',
+            'features' => 'nullable|array',
+            'features.*' => 'string',
         ]);
 
         $packageId = $validated['package_id'];
         $package = \App\Models\SuperAdmin\Package::findOrFail($packageId);
 
-        // Since features are now stored as JSON in packages table,
-        // we'll store the features directly in the package
-        $features = isset($validated['features']) ? $validated['features'] : [];
+        // Process checkbox inputs - only include features that are checked
+        $features = [];
+        if (isset($validated['features'])) {
+            foreach ($validated['features'] as $featureKey => $value) {
+                if ($value == '1') {
+                    $features[] = $featureKey;
+                }
+            }
+        }
 
         $package->update([
             'features' => $features
@@ -110,42 +117,4 @@ class PackageController extends Controller
         return redirect()->back()->with('success', 'Feature configuration updated successfully.');
     }
 
-    /**
-     * Show pricing settings page
-     */
-    public function pricingSettings()
-    {
-        $packages = \App\Models\SuperAdmin\Package::all();
-
-        // Since discounts table was dropped, we'll just show packages
-        return view('superadmin.packages.pricing-settings', compact('packages'));
-    }
-
-    /**
-     * Update pricing settings
-     */
-    public function updatePricingSettings(Request $request)
-    {
-        $validated = $request->validate([
-            'packages' => 'required|array',
-            'packages.*.id' => 'required|exists:packages,id',
-            'packages.*.price' => 'required|numeric|min:0',
-            'packages.*.duration_days' => 'required|integer|min:1',
-            'packages.*.max_employees' => 'required|integer|min:1',
-            'packages.*.max_branches' => 'required|integer|min:1',
-            'packages.*.is_active' => 'boolean',
-        ]);
-
-        foreach ($validated['packages'] as $packageData) {
-            \App\Models\SuperAdmin\Package::where('id', $packageData['id'])->update([
-                'price' => $packageData['price'],
-                'duration_days' => $packageData['duration_days'],
-                'max_employees' => $packageData['max_employees'],
-                'max_branches' => $packageData['max_branches'],
-                'is_active' => $packageData['is_active'] ?? false,
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Pricing settings updated successfully.');
-    }
 }
