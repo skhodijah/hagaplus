@@ -385,7 +385,7 @@
                 <x-layout.sidebar-accordion icon="fa-solid fa-receipt" label="Subscription Management" :open="$isSubscriptionsActive" target="menu-subscriptions">
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="All Subscriptions" :active="request()->routeIs('superadmin.subscriptions.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.analytics')" label="Subscription Analytics" :active="request()->routeIs('superadmin.subscriptions.analytics')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.payment-history')" label="Payment History" :active="request()->routeIs('superadmin.subscriptions.payment-history')" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.payment-history')" label="Payment History" :active="request()->routeIs('superadmin.subscriptions.payment-history')" :badge="\DB::table('payment_history')->where('payment_status', 'pending')->count()" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">

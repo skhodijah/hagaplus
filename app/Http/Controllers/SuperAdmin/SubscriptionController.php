@@ -52,6 +52,7 @@ class SubscriptionController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'price' => 'nullable|numeric|min:0',
+            'payment_method' => 'required|in:transfer,bank_transfer,cash,credit_card',
         ]);
 
         // Prevent overlapping active-like subscriptions for the same instansi
@@ -81,7 +82,35 @@ class SubscriptionController extends Controller
             $validated['price'] = optional(\App\Models\SuperAdmin\Package::find($validated['package_id']))->price ?? 0;
         }
 
-        Subscription::create($validated);
+        $subscription = Subscription::create($validated);
+
+        // Create payment history record
+        try {
+            DB::table('payment_history')->insert([
+                'instansi_id' => $validated['instansi_id'],
+                'package_id' => $validated['package_id'],
+                'subscription_id' => $subscription->id,
+                'start_date' => $validated['start_date'] . ' 00:00:00',
+                'end_date' => $validated['end_date'] . ' 00:00:00',
+                'amount' => $validated['price'],
+                'payment_method' => $validated['payment_method'],
+                'payment_status' => 'paid', // Assuming payment is completed when subscription is created
+                'transaction_id' => 'SUB-' . $subscription->id . '-' . time(),
+                'created_by' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Failed to create payment history record: ' . $e->getMessage(), [
+                'subscription_id' => $subscription->id,
+                'validated_data' => $validated
+            ]);
+
+            // Continue with the subscription creation even if payment history fails
+            return redirect()->route('superadmin.subscriptions.index')
+                ->with('success', 'Subscription berhasil dibuat, namun gagal mencatat history pembayaran.');
+        }
 
         return redirect()->route('superadmin.subscriptions.index')
             ->with('success', 'Subscription berhasil dibuat.');
@@ -95,7 +124,33 @@ class SubscriptionController extends Controller
         $subscription = Subscription::with(['instansi', 'package'])->findOrFail($id);
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
-        return view('superadmin.subscriptions.edit', compact('subscription', 'packages'));
+        // Check if there's a pending payment for this subscription
+        $pendingPayment = DB::table('payment_history')
+            ->where('subscription_id', $id)
+            ->where('payment_status', 'pending')
+            ->first();
+
+        // Auto-detect changes from pending payment notes
+        $autoDetected = [];
+        if ($pendingPayment && $pendingPayment->notes) {
+            // Check for extension
+            if (preg_match('/perpanjangan subscription (\d+) bulan/i', $pendingPayment->notes, $matches)) {
+                $extensionMonths = (int) $matches[1];
+                $autoDetected['end_date'] = $subscription->end_date->copy()->addMonths($extensionMonths)->format('Y-m-d');
+            }
+
+            // Check for upgrade
+            if (preg_match('/upgrade.*ke paket ([^.\n]+)/i', $pendingPayment->notes, $matches)) {
+                $targetPackageName = trim($matches[1]);
+                $targetPackage = $packages->firstWhere('name', $targetPackageName);
+                if ($targetPackage) {
+                    $autoDetected['package_id'] = $targetPackage->id;
+                    $autoDetected['price'] = $targetPackage->price;
+                }
+            }
+        }
+
+        return view('superadmin.subscriptions.edit', compact('subscription', 'packages', 'pendingPayment', 'autoDetected'));
     }
 
     /**
@@ -109,8 +164,9 @@ class SubscriptionController extends Controller
             'package_id' => 'required|exists:packages,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
-            'status' => 'required|in:active,inactive,suspended,expired,canceled',
+            'status' => 'required|in:pending_verification,active,inactive,expired,cancelled',
             'price' => 'nullable|numeric|min:0',
+            'payment_method' => 'required|in:transfer,bank_transfer,cash,credit_card',
         ]);
 
         // Prevent overlapping periods with other subscriptions for same instansi
@@ -136,6 +192,23 @@ class SubscriptionController extends Controller
         // If price not provided, use package price
         if (!isset($validated['price'])) {
             $validated['price'] = optional(\App\Models\SuperAdmin\Package::find($validated['package_id']))->price ?? $subscription->price;
+        }
+
+        // Check if there's a pending payment for this subscription
+        $pendingPayment = DB::table('payment_history')
+            ->where('subscription_id', $subscription->id)
+            ->where('payment_status', 'pending')
+            ->first();
+
+        if ($pendingPayment) {
+            // Update payment status to paid and set payment method
+            DB::table('payment_history')
+                ->where('id', $pendingPayment->id)
+                ->update([
+                    'payment_status' => 'paid',
+                    'payment_method' => $validated['payment_method'],
+                    'updated_at' => now()
+                ]);
         }
 
         $subscription->update($validated);
@@ -249,16 +322,32 @@ class SubscriptionController extends Controller
     }
 
     /**
+     * Remove the specified subscription from storage.
+     */
+    public function destroy($id)
+    {
+        $subscription = Subscription::findOrFail($id);
+
+        // Delete related payment history records
+        DB::table('payment_history')->where('subscription_id', $id)->delete();
+
+        $subscription->delete();
+
+        return redirect()->route('superadmin.subscriptions.index')
+            ->with('success', 'Subscription berhasil dihapus.');
+    }
+
+    /**
      * Show payment history
      */
     public function paymentHistory(Request $request)
     {
-        $query = DB::table('subscription_history')
-            ->leftJoin('instansis', 'subscription_history.company_id', '=', 'instansis.id')
-            ->leftJoin('packages', 'subscription_history.package_id', '=', 'packages.id')
-            ->leftJoin('users', 'subscription_history.created_by', '=', 'users.id')
+        $query = DB::table('payment_history')
+            ->leftJoin('instansis', 'payment_history.instansi_id', '=', 'instansis.id')
+            ->leftJoin('packages', 'payment_history.package_id', '=', 'packages.id')
+            ->leftJoin('users', 'payment_history.created_by', '=', 'users.id')
             ->select(
-                'subscription_history.*',
+                'payment_history.*',
                 'instansis.nama_instansi',
                 'packages.name as package_name',
                 'users.name as created_by_name'
@@ -266,39 +355,39 @@ class SubscriptionController extends Controller
 
         // Apply filters
         if ($request->filled('status')) {
-            $query->where('subscription_history.payment_status', $request->status);
+            $query->where('payment_history.payment_status', $request->status);
         }
 
         if ($request->filled('instansi_id')) {
-            $query->where('subscription_history.company_id', $request->instansi_id);
+            $query->where('payment_history.instansi_id', $request->instansi_id);
         }
 
         if ($request->filled('package_id')) {
-            $query->where('subscription_history.package_id', $request->package_id);
+            $query->where('payment_history.package_id', $request->package_id);
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('subscription_history.created_at', '>=', $request->date_from);
+            $query->whereDate('payment_history.created_at', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('subscription_history.created_at', '<=', $request->date_to);
+            $query->whereDate('payment_history.created_at', '<=', $request->date_to);
         }
 
         if ($request->filled('payment_method')) {
-            $query->where('subscription_history.payment_method', $request->payment_method);
+            $query->where('payment_history.payment_method', $request->payment_method);
         }
 
         // Search by transaction ID or instansi name
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('subscription_history.transaction_id', 'like', "%{$search}%")
+                $q->where('payment_history.transaction_id', 'like', "%{$search}%")
                     ->orWhere('instansis.nama_instansi', 'like', "%{$search}%");
             });
         }
 
-        $payments = $query->orderBy('subscription_history.created_at', 'desc')
+        $payments = $query->orderBy('payment_history.created_at', 'desc')
             ->paginate(15)
             ->through(function ($payment) {
                 // Cast created_at to Carbon instance
@@ -307,10 +396,10 @@ class SubscriptionController extends Controller
             });
 
         // Summary statistics
-        $totalPayments = DB::table('subscription_history')->count();
-        $paidPayments = DB::table('subscription_history')->where('payment_status', 'paid')->count();
-        $pendingPayments = DB::table('subscription_history')->where('payment_status', 'pending')->count();
-        $totalRevenue = DB::table('subscription_history')->where('payment_status', 'paid')->sum('amount');
+        $totalPayments = DB::table('payment_history')->count();
+        $paidPayments = DB::table('payment_history')->where('payment_status', 'paid')->count();
+        $pendingPayments = DB::table('payment_history')->where('payment_status', 'pending')->count();
+        $totalRevenue = DB::table('payment_history')->where('payment_status', 'paid')->sum('amount');
 
         // Get filter options
         $instansis = \App\Models\SuperAdmin\Instansi::select('id', 'nama_instansi')->get();
@@ -325,5 +414,32 @@ class SubscriptionController extends Controller
             'instansis',
             'packages'
         ));
+    }
+
+    /**
+     * Process pending payment (admin request)
+     */
+    public function processPayment($paymentId)
+    {
+        $payment = DB::table('payment_history')
+            ->where('id', $paymentId)
+            ->where('payment_status', 'pending')
+            ->first();
+
+        if (!$payment) {
+            return redirect()->back()->with('error', 'Payment tidak ditemukan atau sudah diproses.');
+        }
+
+        // Get the subscription
+        $subscription = DB::table('subscriptions')
+            ->where('id', $payment->subscription_id)
+            ->first();
+
+        if (!$subscription) {
+            return redirect()->back()->with('error', 'Subscription tidak ditemukan.');
+        }
+
+        // Redirect to edit subscription
+        return redirect()->route('superadmin.subscriptions.edit', $subscription->id);
     }
 }

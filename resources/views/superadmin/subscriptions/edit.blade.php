@@ -14,6 +14,22 @@
             </div>
 
             <x-section-card title="Informasi Subscription">
+                @if(isset($pendingPayment) && $pendingPayment)
+                    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-info-circle text-blue-600 dark:text-blue-400 mr-3"></i>
+                            <div>
+                                <h4 class="text-blue-800 dark:text-blue-200 font-medium">Memproses Permintaan Pembayaran</h4>
+                                <p class="text-blue-700 dark:text-blue-300 text-sm">
+                                    {{ $pendingPayment->notes }}
+                                    <br>
+                                    <strong>Jumlah: Rp {{ number_format($pendingPayment->amount, 0, ',', '.') }}</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('superadmin.subscriptions.update', $subscription) }}">
                     @csrf
                     @method('PUT')
@@ -25,7 +41,7 @@
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('package_id') border-red-300 dark:border-red-600 @enderror">
                                 <option value="">Pilih Paket</option>
                                 @foreach($packages as $package)
-                                    <option value="{{ $package->id }}" {{ old('package_id', $subscription->package_id) == $package->id ? 'selected' : '' }}>
+                                    <option value="{{ $package->id }}" {{ old('package_id', (isset($autoDetected['package_id']) ? $autoDetected['package_id'] : $subscription->package_id)) == $package->id ? 'selected' : '' }}>
                                         {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
                                     </option>
                                 @endforeach
@@ -61,7 +77,7 @@
 
                         <div>
                             <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tanggal Berakhir <span class="text-red-500">*</span></label>
-                            <input type="date" name="end_date" id="end_date" value="{{ old('end_date', $subscription->end_date->format('Y-m-d')) }}" required
+                            <input type="date" name="end_date" id="end_date" value="{{ old('end_date', (isset($autoDetected['end_date']) ? $autoDetected['end_date'] : $subscription->end_date->format('Y-m-d'))) }}" required
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('end_date') border-red-300 dark:border-red-600 @enderror">
                             @error('end_date')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -70,12 +86,27 @@
 
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Harga (Rp) <span class="text-red-500">*</span></label>
-                            <input type="number" name="price" id="price" value="{{ old('price', $subscription->price) }}" required min="0"
+                            <input type="number" name="price" id="price" value="{{ old('price', (isset($autoDetected['price']) ? $autoDetected['price'] : $subscription->price)) }}" required min="0"
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('price') border-red-300 dark:border-red-600 @enderror">
                             @error('price')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Harga akan otomatis terupdate saat paket dipilih</p>
+                        </div>
+
+                        <div>
+                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Metode Pembayaran <span class="text-red-500">*</span></label>
+                            <select name="payment_method" id="payment_method" required
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('payment_method') border-red-300 dark:border-red-600 @enderror">
+                                <option value="">Pilih Metode Pembayaran</option>
+                                <option value="transfer" {{ old('payment_method', (isset($pendingPayment) && $pendingPayment ? $pendingPayment->payment_method : '')) == 'transfer' ? 'selected' : '' }}>Transfer Bank</option>
+                                <option value="bank_transfer" {{ old('payment_method', (isset($pendingPayment) && $pendingPayment ? $pendingPayment->payment_method : '')) == 'bank_transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                <option value="cash" {{ old('payment_method', (isset($pendingPayment) && $pendingPayment ? $pendingPayment->payment_method : '')) == 'cash' ? 'selected' : '' }}>Tunai</option>
+                                <option value="credit_card" {{ old('payment_method', (isset($pendingPayment) && $pendingPayment ? $pendingPayment->payment_method : '')) == 'credit_card' ? 'selected' : '' }}>Kartu Kredit</option>
+                            </select>
+                            @error('payment_method')
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div class="md:col-span-2">

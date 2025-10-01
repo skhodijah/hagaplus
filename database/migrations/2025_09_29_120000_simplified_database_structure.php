@@ -5,18 +5,51 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up()
     {
+        // Drop foreign keys first before dropping tables
+        if (Schema::hasTable('package_features')) {
+            $constraint = DB::selectOne("
+                SELECT CONSTRAINT_NAME
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE
+                    TABLE_SCHEMA = DATABASE() AND
+                    TABLE_NAME = 'package_features' AND
+                    CONSTRAINT_TYPE = 'FOREIGN KEY' AND
+                    CONSTRAINT_NAME LIKE '%feature_id%'
+                LIMIT 1");
+
+            if ($constraint) {
+                DB::statement("ALTER TABLE package_features DROP FOREIGN KEY {$constraint->CONSTRAINT_NAME}");
+            }
+        }
+
+        if (Schema::hasTable('instansi_feature_overrides')) {
+            $constraint = DB::selectOne("
+                SELECT CONSTRAINT_NAME
+                FROM information_schema.TABLE_CONSTRAINTS
+                WHERE
+                    TABLE_SCHEMA = DATABASE() AND
+                    TABLE_NAME = 'instansi_feature_overrides' AND
+                    CONSTRAINT_TYPE = 'FOREIGN KEY' AND
+                    CONSTRAINT_NAME LIKE '%feature_id%'
+                LIMIT 1");
+
+            if ($constraint) {
+                DB::statement("ALTER TABLE instansi_feature_overrides DROP FOREIGN KEY {$constraint->CONSTRAINT_NAME}");
+            }
+        }
+
         // Drop redundant tables that can be simplified
-        Schema::dropIfExists('features');
+        // Drop child tables first to avoid foreign key constraints
         Schema::dropIfExists('package_features');
         Schema::dropIfExists('instansi_feature_overrides');
-        Schema::dropIfExists('subscription_addons');
         Schema::dropIfExists('instansi_subscription_addons');
-        Schema::dropIfExists('discounts');
         Schema::dropIfExists('discount_usage');
+        Schema::dropIfExists('features');
+        Schema::dropIfExists('subscription_addons');
+        Schema::dropIfExists('discounts');
         Schema::dropIfExists('backup_logs');
         Schema::dropIfExists('compliance_logs');
         Schema::dropIfExists('data_deletion_requests');
@@ -81,6 +114,14 @@ return new class extends Migration
             if (!Schema::hasColumn('settings', 'is_public')) {
                 $table->boolean('is_public')->default(false)->after('description');
             }
+
+            // Remove duplicate keys, keeping the one with the lowest id (oldest)
+            DB::statement("
+                DELETE s1 FROM settings s1
+                INNER JOIN settings s2
+                WHERE s1.id > s2.id AND s1.key = s2.key
+            ");
+
             // Add new unique constraint on key only (for global settings)
             $table->unique('key');
         });

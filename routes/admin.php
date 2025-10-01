@@ -30,6 +30,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
 
+    // Subscription management
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::get('/subscription/{id}/edit', [SubscriptionController::class, 'edit'])->name('subscription.edit');
+    Route::put('/subscription/{id}', [SubscriptionController::class, 'update'])->name('subscription.update');
+    Route::post('/subscription/request', [SubscriptionController::class, 'handleRequest'])->name('subscription.request');
+    Route::post('/subscription/extend', [SubscriptionController::class, 'requestExtension'])->name('subscription.extend');
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'requestUpgrade'])->name('subscription.upgrade');
+    Route::post('/subscription/payment/{paymentId}/process', [SubscriptionController::class, 'processPayment'])->name('subscription.process-payment');
+    Route::post('/subscription/payment/{paymentId}/cancel', [SubscriptionController::class, 'cancelPayment'])->name('subscription.cancel-payment');
+
     // Notifications
     Route::get('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
     Route::put('/notifications/{id}/read', [App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');

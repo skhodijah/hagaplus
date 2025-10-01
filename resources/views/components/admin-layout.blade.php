@@ -59,10 +59,57 @@
                 <x-layout.sidebar-link :href="route('admin.branches.index')" icon="fa-solid fa-building" label="Branches" :active="request()->routeIs('admin.branches.*')" />
 
                 <x-layout.sidebar-link :href="route('admin.settings.index')" icon="fa-solid fa-gear" label="Settings" :active="request()->routeIs('admin.settings.*')" />
-
-                <a href="#" data-logout class="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200">Logout</a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
             </nav>
+
+            <!-- Subscription Status Footer -->
+            <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
+                @php
+                    $subscription = \DB::table('subscriptions')
+                        ->leftJoin('packages', 'subscriptions.package_id', '=', 'packages.id')
+                        ->where('subscriptions.instansi_id', Auth::user()->instansi_id ?? 1)
+                        ->where('subscriptions.status', 'active')
+                        ->select('subscriptions.*', 'packages.name as package_name')
+                        ->first();
+                @endphp
+
+                <a href="{{ route('admin.subscription.index') }}"
+                   class="flex items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200
+                          {{ request()->routeIs('admin.subscription.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-crown mr-3 {{ $subscription ? 'text-yellow-500' : 'text-gray-400' }}"></i>
+                        <div class="flex flex-col">
+                            <span class="font-medium">Subscription</span>
+                            @if($subscription)
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $subscription->package_name }}</span>
+                            @else
+                                <span class="text-xs text-gray-500 dark:text-gray-400">Tidak aktif</span>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        @php
+                            $pendingPayments = \DB::table('payment_history')
+                                ->where('instansi_id', Auth::user()->instansi_id ?? 1)
+                                ->where('payment_status', 'pending')
+                                ->count();
+                        @endphp
+                        @if($pendingPayments > 0)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300">
+                                {{ $pendingPayments }} Pending
+                            </span>
+                        @endif
+                        @if($subscription)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                Active
+                            </span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                Inactive
+                            </span>
+                        @endif
+                    </div>
+                </a>
+            </div>
         </aside>
 
         <div class="flex-1 flex flex-col overflow-hidden">
@@ -336,6 +383,11 @@
                     </div>
                 </div>
             </header>
+
+            <!-- Logout Form -->
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
+                @csrf
+            </form>
 
             @include('partials.breadcrumbs')
 

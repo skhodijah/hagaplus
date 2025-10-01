@@ -43,6 +43,14 @@
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
                             {{ $notification->message }}
                         </p>
+                        @if($notification->type === 'subscription_request' && $notification->action_url)
+                            <div class="mt-2">
+                                <a href="{{ $notification->action_url }}" class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    View Payment History
+                                </a>
+                            </div>
+                        @endif
                         <div class="mt-2 flex items-center text-xs text-gray-500 dark:text-gray-400">
                             <time datetime="{{ $notification->created_at->toIso8601String() }}" title="{{ $notification->created_at->format('M j, Y g:i A') }}">
                                 {{ $notification->created_at->diffForHumans() }}
