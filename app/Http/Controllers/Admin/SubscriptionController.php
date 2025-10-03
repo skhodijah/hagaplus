@@ -69,14 +69,25 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $instansi = $user->instansi;
 
-        // Get current active subscription
+        // Check if there are already pending requests
+        $existingPendingRequest = DB::table('payment_history')
+            ->where('instansi_id', $instansi->id)
+            ->where('payment_status', 'pending')
+            ->exists();
+
+        if ($existingPendingRequest) {
+            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+        }
+
+        // Get current subscription (active or inactive)
         $currentSubscription = DB::table('subscriptions')
             ->where('instansi_id', $instansi->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'expired'])
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$currentSubscription) {
-            return redirect()->back()->with('error', 'Tidak ada subscription aktif untuk dikelola.');
+            return redirect()->back()->with('error', 'Tidak ada subscription untuk dikelola. Silakan hubungi superadmin untuk membuat subscription baru.');
         }
 
         $requestType = $request->request_type;
@@ -174,7 +185,7 @@ class SubscriptionController extends Controller
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan ' . ucfirst($requestType) . ' Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan " . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . " subscription - " . route('superadmin.subscriptions.payment-history'),
+            'message' => "Instansi {$instansi->nama_instansi} mengajukan " . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . " subscription - " . route('superadmin.subscriptions.subscription-requests'),
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
@@ -202,14 +213,25 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $instansi = $user->instansi->load('package');
 
-        // Get current active subscription
+        // Check if there are already pending requests
+        $existingPendingRequest = DB::table('payment_history')
+            ->where('instansi_id', $instansi->id)
+            ->where('payment_status', 'pending')
+            ->exists();
+
+        if ($existingPendingRequest) {
+            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+        }
+
+        // Get current subscription (active or inactive)
         $currentSubscription = DB::table('subscriptions')
             ->where('instansi_id', $instansi->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'expired'])
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$currentSubscription) {
-            return redirect()->back()->with('error', 'Tidak ada subscription aktif untuk diperpanjang.');
+            return redirect()->back()->with('error', 'Tidak ada subscription untuk diperpanjang. Silakan hubungi superadmin untuk membuat subscription baru.');
         }
 
         // Calculate new end date
@@ -242,19 +264,14 @@ class SubscriptionController extends Controller
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan Perpanjangan Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan perpanjangan subscription {$request->extension_months} bulan - " . route('superadmin.subscriptions.payment-history'),
+            'message' => "Instansi {$instansi->nama_instansi} mengajukan perpanjangan subscription {$request->extension_months} bulan - " . route('superadmin.subscriptions.subscription-requests'),
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // Create WhatsApp message
-        $whatsappMessage = urlencode("Halo Admin, saya telah mengajukan perpanjangan subscription {$request->extension_months} bulan untuk instansi {$instansi->nama_instansi}. Transaction ID: {$paymentId}. Mohon segera diproses. Terima kasih!");
-
-        // Redirect to WhatsApp (you may need to configure the WhatsApp number)
-        $whatsappUrl = "https://wa.me/6281234567890?text={$whatsappMessage}"; // Replace with actual WhatsApp number
-
-        return redirect($whatsappUrl);
+        // Return success message - request has been created and superadmin will be notified
+        return redirect()->back()->with('success', 'Permintaan perpanjangan subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
     }
 
     /**
@@ -270,14 +287,25 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $instansi = $user->instansi;
 
-        // Get current active subscription
+        // Check if there are already pending requests
+        $existingPendingRequest = DB::table('payment_history')
+            ->where('instansi_id', $instansi->id)
+            ->where('payment_status', 'pending')
+            ->exists();
+
+        if ($existingPendingRequest) {
+            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+        }
+
+        // Get current subscription (active or inactive)
         $currentSubscription = DB::table('subscriptions')
             ->where('instansi_id', $instansi->id)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'inactive', 'expired'])
+            ->orderBy('created_at', 'desc')
             ->first();
 
         if (!$currentSubscription) {
-            return redirect()->back()->with('error', 'Tidak ada subscription aktif untuk diupgrade.');
+            return redirect()->back()->with('error', 'Tidak ada subscription untuk diupgrade. Silakan hubungi superadmin untuk membuat subscription baru.');
         }
 
         $targetPackage = DB::table('packages')->find($request->target_package_id);
@@ -310,19 +338,14 @@ class SubscriptionController extends Controller
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan Upgrade Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name} - " . route('superadmin.subscriptions.payment-history'),
+            'message' => "Instansi {$instansi->nama_instansi} mengajukan upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name} - " . route('superadmin.subscriptions.subscription-requests'),
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        // Create WhatsApp message
-        $whatsappMessage = urlencode("Halo Admin, saya telah mengajukan upgrade subscription dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name} untuk instansi {$instansi->nama_instansi}. Transaction ID: {$paymentId}. Mohon segera diproses. Terima kasih!");
-
-        // Redirect to WhatsApp (you may need to configure the WhatsApp number)
-        $whatsappUrl = "https://wa.me/6281234567890?text={$whatsappMessage}"; // Replace with actual WhatsApp number
-
-        return redirect($whatsappUrl);
+        // Return success message - request has been created and superadmin will be notified
+        return redirect()->back()->with('success', 'Permintaan upgrade subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
     }
 
     /**

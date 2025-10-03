@@ -79,150 +79,141 @@
             <!-- Action Buttons -->
             <div class="mb-6">
                 <x-section-card title="Kelola Subscription">
-                    <form method="POST" action="{{ route('admin.subscription.request') }}" id="subscriptionForm">
-                        @csrf
+                    @if($instansi)
+                        <div class="space-y-6">
+                            <!-- Extension Request Form -->
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                    <i class="fa-solid fa-calendar-plus text-blue-500 mr-2"></i>
+                                    Perpanjangan Subscription
+                                </h3>
+                                <form method="POST" action="{{ route('admin.subscription.extend') }}" class="space-y-4">
+                                    @csrf
+                                    <div>
+                                        <label for="extension_months" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Lama Perpanjangan (Bulan) <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="extension_months" id="extension_months" required
+                                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                            <option value="">Pilih Lama Perpanjangan</option>
+                                            <option value="1">1 Bulan</option>
+                                            <option value="3">3 Bulan</option>
+                                            <option value="6">6 Bulan</option>
+                                            <option value="12">12 Bulan</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="extension_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Catatan (Opsional)
+                                        </label>
+                                        <textarea name="notes" id="extension_notes" rows="2"
+                                                  class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                                  placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                        <i class="fa-solid fa-calendar-plus mr-2"></i>Ajukan Perpanjangan
+                                    </button>
+                                </form>
+                            </div>
 
-                        <!-- Request Type Selection -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Jenis Permintaan
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <label class="relative">
-                                    <input type="radio" name="request_type" value="extension" class="sr-only peer" required>
-                                    <div class="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 transition-all">
-                                        <div class="flex items-center">
-                                            <i class="fa-solid fa-calendar-plus text-blue-500 mr-3"></i>
-                                            <div>
-                                                <div class="font-medium text-gray-900 dark:text-white">Perpanjangan</div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">Perpanjang masa aktif</div>
-                                            </div>
+                            <!-- Upgrade Request Form -->
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                    <i class="fa-solid fa-arrow-up text-green-500 mr-2"></i>
+                                    Upgrade Subscription
+                                </h3>
+                                <form method="POST" action="{{ route('admin.subscription.upgrade') }}" class="space-y-4">
+                                    @csrf
+                                    <div>
+                                        <label for="target_package_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Pilih Paket Tujuan <span class="text-red-500">*</span>
+                                        </label>
+                                        <select name="target_package_id" id="target_package_id" required
+                                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white">
+                                            <option value="">Pilih Paket</option>
+                                            @foreach($packages as $package)
+                                                <option value="{{ $package->id }}" {{ ($currentSubscription && $currentSubscription->package_id == $package->id) ? 'disabled' : '' }}>
+                                                    {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="upgrade_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Catatan (Opsional)
+                                        </label>
+                                        <textarea name="notes" id="upgrade_notes" rows="2"
+                                                  class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
+                                                  placeholder="Tambahkan catatan jika diperlukan..."></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                        <i class="fa-solid fa-arrow-up mr-2"></i>Ajukan Upgrade
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Combined Request Form -->
+                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                                    <i class="fa-solid fa-sync text-purple-500 mr-2"></i>
+                                    Perpanjangan + Upgrade
+                                </h3>
+                                <form method="POST" action="{{ route('admin.subscription.request') }}" class="space-y-4">
+                                    @csrf
+                                    <input type="hidden" name="request_type" value="both">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="both_extension_months" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Lama Perpanjangan (Bulan) <span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="extension_months" id="both_extension_months" required
+                                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white">
+                                                <option value="">Pilih Lama Perpanjangan</option>
+                                                <option value="1">1 Bulan</option>
+                                                <option value="3">3 Bulan</option>
+                                                <option value="6">6 Bulan</option>
+                                                <option value="12">12 Bulan</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="both_target_package_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                Pilih Paket Tujuan <span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="target_package_id" id="both_target_package_id" required
+                                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white">
+                                                <option value="">Pilih Paket</option>
+                                                @foreach($packages as $package)
+                                                    <option value="{{ $package->id }}" {{ ($currentSubscription && $currentSubscription->package_id == $package->id) ? 'disabled' : '' }}>
+                                                        {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
-                                </label>
-
-                                <label class="relative">
-                                    <input type="radio" name="request_type" value="upgrade" class="sr-only peer">
-                                    <div class="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer peer-checked:border-green-500 peer-checked:bg-green-50 dark:peer-checked:bg-green-900/20 transition-all">
-                                        <div class="flex items-center">
-                                            <i class="fa-solid fa-arrow-up text-green-500 mr-3"></i>
-                                            <div>
-                                                <div class="font-medium text-gray-900 dark:text-white">Upgrade</div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">Naikkan paket</div>
-                                            </div>
-                                        </div>
+                                    <div>
+                                        <label for="combined_notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            Catatan (Opsional)
+                                        </label>
+                                        <textarea name="notes" id="combined_notes" rows="2"
+                                                  class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
+                                                  placeholder="Tambahkan catatan jika diperlukan..."></textarea>
                                     </div>
-                                </label>
-
-                                <label class="relative">
-                                    <input type="radio" name="request_type" value="both" class="sr-only peer">
-                                    <div class="p-4 border-2 border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer peer-checked:border-purple-500 peer-checked:bg-purple-50 dark:peer-checked:bg-purple-900/20 transition-all">
-                                        <div class="flex items-center">
-                                            <i class="fa-solid fa-sync text-purple-500 mr-3"></i>
-                                            <div>
-                                                <div class="font-medium text-gray-900 dark:text-white">Perpanjangan + Upgrade</div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">Keduanya sekaligus</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </label>
+                                    <button type="submit" class="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                        <i class="fa-solid fa-sync mr-2"></i>Ajukan Perpanjangan + Upgrade
+                                    </button>
+                                </form>
                             </div>
                         </div>
-
-                        <!-- Extension Options -->
-                        <div id="extensionOptions" class="hidden space-y-4">
-                            <div>
-                                <label for="ext_extension_months" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Lama Perpanjangan (Bulan)
-                                </label>
-                                <select name="extension_months" id="ext_extension_months"
-                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">Pilih Lama Perpanjangan</option>
-                                    <option value="1">1 Bulan</option>
-                                    <option value="3">3 Bulan</option>
-                                    <option value="6">6 Bulan</option>
-                                    <option value="12">12 Bulan</option>
-                                </select>
-                            </div>
+                    @else
+                        <div class="text-center py-8">
+                            <i class="fa-solid fa-info-circle text-blue-500 text-3xl mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Belum Ada Subscription</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">Instansi Anda belum memiliki subscription. Silakan hubungi superadmin untuk membuat subscription baru.</p>
+                            <a href="{{ route('admin.notifications.index') }}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                <i class="fa-solid fa-bell mr-2"></i>Lihat Notifikasi
+                            </a>
                         </div>
-
-                        <!-- Upgrade Options -->
-                        <div id="upgradeOptions" class="hidden space-y-4">
-                            <div>
-                                <label for="upg_target_package_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Pilih Paket Tujuan
-                                </label>
-                                <select name="target_package_id" id="upg_target_package_id"
-                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="">Pilih Paket</option>
-                                    @foreach($packages as $package)
-                                        <option value="{{ $package->id }}" {{ ($currentSubscription && $currentSubscription->package_id == $package->id) ? 'disabled' : '' }}>
-                                            {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- Both Options -->
-                        <div id="bothOptions" class="hidden space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="both_extension_months" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Lama Perpanjangan (Bulan)
-                                    </label>
-                                    <select name="extension_months" id="both_extension_months"
-                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                        <option value="">Pilih Lama Perpanjangan</option>
-                                        <option value="1">1 Bulan</option>
-                                        <option value="3">3 Bulan</option>
-                                        <option value="6">6 Bulan</option>
-                                        <option value="12">12 Bulan</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="both_target_package_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Pilih Paket Tujuan
-                                    </label>
-                                    <select name="target_package_id" id="both_target_package_id"
-                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                        <option value="">Pilih Paket</option>
-                                        @foreach($packages as $package)
-                                            <option value="{{ $package->id }}" {{ ($currentSubscription && $currentSubscription->package_id == $package->id) ? 'disabled' : '' }}>
-                                                {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Price Preview -->
-                        <div id="pricePreview" class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg hidden">
-                            <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">Estimasi Biaya:</h4>
-                            <div id="priceBreakdown" class="text-sm text-gray-600 dark:text-gray-400 space-y-1"></div>
-                            <div class="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                <span class="font-medium text-gray-900 dark:text-white">Total: <span id="totalPrice" class="text-lg text-green-600 dark:text-green-400">Rp 0</span></span>
-                            </div>
-                        </div>
-
-                        <!-- Notes -->
-                        <div class="mt-4">
-                            <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Catatan (Opsional)
-                            </label>
-                            <textarea name="notes" id="notes" rows="3"
-                                      class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
-                                      placeholder="Tambahkan catatan jika diperlukan..."></textarea>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="mt-6">
-                            <button type="submit" id="submitBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i class="fa-solid fa-paper-plane mr-2"></i>Ajukan Permintaan
-                            </button>
-                        </div>
-                    </form>
+                    @endif
                 </x-section-card>
             </div>
 
@@ -349,135 +340,6 @@
     </div>
 
     <script>
-        // Package and subscription data
-        const packages = @json($packages->keyBy('id'));
-        const currentSubscription = @json($currentSubscription);
-
-        // Calculate and display price preview
-        function updatePricePreview() {
-            const requestType = document.querySelector('input[name="request_type"]:checked');
-            if (!requestType || !currentSubscription) return;
-
-            const type = requestType.value;
-            let totalPrice = 0;
-            let breakdown = [];
-
-            if (type === 'extension') {
-                const months = parseInt(document.querySelector('select[name="extension_months"]').value) || 0;
-                const extensionCost = currentSubscription.price * months;
-                totalPrice = extensionCost;
-                breakdown.push(`Perpanjangan ${months} bulan: Rp ${extensionCost.toLocaleString('id-ID')}`);
-            } else if (type === 'upgrade') {
-                const targetPackageId = document.querySelector('select[name="target_package_id"]').value;
-                const targetPackage = packages[targetPackageId];
-                if (targetPackage) {
-                    const upgradeCost = Math.max(0, targetPackage.price - currentSubscription.price);
-                    totalPrice = upgradeCost;
-                    breakdown.push(`Upgrade ke ${targetPackage.name}: Rp ${upgradeCost.toLocaleString('id-ID')}`);
-                }
-            } else if (type === 'both') {
-                const months = parseInt(document.querySelector('select[name="extension_months"]').value) || 0;
-                const targetPackageId = document.querySelector('select[name="target_package_id"]').value;
-                const targetPackage = packages[targetPackageId];
-
-                const extensionCost = currentSubscription.price * months;
-                const upgradeCost = targetPackage ? Math.max(0, targetPackage.price - currentSubscription.price) : 0;
-                totalPrice = extensionCost + upgradeCost;
-
-                breakdown.push(`Perpanjangan ${months} bulan: Rp ${extensionCost.toLocaleString('id-ID')}`);
-                if (targetPackage) {
-                    breakdown.push(`Upgrade ke ${targetPackage.name}: Rp ${upgradeCost.toLocaleString('id-ID')}`);
-                }
-            }
-
-            // Update display
-            const pricePreview = document.getElementById('pricePreview');
-            const priceBreakdown = document.getElementById('priceBreakdown');
-            const totalPriceEl = document.getElementById('totalPrice');
-
-            if (totalPrice > 0) {
-                priceBreakdown.innerHTML = breakdown.map(item => `<div>${item}</div>`).join('');
-                totalPriceEl.textContent = `Rp ${totalPrice.toLocaleString('id-ID')}`;
-                pricePreview.classList.remove('hidden');
-            } else {
-                pricePreview.classList.add('hidden');
-            }
-        }
-
-        // Handle request type selection
-        document.querySelectorAll('input[name="request_type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const requestType = this.value;
-
-                // Hide all option sections
-                document.getElementById('extensionOptions').classList.add('hidden');
-                document.getElementById('upgradeOptions').classList.add('hidden');
-                document.getElementById('bothOptions').classList.add('hidden');
-
-                // Reset all required attributes
-                const allSelects = document.querySelectorAll('select[name="extension_months"], select[name="target_package_id"]');
-                allSelects.forEach(select => select.required = false);
-
-                // Show relevant section and update required fields
-                if (requestType === 'extension') {
-                    document.getElementById('extensionOptions').classList.remove('hidden');
-                    document.getElementById('ext_extension_months').required = true;
-                } else if (requestType === 'upgrade') {
-                    document.getElementById('upgradeOptions').classList.remove('hidden');
-                    document.getElementById('upg_target_package_id').required = true;
-                } else if (requestType === 'both') {
-                    document.getElementById('bothOptions').classList.remove('hidden');
-                    document.getElementById('both_extension_months').required = true;
-                    document.getElementById('both_target_package_id').required = true;
-                }
-
-                // Update submit button text
-                const submitBtn = document.getElementById('submitBtn');
-                if (requestType === 'extension') {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-calendar-plus mr-2"></i>Ajukan Perpanjangan';
-                } else if (requestType === 'upgrade') {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-arrow-up mr-2"></i>Ajukan Upgrade';
-                } else if (requestType === 'both') {
-                    submitBtn.innerHTML = '<i class="fa-solid fa-sync mr-2"></i>Ajukan Perpanjangan + Upgrade';
-                }
-
-                updatePricePreview();
-            });
-        });
-
-        // Update price when inputs change
-        document.querySelectorAll('select[name="extension_months"], select[name="target_package_id"]').forEach(select => {
-            select.addEventListener('change', updatePricePreview);
-        });
-
-        // Form validation before submit
-        document.getElementById('subscriptionForm').addEventListener('submit', function(e) {
-            const requestType = document.querySelector('input[name="request_type"]:checked');
-
-            if (!requestType) {
-                e.preventDefault();
-                alert('Silakan pilih jenis permintaan terlebih dahulu.');
-                return;
-            }
-
-            // Ensure required attributes are set based on selected request type
-            const requestTypeValue = requestType.value;
-            const allSelects = document.querySelectorAll('select[name="extension_months"], select[name="target_package_id"]');
-            allSelects.forEach(select => select.required = false);
-
-            if (requestTypeValue === 'extension') {
-                document.querySelector('select[name="extension_months"]').required = true;
-            } else if (requestTypeValue === 'upgrade') {
-                document.querySelector('select[name="target_package_id"]').required = true;
-            } else if (requestTypeValue === 'both') {
-                document.querySelectorAll('select[name="extension_months"], select[name="target_package_id"]').forEach(select => select.required = true);
-            }
-
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Mengirim...';
-        });
-
         function showPaymentDetail(paymentId) {
             // Find the payment data from the payments array
             const payments = @json($paymentHistory);

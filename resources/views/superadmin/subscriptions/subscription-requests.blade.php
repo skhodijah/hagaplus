@@ -3,8 +3,8 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-6 md:mb-8">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Payment History</h1>
-                <p class="mt-1 text-gray-600 dark:text-gray-400">Track and manage all subscription payments</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Subscription Requests</h1>
+                <p class="mt-1 text-gray-600 dark:text-gray-400">Manage and process subscription requests and payments</p>
             </div>
 
             <!-- Summary Cards -->
@@ -15,7 +15,7 @@
                             <i class="fa-solid fa-receipt text-blue-600 dark:text-blue-400"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Payments</p>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Requests</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($totalPayments) }}</p>
                         </div>
                     </div>
@@ -27,7 +27,7 @@
                             <i class="fa-solid fa-check-circle text-green-600 dark:text-green-400"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Paid Payments</p>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Processed</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($paidPayments) }}</p>
                         </div>
                     </div>
@@ -39,7 +39,7 @@
                             <i class="fa-solid fa-clock text-yellow-600 dark:text-yellow-400"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Payments</p>
+                            <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending</p>
                             <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ number_format($pendingPayments) }}</p>
                         </div>
                     </div>
@@ -116,7 +116,7 @@
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 <i class="fa-solid fa-search"></i>
                             </button>
-                            <a href="{{ route('superadmin.subscriptions.payment-history') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            <a href="{{ route('superadmin.subscriptions.subscription-requests') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500">
                                 <i class="fa-solid fa-times"></i>
                             </a>
                         </div>
@@ -124,10 +124,10 @@
                 </form>
             </div>
 
-            <!-- Payments Table -->
+            <!-- Requests Table -->
             <div class="bg-white dark:bg-gray-900 rounded-lg shadow overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Payment Records</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Subscription Requests</h3>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -182,7 +182,7 @@
                                             <form method="POST" action="{{ route('superadmin.subscriptions.process-payment', $payment->id) }}" class="inline">
                                                 @csrf
                                                 <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                                                    Proses
+                                                    Process
                                                 </button>
                                             </form>
                                         @else
@@ -193,7 +193,7 @@
                             @empty
                                 <tr>
                                     <td colspan="9" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                        No payment records found.
+                                        No subscription requests found.
                                     </td>
                                 </tr>
                             @endforelse

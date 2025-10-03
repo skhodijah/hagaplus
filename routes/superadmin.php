@@ -36,7 +36,7 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
 
     // Subscription management
     Route::get('/subscriptions/analytics', [SubscriptionController::class, 'analytics'])->name('subscriptions.analytics');
-    Route::get('/subscriptions/payment-history', [SubscriptionController::class, 'paymentHistory'])->name('subscriptions.payment-history');
+    Route::get('/subscriptions/subscription-requests', [SubscriptionController::class, 'subscriptionRequests'])->name('subscriptions.subscription-requests');
     Route::post('/subscriptions/payment/{paymentId}/process', [SubscriptionController::class, 'processPayment'])->name('subscriptions.process-payment');
     Route::get('/subscriptions/create', [SubscriptionController::class, 'create'])->name('subscriptions.create');
     Route::post('/subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');

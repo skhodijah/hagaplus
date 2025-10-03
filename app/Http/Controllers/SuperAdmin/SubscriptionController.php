@@ -338,9 +338,9 @@ class SubscriptionController extends Controller
     }
 
     /**
-     * Show payment history
+     * Show subscription requests
      */
-    public function paymentHistory(Request $request)
+    public function subscriptionRequests(Request $request)
     {
         $query = DB::table('payment_history')
             ->leftJoin('instansis', 'payment_history.instansi_id', '=', 'instansis.id')
@@ -405,7 +405,7 @@ class SubscriptionController extends Controller
         $instansis = \App\Models\SuperAdmin\Instansi::select('id', 'nama_instansi')->get();
         $packages = \App\Models\SuperAdmin\Package::select('id', 'name')->get();
 
-        return view('superadmin.subscriptions.payment-history', compact(
+        return view('superadmin.subscriptions.subscription-requests', compact(
             'payments',
             'totalPayments',
             'paidPayments',
