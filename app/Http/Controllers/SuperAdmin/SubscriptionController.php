@@ -38,7 +38,29 @@ class SubscriptionController extends Controller
         $instansis = \App\Models\SuperAdmin\Instansi::where('is_active', true)->get();
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
-        return view('superadmin.subscriptions.create', compact('instansis', 'packages'));
+        // Get available payment methods from system settings
+        $paymentMethodsSetting = DB::table('system_settings')
+            ->where('key', 'payment_methods')
+            ->value('value');
+
+        if ($paymentMethodsSetting) {
+            $paymentMethods = json_decode($paymentMethodsSetting, true);
+        } else {
+            // Default payment methods
+            $paymentMethods = [
+                ['value' => 'transfer', 'label' => 'Transfer Bank', 'enabled' => true],
+                ['value' => 'bank_transfer', 'label' => 'Bank Transfer', 'enabled' => true],
+                ['value' => 'cash', 'label' => 'Tunai', 'enabled' => true],
+                ['value' => 'credit_card', 'label' => 'Kartu Kredit', 'enabled' => true]
+            ];
+        }
+
+        // Filter only enabled payment methods
+        $enabledPaymentMethods = array_filter($paymentMethods, function ($method) {
+            return $method['enabled'] ?? true;
+        });
+
+        return view('superadmin.subscriptions.create', compact('instansis', 'packages', 'enabledPaymentMethods'));
     }
 
     /**
@@ -46,13 +68,28 @@ class SubscriptionController extends Controller
      */
     public function store(Request $request)
     {
+        // Get available payment methods from system settings
+        $paymentMethodsSetting = DB::table('system_settings')
+            ->where('key', 'payment_methods')
+            ->value('value');
+
+        if ($paymentMethodsSetting) {
+            $paymentMethods = json_decode($paymentMethodsSetting, true);
+            $availablePaymentMethods = array_column(array_filter($paymentMethods, function ($method) {
+                return $method['enabled'] ?? true;
+            }), 'value');
+        } else {
+            // Default payment methods
+            $availablePaymentMethods = ['transfer', 'bank_transfer', 'cash', 'credit_card'];
+        }
+
         $validated = $request->validate([
             'instansi_id' => 'required|exists:instansis,id',
             'package_id' => 'required|exists:packages,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'price' => 'nullable|numeric|min:0',
-            'payment_method' => 'required|in:transfer,bank_transfer,cash,credit_card',
+            'payment_method' => 'required|in:' . implode(',', $availablePaymentMethods),
         ]);
 
         // Prevent overlapping active-like subscriptions for the same instansi
@@ -86,7 +123,7 @@ class SubscriptionController extends Controller
 
         // Create payment history record
         try {
-            DB::table('payment_history')->insert([
+            DB::table('subscription_requests')->insert([
                 'instansi_id' => $validated['instansi_id'],
                 'package_id' => $validated['package_id'],
                 'subscription_id' => $subscription->id,
@@ -124,8 +161,30 @@ class SubscriptionController extends Controller
         $subscription = Subscription::with(['instansi', 'package'])->findOrFail($id);
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
+        // Get available payment methods from system settings
+        $paymentMethodsSetting = DB::table('system_settings')
+            ->where('key', 'payment_methods')
+            ->value('value');
+
+        if ($paymentMethodsSetting) {
+            $paymentMethods = json_decode($paymentMethodsSetting, true);
+        } else {
+            // Default payment methods
+            $paymentMethods = [
+                ['value' => 'transfer', 'label' => 'Transfer Bank', 'enabled' => true],
+                ['value' => 'bank_transfer', 'label' => 'Bank Transfer', 'enabled' => true],
+                ['value' => 'cash', 'label' => 'Tunai', 'enabled' => true],
+                ['value' => 'credit_card', 'label' => 'Kartu Kredit', 'enabled' => true]
+            ];
+        }
+
+        // Filter only enabled payment methods
+        $enabledPaymentMethods = array_filter($paymentMethods, function ($method) {
+            return $method['enabled'] ?? true;
+        });
+
         // Check if there's a pending payment for this subscription
-        $pendingPayment = DB::table('payment_history')
+        $pendingPayment = DB::table('subscription_requests')
             ->where('subscription_id', $id)
             ->where('payment_status', 'pending')
             ->first();
@@ -133,14 +192,25 @@ class SubscriptionController extends Controller
         // Auto-detect changes from pending payment notes
         $autoDetected = [];
         if ($pendingPayment && $pendingPayment->notes) {
-            // Check for extension
-            if (preg_match('/perpanjangan subscription (\d+) bulan/i', $pendingPayment->notes, $matches)) {
+            // Check for combined extension + upgrade first
+            if (preg_match('/Perpanjangan (\d+) bulan \+ Upgrade.*ke paket ([^.\n]+)/i', $pendingPayment->notes, $matches)) {
+                $extensionMonths = (int) $matches[1];
+                $targetPackageName = trim($matches[2]);
+                $autoDetected['end_date'] = $subscription->end_date->copy()->addMonths($extensionMonths)->format('Y-m-d');
+
+                $targetPackage = $packages->firstWhere('name', $targetPackageName);
+                if ($targetPackage) {
+                    $autoDetected['package_id'] = $targetPackage->id;
+                    $autoDetected['price'] = $targetPackage->price;
+                }
+            }
+            // Check for extension only
+            elseif (preg_match('/perpanjangan subscription (\d+) bulan/i', $pendingPayment->notes, $matches)) {
                 $extensionMonths = (int) $matches[1];
                 $autoDetected['end_date'] = $subscription->end_date->copy()->addMonths($extensionMonths)->format('Y-m-d');
             }
-
-            // Check for upgrade
-            if (preg_match('/upgrade.*ke paket ([^.\n]+)/i', $pendingPayment->notes, $matches)) {
+            // Check for upgrade only
+            elseif (preg_match('/upgrade.*ke paket ([^.\n]+)/i', $pendingPayment->notes, $matches)) {
                 $targetPackageName = trim($matches[1]);
                 $targetPackage = $packages->firstWhere('name', $targetPackageName);
                 if ($targetPackage) {
@@ -150,7 +220,7 @@ class SubscriptionController extends Controller
             }
         }
 
-        return view('superadmin.subscriptions.edit', compact('subscription', 'packages', 'pendingPayment', 'autoDetected'));
+        return view('superadmin.subscriptions.edit', compact('subscription', 'packages', 'enabledPaymentMethods', 'pendingPayment', 'autoDetected'));
     }
 
     /**
@@ -160,13 +230,28 @@ class SubscriptionController extends Controller
     {
         $subscription = Subscription::findOrFail($id);
 
+        // Get available payment methods from system settings
+        $paymentMethodsSetting = DB::table('system_settings')
+            ->where('key', 'payment_methods')
+            ->value('value');
+
+        if ($paymentMethodsSetting) {
+            $paymentMethods = json_decode($paymentMethodsSetting, true);
+            $availablePaymentMethods = array_column(array_filter($paymentMethods, function ($method) {
+                return $method['enabled'] ?? true;
+            }), 'value');
+        } else {
+            // Default payment methods
+            $availablePaymentMethods = ['transfer', 'bank_transfer', 'cash', 'credit_card'];
+        }
+
         $validated = $request->validate([
             'package_id' => 'required|exists:packages,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
             'status' => 'required|in:pending_verification,active,inactive,expired,cancelled',
             'price' => 'nullable|numeric|min:0',
-            'payment_method' => 'required|in:transfer,bank_transfer,cash,credit_card',
+            'payment_method' => 'required|in:' . implode(',', $availablePaymentMethods),
         ]);
 
         // Prevent overlapping periods with other subscriptions for same instansi
@@ -195,14 +280,14 @@ class SubscriptionController extends Controller
         }
 
         // Check if there's a pending payment for this subscription
-        $pendingPayment = DB::table('payment_history')
+        $pendingPayment = DB::table('subscription_requests')
             ->where('subscription_id', $subscription->id)
             ->where('payment_status', 'pending')
             ->first();
 
         if ($pendingPayment) {
             // Update payment status to paid and set payment method
-            DB::table('payment_history')
+            DB::table('subscription_requests')
                 ->where('id', $pendingPayment->id)
                 ->update([
                     'payment_status' => 'paid',
@@ -329,7 +414,7 @@ class SubscriptionController extends Controller
         $subscription = Subscription::findOrFail($id);
 
         // Delete related payment history records
-        DB::table('payment_history')->where('subscription_id', $id)->delete();
+        DB::table('subscription_requests')->where('subscription_id', $id)->delete();
 
         $subscription->delete();
 
@@ -342,12 +427,12 @@ class SubscriptionController extends Controller
      */
     public function subscriptionRequests(Request $request)
     {
-        $query = DB::table('payment_history')
-            ->leftJoin('instansis', 'payment_history.instansi_id', '=', 'instansis.id')
-            ->leftJoin('packages', 'payment_history.package_id', '=', 'packages.id')
-            ->leftJoin('users', 'payment_history.created_by', '=', 'users.id')
+        $query = DB::table('subscription_requests')
+            ->leftJoin('instansis', 'subscription_requests.instansi_id', '=', 'instansis.id')
+            ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
+            ->leftJoin('users', 'subscription_requests.created_by', '=', 'users.id')
             ->select(
-                'payment_history.*',
+                'subscription_requests.*',
                 'instansis.nama_instansi',
                 'packages.name as package_name',
                 'users.name as created_by_name'
@@ -355,39 +440,39 @@ class SubscriptionController extends Controller
 
         // Apply filters
         if ($request->filled('status')) {
-            $query->where('payment_history.payment_status', $request->status);
+            $query->where('subscription_requests.payment_status', $request->status);
         }
 
         if ($request->filled('instansi_id')) {
-            $query->where('payment_history.instansi_id', $request->instansi_id);
+            $query->where('subscription_requests.instansi_id', $request->instansi_id);
         }
 
         if ($request->filled('package_id')) {
-            $query->where('payment_history.package_id', $request->package_id);
+            $query->where('subscription_requests.package_id', $request->package_id);
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('payment_history.created_at', '>=', $request->date_from);
+            $query->whereDate('subscription_requests.created_at', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('payment_history.created_at', '<=', $request->date_to);
+            $query->whereDate('subscription_requests.created_at', '<=', $request->date_to);
         }
 
         if ($request->filled('payment_method')) {
-            $query->where('payment_history.payment_method', $request->payment_method);
+            $query->where('subscription_requests.payment_method', $request->payment_method);
         }
 
         // Search by transaction ID or instansi name
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('payment_history.transaction_id', 'like', "%{$search}%")
+                $q->where('subscription_requests.transaction_id', 'like', "%{$search}%")
                     ->orWhere('instansis.nama_instansi', 'like', "%{$search}%");
             });
         }
 
-        $payments = $query->orderBy('payment_history.created_at', 'desc')
+        $payments = $query->orderBy('subscription_requests.created_at', 'desc')
             ->paginate(15)
             ->through(function ($payment) {
                 // Cast created_at to Carbon instance
@@ -396,10 +481,10 @@ class SubscriptionController extends Controller
             });
 
         // Summary statistics
-        $totalPayments = DB::table('payment_history')->count();
-        $paidPayments = DB::table('payment_history')->where('payment_status', 'paid')->count();
-        $pendingPayments = DB::table('payment_history')->where('payment_status', 'pending')->count();
-        $totalRevenue = DB::table('payment_history')->where('payment_status', 'paid')->sum('amount');
+        $totalPayments = DB::table('subscription_requests')->count();
+        $paidPayments = DB::table('subscription_requests')->where('payment_status', 'paid')->count();
+        $pendingPayments = DB::table('subscription_requests')->where('payment_status', 'pending')->count();
+        $totalRevenue = DB::table('subscription_requests')->where('payment_status', 'paid')->sum('amount');
 
         // Get filter options
         $instansis = \App\Models\SuperAdmin\Instansi::select('id', 'nama_instansi')->get();
@@ -421,7 +506,7 @@ class SubscriptionController extends Controller
      */
     public function processPayment($paymentId)
     {
-        $payment = DB::table('payment_history')
+        $payment = DB::table('subscription_requests')
             ->where('id', $paymentId)
             ->where('payment_status', 'pending')
             ->first();

@@ -6,7 +6,7 @@ use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
 use App\Http\Controllers\SuperAdmin\SupportRequestController;
 use App\Http\Controllers\SuperAdmin\NotificationController;
-use App\Http\Controllers\SuperAdmin\SettingController;
+use App\Http\Controllers\SuperAdmin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
@@ -18,11 +18,22 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     // Financial
     Route::get('/financial', [DashboardController::class, 'financial'])->name('financial.index');
 
-    // System
-    Route::get('/system/health', [DashboardController::class, 'systemHealth'])->name('system.health');
 
     // Reports
     Route::get('/reports/activities', [DashboardController::class, 'reportsActivities'])->name('reports.activities');
+
+    // User management (Superadmin only)
+    Route::middleware(['role:superadmin'])->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/bulk-action', [UserController::class, 'bulkAction'])->name('users.bulk-action');
+    });
 
     // Instansi management
     Route::get('/instansi/monitoring', [InstansiController::class, 'monitoring'])->name('instansi.monitoring');
@@ -79,14 +90,4 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/settings/notifications', [DashboardController::class, 'settingsNotifications'])->name('settings.notifications');
     Route::patch('/settings/notifications', [DashboardController::class, 'updateSettingsNotifications'])->name('settings.notifications.update');
 
-    // System Management
-    Route::prefix('system')->name('system.')->group(function () {
-        // Settings
-        Route::resource('settings', SettingController::class);
-        Route::post('settings/bulk-update', [SettingController::class, 'bulkUpdate'])->name('settings.bulk-update');
-        Route::get('settings-export', [SettingController::class, 'export'])->name('settings.export');
-        Route::post('settings-import', [SettingController::class, 'import'])->name('settings.import');
-        Route::get('settings/{key}/value', [SettingController::class, 'getValue'])->name('settings.get-value');
-        Route::post('settings/{key}/value', [SettingController::class, 'setValue'])->name('settings.set-value');
-    });
 });

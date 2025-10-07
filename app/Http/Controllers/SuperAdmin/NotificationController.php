@@ -15,9 +15,44 @@ class NotificationController extends Controller
      */
     public function index(Request $request)
     {
+        // Build base query for notifications
+        $query = Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id'); // Include broadcast notifications
+        });
+
+        // Apply filters
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->filled('status')) {
+            if ($request->status === 'read') {
+                $query->where('is_read', true);
+            } elseif ($request->status === 'unread') {
+                $query->where('is_read', false);
+            }
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('message', 'like', "%{$search}%");
+            });
+        }
+
         // Handle AJAX request for dropdown
         if ($request->ajax() || $request->wantsJson() || $request->query('ajax')) {
-            $notifications = Notification::where('user_id', Auth::id())
+            $notifications = (clone $query)
                 ->unread()
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
@@ -25,16 +60,20 @@ class NotificationController extends Controller
 
             return response()->json([
                 'notifications' => $notifications,
-                'unread_count' => Notification::where('user_id', Auth::id())->unread()->count()
+                'unread_count' => (clone $query)->unread()->count()
             ]);
         }
 
         // Handle page request for full view
-        $notifications = Notification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $notifications = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('superadmin.notifications.index', compact('notifications'));
+        // Get filter options
+        $types = Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->distinct()->pluck('type')->filter()->values();
+
+        return view('superadmin.notifications.index', compact('notifications', 'types'));
     }
 
     /**
@@ -42,8 +81,10 @@ class NotificationController extends Controller
      */
     public function markAsRead(Request $request, $notification)
     {
-        $notification = Notification::where('user_id', Auth::id())
-            ->findOrFail($notification);
+        $notification = Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->findOrFail($notification);
 
         $notification->markAsRead();
 
@@ -55,7 +96,10 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        Notification::where('user_id', Auth::id())
+        Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })
             ->unread()
             ->update(['is_read' => true]);
 
@@ -67,8 +111,10 @@ class NotificationController extends Controller
      */
     public function destroy($notification)
     {
-        $notification = Notification::where('user_id', Auth::id())
-            ->findOrFail($notification);
+        $notification = Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->findOrFail($notification);
 
         $notification->delete();
 
@@ -80,7 +126,10 @@ class NotificationController extends Controller
      */
     public function destroyAll()
     {
-        Notification::where('user_id', Auth::id())->delete();
+        Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })->delete();
 
         return response()->json(['success' => true]);
     }
@@ -90,7 +139,10 @@ class NotificationController extends Controller
      */
     public function unreadCount()
     {
-        $count = Notification::where('user_id', Auth::id())
+        $count = Notification::where(function ($query) {
+            $query->where('user_id', Auth::id())
+                ->orWhereNull('user_id');
+        })
             ->unread()
             ->count();
 

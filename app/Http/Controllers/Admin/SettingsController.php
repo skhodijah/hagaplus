@@ -10,6 +10,30 @@ use Illuminate\Support\Facades\Cache;
 
 class SettingsController extends Controller
 {
+    public function profileSettings(Request $request)
+    {
+        $instansiId = Auth::user()->instansi_id;
+
+        // Get existing settings
+        $settings = Setting::where('instansi_id', $instansiId)
+            ->pluck('value', 'key')
+            ->toArray();
+
+        // Merge with defaults
+        $allSettings = [];
+        foreach ($this->defaultSettings as $key => $config) {
+            $allSettings[$key] = [
+                'value' => $settings[$key] ?? $config['default'],
+                'config' => $config
+            ];
+        }
+
+        return view('admin.settings.profile', [
+            'user' => $request->user(),
+            'settings' => $allSettings
+        ]);
+    }
+
     protected $defaultSettings = [
         // Company Information
         'company_name' => ['type' => 'text', 'label' => 'Company Name', 'default' => '', 'category' => 'company'],

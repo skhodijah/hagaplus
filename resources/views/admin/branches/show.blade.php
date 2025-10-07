@@ -66,12 +66,77 @@
                 <!-- Location Map -->
                 @if($branch->latitude && $branch->longitude)
                     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Location Map</h3>
-                        <div id="map-container" class="w-full h-64 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                            <div class="text-center text-gray-500 dark:text-gray-400">
-                                <i class="fa-solid fa-map-marked-alt text-3xl mb-2"></i>
-                                <p>Map preview for {{ $branch->name }}</p>
-                                <p class="text-xs">{{ number_format($branch->latitude, 6) }}, {{ number_format($branch->longitude, 6) }}</p>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white">Location Map</h3>
+                            <div class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                <i class="fa-solid fa-map-marker-alt"></i>
+                                <span>{{ number_format($branch->latitude, 6) }}, {{ number_format($branch->longitude, 6) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Map Container -->
+                        <div class="relative">
+                            <div id="map-container" class="w-full h-80 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden shadow-inner"></div>
+
+                            <!-- Map Controls -->
+                            <div class="absolute top-3 right-3 flex flex-col space-y-2">
+                                <button id="fullscreen-btn" class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 p-2 rounded-lg shadow-lg transition-colors duration-200" title="Fullscreen">
+                                    <i class="fa-solid fa-expand"></i>
+                                </button>
+                                <button id="locate-btn" class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 p-2 rounded-lg shadow-lg transition-colors duration-200" title="Center on location">
+                                    <i class="fa-solid fa-crosshairs"></i>
+                                </button>
+                            </div>
+
+                            <!-- Map Info Overlay -->
+                            <div class="absolute bottom-3 left-3 bg-white dark:bg-gray-800 px-3 py-2 rounded-lg shadow-lg">
+                                <div class="flex items-center space-x-2 text-sm">
+                                    <div class="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                                    <span class="text-gray-700 dark:text-gray-300 font-medium">{{ $branch->name }}</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Attendance Radius: {{ $branch->radius }}m
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Map Statistics -->
+                        <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-map-pin text-blue-600 dark:text-blue-400"></i>
+                                    <div>
+                                        <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Latitude</p>
+                                        <p class="text-sm font-semibold text-blue-900 dark:text-blue-100">{{ number_format($branch->latitude, 4) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-map-pin text-green-600 dark:text-green-400"></i>
+                                    <div>
+                                        <p class="text-xs text-green-600 dark:text-green-400 font-medium">Longitude</p>
+                                        <p class="text-sm font-semibold text-green-900 dark:text-green-100">{{ number_format($branch->longitude, 4) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-circle-dot text-purple-600 dark:text-purple-400"></i>
+                                    <div>
+                                        <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Radius</p>
+                                        <p class="text-sm font-semibold text-purple-900 dark:text-purple-100">{{ $branch->radius }}m</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fa-solid fa-clock text-orange-600 dark:text-orange-400"></i>
+                                    <div>
+                                        <p class="text-xs text-orange-600 dark:text-orange-400 font-medium">Timezone</p>
+                                        <p class="text-sm font-semibold text-orange-900 dark:text-orange-100">{{ $branch->timezone }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -228,4 +293,157 @@
             </a>
         </div>
     </div>
+
+    <!-- OpenStreetMap Integration -->
+    @if($branch->latitude && $branch->longitude)
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize map
+            const map = L.map('map-container', {
+                center: [{{ $branch->latitude }}, {{ $branch->longitude }}],
+                zoom: 16,
+                zoomControl: true,
+                scrollWheelZoom: true,
+                doubleClickZoom: true,
+                boxZoom: true,
+                keyboard: true,
+                dragging: true,
+                touchZoom: true
+            });
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19,
+                minZoom: 3
+            }).addTo(map);
+
+            // Add marker for branch location
+            const branchIcon = L.divIcon({
+                html: `
+                    <div class="flex items-center justify-center w-12 h-12 bg-blue-500 rounded-full shadow-lg border-4 border-white">
+                        <i class="fa-solid fa-building text-white text-lg"></i>
+                    </div>
+                `,
+                className: 'custom-branch-marker',
+                iconSize: [48, 48],
+                iconAnchor: [24, 24]
+            });
+
+            const marker = L.marker([{{ $branch->latitude }}, {{ $branch->longitude }}], {
+                icon: branchIcon
+            }).addTo(map);
+
+            // Add attendance radius circle
+            const radiusCircle = L.circle([{{ $branch->latitude }}, {{ $branch->longitude }}], {
+                color: '#ef4444',
+                fillColor: '#fca5a5',
+                fillOpacity: 0.2,
+                weight: 2,
+                radius: {{ $branch->radius }}
+            }).addTo(map);
+
+            // Add popup to marker
+            marker.bindPopup(`
+                <div class="text-center">
+                    <h4 class="font-semibold text-gray-900">{{ $branch->name }}</h4>
+                    <p class="text-sm text-gray-600">{{ $branch->address }}</p>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <div>Lat: {{ number_format($branch->latitude, 6) }}</div>
+                        <div>Lng: {{ number_format($branch->longitude, 6) }}</div>
+                        <div>Radius: {{ $branch->radius }}m</div>
+                    </div>
+                </div>
+            `);
+
+            // Add radius circle popup
+            radiusCircle.bindPopup(`
+                <div class="text-center">
+                    <h4 class="font-semibold text-red-600">Attendance Zone</h4>
+                    <p class="text-sm text-gray-600">Radius: {{ $branch->radius }} meters</p>
+                    <p class="text-xs text-gray-500">Employees must be within this area to check attendance</p>
+                </div>
+            `);
+
+            // Add scale control
+            L.control.scale({
+                position: 'bottomleft',
+                metric: true,
+                imperial: false
+            }).addTo(map);
+
+            // Fullscreen functionality
+            document.getElementById('fullscreen-btn').addEventListener('click', function() {
+                const mapContainer = document.getElementById('map-container');
+                if (mapContainer.requestFullscreen) {
+                    mapContainer.requestFullscreen();
+                } else if (mapContainer.webkitRequestFullscreen) {
+                    mapContainer.webkitRequestFullscreen();
+                } else if (mapContainer.msRequestFullscreen) {
+                    mapContainer.msRequestFullscreen();
+                }
+                map.invalidateSize();
+            });
+
+            // Center on location functionality
+            document.getElementById('locate-btn').addEventListener('click', function() {
+                map.setView([{{ $branch->latitude }}, {{ $branch->longitude }}], 18);
+                marker.openPopup();
+            });
+
+            // Handle fullscreen changes
+            document.addEventListener('fullscreenchange', function() {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            });
+
+            document.addEventListener('webkitfullscreenchange', function() {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            });
+
+            document.addEventListener('mozfullscreenchange', function() {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            });
+
+            document.addEventListener('MSFullscreenChange', function() {
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 100);
+            });
+
+            // Add custom CSS for better map styling
+            const style = document.createElement('style');
+            style.textContent = `
+                .leaflet-control-container .leaflet-routing-container-hide {
+                    display: none;
+                }
+                .custom-branch-marker {
+                    background: transparent !important;
+                    border: none !important;
+                }
+                .leaflet-popup-content-wrapper {
+                    border-radius: 8px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                }
+                .leaflet-popup-tip {
+                    background-color: white;
+                }
+                .leaflet-control-scale {
+                    border: 1px solid rgba(255, 255, 255, 0.8);
+                    border-radius: 4px;
+                    background: rgba(255, 255, 255, 0.8);
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+    @endif
 </x-admin-layout>

@@ -52,17 +52,6 @@
             </div>
         </x-action-button>
         
-        <x-action-button
-            href="{{ route('superadmin.system.settings.index') }}"
-            color="purple"
-            icon="fas fa-cog"
-            class="h-full"
-        >
-            <div class="space-y-1">
-                <div class="font-semibold text-sm">Pengaturan Sistem</div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Konfigurasi aplikasi</p>
-            </div>
-        </x-action-button>
 
         <x-action-button
             href="#"

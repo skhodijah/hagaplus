@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\EmployeePolicyController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -39,6 +40,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/subscription/upgrade', [SubscriptionController::class, 'requestUpgrade'])->name('subscription.upgrade');
     Route::post('/subscription/payment/{paymentId}/process', [SubscriptionController::class, 'processPayment'])->name('subscription.process-payment');
     Route::post('/subscription/payment/{paymentId}/cancel', [SubscriptionController::class, 'cancelPayment'])->name('subscription.cancel-payment');
+
+    // Employee Policies
+    Route::resource('employee-policies', EmployeePolicyController::class);
+    Route::patch('employee-policies/{employee_policy}/toggle-status', [EmployeePolicyController::class, 'toggleStatus'])->name('employee-policies.toggle-status');
 
     // Notifications
     Route::get('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');

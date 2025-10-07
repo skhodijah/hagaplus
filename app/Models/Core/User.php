@@ -99,4 +99,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Admin\Payroll::class);
     }
+
+    /**
+     * Get the employee policy for the user
+     */
+    public function employeePolicy()
+    {
+        return $this->hasOne(\App\Models\EmployeePolicy::class, 'employee_id');
+    }
+
+    /**
+     * Get the active employee policy for the user
+     */
+    public function activeEmployeePolicy()
+    {
+        return $this->hasOne(\App\Models\EmployeePolicy::class, 'employee_id')
+            ->where('is_active', true)
+            ->currentlyEffective();
+    }
 }

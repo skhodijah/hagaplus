@@ -129,7 +129,7 @@ class DashboardController extends Controller
             $monthlySubscriptionCounts = collect();
             for ($i = 5; $i >= 0; $i--) {
                 $date = now()->subDays($i * 5);
-                $monthlySubscriptionCounts->push((object)[
+                $monthlySubscriptionCounts->push((object) [
                     'ym' => $date->format('Y-m'),
                     'total' => rand(1, 10)
                 ]);
@@ -141,7 +141,7 @@ class DashboardController extends Controller
             $packages = Package::take(3)->get();
             $packageDistribution = collect();
             foreach ($packages as $package) {
-                $packageDistribution->push((object)[
+                $packageDistribution->push((object) [
                     'package_id' => $package->id,
                     'total' => rand(1, 5),
                     'package' => $package
@@ -202,25 +202,25 @@ class DashboardController extends Controller
         // Calculate growth percentages
         $currentMonthInstansi = Instansi::whereMonth('created_at', now()->month)->count();
         $lastMonthInstansi = Instansi::whereMonth('created_at', now()->subMonth()->month)->count();
-        $instansiGrowth = $lastMonthInstansi > 0 
+        $instansiGrowth = $lastMonthInstansi > 0
             ? round((($currentMonthInstansi - $lastMonthInstansi) / $lastMonthInstansi) * 100, 1) . '%'
             : '0%';
-            
+
         $currentMonthActive = Instansi::where('status_langganan', 'active')
             ->whereMonth('updated_at', now()->month)
             ->count();
         $lastMonthActive = Instansi::where('status_langganan', 'active')
             ->whereMonth('updated_at', now()->subMonth()->month)
             ->count();
-        $activeInstansiGrowth = $lastMonthActive > 0 
+        $activeInstansiGrowth = $lastMonthActive > 0
             ? round((($currentMonthActive - $lastMonthActive) / $lastMonthActive) * 100, 1) . '%'
             : '0%';
-            
+
         // Calculate revenue growth
-        $revenueGrowth = $lastMonthRevenue > 0 
+        $revenueGrowth = $lastMonthRevenue > 0
             ? round((($thisMonthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100, 1) . '%'
             : '0%';
-            
+
         // Get most popular package
         $mostPopularPackageData = Subscription::select('package_id', DB::raw('count(*) as total'))
             ->where('status', 'active')
@@ -228,13 +228,13 @@ class DashboardController extends Controller
             ->with('package')
             ->orderByDesc('total')
             ->first();
-            
+
         $mostPopularPackage = $mostPopularPackageData ? $mostPopularPackageData->package->nama_paket : 'N/A';
         $mostPopularPackageCount = $mostPopularPackageData ? $mostPopularPackageData->total : 0;
-        
+
         // Calculate average MRR per instansi
-        $avgMrr = $totalActiveInstansi > 0 
-            ? Subscription::where('status', 'active')->avg('price') 
+        $avgMrr = $totalActiveInstansi > 0
+            ? Subscription::where('status', 'active')->avg('price')
             : 0;
         $avgMrrFormatted = $avgMrr > 0 ? 'Rp ' . number_format($avgMrr, 0, ',', '.') : '-';
 
@@ -343,13 +343,250 @@ class DashboardController extends Controller
 
     public function reportsActivities(Request $request)
     {
-        // Activities & notifications
-        $recentSubscriptionLogs = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->latest()->take(10)->get()
-            : collect();
+        $period = $request->get('period', '7d');
+        $since = match ($period) {
+            '1d' => now()->subDay(),
+            '7d' => now()->subDays(7),
+            '30d' => now()->subDays(30),
+            '90d' => now()->subDays(90),
+            default => now()->subDays(7),
+        };
+
+        // Collect all activities in PHP arrays instead of complex UNION queries
+        $allActivities = [];
+
+        // User Activities
+        $userCreations = DB::table('users')
+            ->selectRaw("
+                'User Registration' as activity_type,
+                'user' as entity_type,
+                id as entity_id,
+                name as description,
+                created_at as activity_date,
+                'success' as status
+            ")
+            ->where('created_at', '>=', $since)
+            ->get();
+
+        $userUpdates = DB::table('users')
+            ->selectRaw("
+                'User Profile Update' as activity_type,
+                'user' as entity_type,
+                id as entity_id,
+                CONCAT('Updated profile for ', name) as description,
+                updated_at as activity_date,
+                'info' as status
+            ")
+            ->where('updated_at', '>=', $since)
+            ->whereColumn('updated_at', '>', 'created_at')
+            ->get();
+
+        $allActivities = array_merge($allActivities, $userCreations->toArray(), $userUpdates->toArray());
+
+        // Subscription Activities
+        $subscriptionCreations = DB::table('subscriptions')
+            ->leftJoin('instansis', 'subscriptions.instansi_id', '=', 'instansis.id')
+            ->leftJoin('packages', 'subscriptions.package_id', '=', 'packages.id')
+            ->selectRaw("
+                CASE
+                    WHEN subscriptions.status = 'active' THEN 'Subscription Activated'
+                    WHEN subscriptions.status = 'inactive' THEN 'Subscription Deactivated'
+                    WHEN subscriptions.status = 'expired' THEN 'Subscription Expired'
+                    WHEN subscriptions.status = 'cancelled' THEN 'Subscription Cancelled'
+                    ELSE 'Subscription Created'
+                END as activity_type,
+                'subscription' as entity_type,
+                subscriptions.id as entity_id,
+                CONCAT('Subscription for ', COALESCE(instansis.nama_instansi, 'Unknown Instansi'), ' - ', COALESCE(packages.name, 'Unknown Package')) as description,
+                subscriptions.created_at as activity_date,
+                subscriptions.status as status
+            ")
+            ->where('subscriptions.created_at', '>=', $since)
+            ->get();
+
+        $subscriptionUpdates = DB::table('subscriptions')
+            ->leftJoin('instansis', 'subscriptions.instansi_id', '=', 'instansis.id')
+            ->selectRaw("
+                'Subscription Updated' as activity_type,
+                'subscription' as entity_type,
+                subscriptions.id as entity_id,
+                CONCAT('Updated subscription for ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
+                subscriptions.updated_at as activity_date,
+                subscriptions.status as status
+            ")
+            ->where('subscriptions.updated_at', '>=', $since)
+            ->whereColumn('subscriptions.updated_at', '>', 'subscriptions.created_at')
+            ->get();
+
+        $allActivities = array_merge($allActivities, $subscriptionCreations->toArray(), $subscriptionUpdates->toArray());
+
+        // Payment Activities
+        $paymentActivities = DB::table('subscription_requests')
+            ->leftJoin('instansis', 'subscription_requests.instansi_id', '=', 'instansis.id')
+            ->selectRaw("
+                CASE
+                    WHEN subscription_requests.payment_status = 'paid' THEN 'Payment Completed'
+                    WHEN subscription_requests.payment_status = 'pending' THEN 'Payment Requested'
+                    WHEN subscription_requests.payment_status = 'cancelled' THEN 'Payment Cancelled'
+                    ELSE 'Payment Created'
+                END as activity_type,
+                'payment' as entity_type,
+                subscription_requests.id as entity_id,
+                CONCAT('Payment of Rp ', subscription_requests.amount, ' for ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
+                subscription_requests.created_at as activity_date,
+                subscription_requests.payment_status as status
+            ")
+            ->where('subscription_requests.created_at', '>=', $since)
+            ->get();
+
+        $allActivities = array_merge($allActivities, $paymentActivities->toArray());
+
+        // Support Request Activities
+        $supportCreations = DB::table('support_requests')
+            ->leftJoin('instansis', 'support_requests.instansi_id', '=', 'instansis.id')
+            ->selectRaw("
+                CASE
+                    WHEN support_requests.status = 'open' THEN 'Support Request Opened'
+                    WHEN support_requests.status = 'in_progress' THEN 'Support Request In Progress'
+                    WHEN support_requests.status = 'resolved' THEN 'Support Request Resolved'
+                    WHEN support_requests.status = 'closed' THEN 'Support Request Closed'
+                    ELSE 'Support Request Created'
+                END as activity_type,
+                'support' as entity_type,
+                support_requests.id as entity_id,
+                CONCAT('Support request from ', COALESCE(instansis.nama_instansi, 'Unknown Instansi'), ': ', LEFT(support_requests.subject, 50)) as description,
+                support_requests.created_at as activity_date,
+                support_requests.status as status
+            ")
+            ->where('support_requests.created_at', '>=', $since)
+            ->get();
+
+        $supportUpdates = DB::table('support_requests')
+            ->leftJoin('instansis', 'support_requests.instansi_id', '=', 'instansis.id')
+            ->selectRaw("
+                'Support Request Updated' as activity_type,
+                'support' as entity_type,
+                support_requests.id as entity_id,
+                CONCAT('Updated support request from ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
+                support_requests.updated_at as activity_date,
+                support_requests.status as status
+            ")
+            ->where('support_requests.updated_at', '>=', $since)
+            ->whereColumn('support_requests.updated_at', '>', 'support_requests.created_at')
+            ->get();
+
+        $allActivities = array_merge($allActivities, $supportCreations->toArray(), $supportUpdates->toArray());
+
+        // Instansi Activities
+        $instansiCreations = DB::table('instansis')
+            ->selectRaw("
+                'Instansi Created' as activity_type,
+                'instansi' as entity_type,
+                id as entity_id,
+                CONCAT('New instansi: ', nama_instansi) as description,
+                created_at as activity_date,
+                CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END as status
+            ")
+            ->where('created_at', '>=', $since)
+            ->get();
+
+        $instansiUpdates = DB::table('instansis')
+            ->selectRaw("
+                'Instansi Updated' as activity_type,
+                'instansi' as entity_type,
+                id as entity_id,
+                CONCAT('Updated instansi: ', nama_instansi) as description,
+                updated_at as activity_date,
+                CASE WHEN is_active = 1 THEN 'active' ELSE 'inactive' END as status
+            ")
+            ->where('updated_at', '>=', $since)
+            ->whereColumn('updated_at', '>', 'created_at')
+            ->get();
+
+        $allActivities = array_merge($allActivities, $instansiCreations->toArray(), $instansiUpdates->toArray());
+
+        // Employee Activities
+        $employeeCreations = DB::table('employees')
+            ->leftJoin('instansis', 'employees.instansi_id', '=', 'instansis.id')
+            ->leftJoin('users', 'employees.user_id', '=', 'users.id')
+            ->selectRaw("
+                'Employee Added' as activity_type,
+                'employee' as entity_type,
+                employees.id as entity_id,
+                CONCAT('New employee: ', COALESCE(users.name, 'Unknown'), ' at ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
+                employees.created_at as activity_date,
+                employees.status as status
+            ")
+            ->where('employees.created_at', '>=', $since)
+            ->get();
+
+        $employeeUpdates = DB::table('employees')
+            ->leftJoin('instansis', 'employees.instansi_id', '=', 'instansis.id')
+            ->leftJoin('users', 'employees.user_id', '=', 'users.id')
+            ->selectRaw("
+                'Employee Updated' as activity_type,
+                'employee' as entity_type,
+                employees.id as entity_id,
+                CONCAT('Updated employee: ', COALESCE(users.name, 'Unknown'), ' at ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
+                employees.updated_at as activity_date,
+                employees.status as status
+            ")
+            ->where('employees.updated_at', '>=', $since)
+            ->whereColumn('employees.updated_at', '>', 'employees.created_at')
+            ->get();
+
+        $allActivities = array_merge($allActivities, $employeeCreations->toArray(), $employeeUpdates->toArray());
+
+        // Sort activities by date and limit to 50
+        usort($allActivities, function ($a, $b) {
+            return strtotime($b->activity_date) - strtotime($a->activity_date);
+        });
+        $recentActivities = array_slice($allActivities, 0, 50);
+
+        // Convert to collection for view compatibility
+        $recentActivities = collect($recentActivities)->map(function ($activity) {
+            $activity->activity_date = \Carbon\Carbon::parse($activity->activity_date);
+            return $activity;
+        });
+
+        // Activity counts by type
+        $activityCounts = [
+            'users' => count($userCreations) + count($userUpdates),
+            'subscriptions' => count($subscriptionCreations) + count($subscriptionUpdates),
+            'payments' => count($paymentActivities),
+            'support' => count($supportCreations) + count($supportUpdates),
+            'instansis' => count($instansiCreations) + count($instansiUpdates),
+            'employees' => count($employeeCreations) + count($employeeUpdates),
+        ];
+
+        $totalActivities = array_sum($activityCounts);
+
+        // Activity trends (last 7 days)
+        $activityTrends = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dayActivities = 0;
+
+            // Count activities for this day across all tables
+            $dayActivities += DB::table('users')->whereDate('created_at', $date)->count();
+            $dayActivities += DB::table('subscriptions')->whereDate('created_at', $date)->count();
+            $dayActivities += DB::table('subscription_requests')->whereDate('created_at', $date)->count();
+            $dayActivities += DB::table('support_requests')->whereDate('created_at', $date)->count();
+            $dayActivities += DB::table('instansis')->whereDate('created_at', $date)->count();
+            $dayActivities += DB::table('employees')->whereDate('created_at', $date)->count();
+
+            $activityTrends[] = [
+                'date' => $date->format('M j'),
+                'count' => $dayActivities
+            ];
+        }
 
         return view('superadmin.reports.activities', compact(
-            'recentSubscriptionLogs'
+            'period',
+            'totalActivities',
+            'activityCounts',
+            'recentActivities',
+            'activityTrends'
         ));
     }
 

@@ -58,6 +58,8 @@
 
                 <x-layout.sidebar-link :href="route('admin.branches.index')" icon="fa-solid fa-building" label="Branches" :active="request()->routeIs('admin.branches.*')" />
 
+                <x-layout.sidebar-link :href="route('admin.employee-policies.index')" icon="fa-solid fa-file-contract" label="Employee Policies" :active="request()->routeIs('admin.employee-policies.*')" />
+
                 <x-layout.sidebar-link :href="route('admin.settings.index')" icon="fa-solid fa-gear" label="Settings" :active="request()->routeIs('admin.settings.*')" />
             </nav>
 
@@ -88,7 +90,7 @@
                     </div>
                     <div class="flex items-center space-x-2">
                         @php
-                            $pendingPayments = \DB::table('payment_history')
+                            $pendingPayments = \DB::table('subscription_requests')
                                 ->where('instansi_id', Auth::user()->instansi_id ?? 1)
                                 ->where('payment_status', 'pending')
                                 ->count();
@@ -353,17 +355,9 @@
                                 
                                 <!-- Menu Items -->
                                 <div class="py-1">
-                                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <a href="{{ route('admin.settings.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         <i class="fa-solid fa-user-cog mr-3 text-gray-400"></i>
-                                        Profile Settings
-                                    </a>
-                                    <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fa-solid fa-cog mr-3 text-gray-400"></i>
-                                        Account Settings
-                                    </a>
-                                    <a href="{{ route('admin.settings.index') }}#notifications" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fa-solid fa-bell mr-3 text-gray-400"></i>
-                                        Notification Settings
+                                        Profile & Account Settings
                                     </a>
                                     <a href="#" onclick="alert('Help & Support feature coming soon!')" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                                         <i class="fa-solid fa-question-circle mr-3 text-gray-400"></i>

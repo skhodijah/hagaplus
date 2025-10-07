@@ -33,11 +33,11 @@ class SubscriptionController extends Controller
             ->get();
 
         // Get payment history
-        $paymentHistory = DB::table('payment_history')
-            ->leftJoin('packages', 'payment_history.package_id', '=', 'packages.id')
-            ->where('payment_history.instansi_id', $instansi->id)
-            ->select('payment_history.*', 'packages.name as package_name')
-            ->orderBy('payment_history.created_at', 'desc')
+        $paymentHistory = DB::table('subscription_requests')
+            ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
+            ->where('subscription_requests.instansi_id', $instansi->id)
+            ->select('subscription_requests.*', 'packages.name as package_name')
+            ->orderBy('subscription_requests.created_at', 'desc')
             ->get();
 
         // Get available packages
@@ -104,7 +104,7 @@ class SubscriptionController extends Controller
             $whatsappDetails = "perpanjangan subscription {$extensionMonths} bulan";
 
             // Create pending payment record
-            $paymentId = DB::table('payment_history')->insertGetId([
+            $paymentId = DB::table('subscription_requests')->insertGetId([
                 'instansi_id' => $instansi->id,
                 'package_id' => $currentSubscription->package_id,
                 'subscription_id' => $currentSubscription->id,
@@ -130,7 +130,7 @@ class SubscriptionController extends Controller
             $whatsappDetails = "upgrade subscription dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}";
 
             // Create pending payment record
-            $paymentId = DB::table('payment_history')->insertGetId([
+            $paymentId = DB::table('subscription_requests')->insertGetId([
                 'instansi_id' => $instansi->id,
                 'package_id' => $request->target_package_id,
                 'subscription_id' => $currentSubscription->id,
@@ -163,7 +163,7 @@ class SubscriptionController extends Controller
             $whatsappDetails = "perpanjangan subscription {$extensionMonths} bulan + upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}";
 
             // Create pending payment record
-            $paymentId = DB::table('payment_history')->insertGetId([
+            $paymentId = DB::table('subscription_requests')->insertGetId([
                 'instansi_id' => $instansi->id,
                 'package_id' => $request->target_package_id,
                 'subscription_id' => $currentSubscription->id,
@@ -191,13 +191,8 @@ class SubscriptionController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Create WhatsApp message with detailed information
-        $whatsappMessage = urlencode("Halo Admin, saya telah mengajukan {$whatsappDetails} untuk instansi {$instansi->nama_instansi}. Transaction ID: {$paymentId}. Jumlah: Rp " . number_format($totalAmount, 0, ',', '.') . ". Mohon segera diproses. Terima kasih!");
-
-        // Redirect to WhatsApp (you may need to configure the WhatsApp number)
-        $whatsappUrl = "https://wa.me/6281234567890?text={$whatsappMessage}"; // Replace with actual WhatsApp number
-
-        return redirect($whatsappUrl);
+        // Return success message - request has been created and superadmin will be notified
+        return redirect()->back()->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
     }
 
     /**
@@ -214,7 +209,7 @@ class SubscriptionController extends Controller
         $instansi = $user->instansi->load('package');
 
         // Check if there are already pending requests
-        $existingPendingRequest = DB::table('payment_history')
+        $existingPendingRequest = DB::table('subscription_requests')
             ->where('instansi_id', $instansi->id)
             ->where('payment_status', 'pending')
             ->exists();
@@ -243,7 +238,7 @@ class SubscriptionController extends Controller
         $totalPrice = $currentSubscription->price * $extensionMonths;
 
         // Create pending payment record
-        $paymentId = DB::table('payment_history')->insertGetId([
+        $paymentId = DB::table('subscription_requests')->insertGetId([
             'instansi_id' => $instansi->id,
             'package_id' => $currentSubscription->package_id,
             'subscription_id' => $currentSubscription->id,
@@ -264,7 +259,7 @@ class SubscriptionController extends Controller
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan Perpanjangan Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan perpanjangan subscription {$request->extension_months} bulan - " . route('superadmin.subscriptions.subscription-requests'),
+            'message' => "Instansi {$instansi->nama_instansi} mengajukan perpanjangan subscription {$request->extension_months} bulan. Klik untuk melihat detail.",
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
@@ -317,7 +312,7 @@ class SubscriptionController extends Controller
         }
 
         // Create pending payment record for upgrade
-        $paymentId = DB::table('payment_history')->insertGetId([
+        $paymentId = DB::table('subscription_requests')->insertGetId([
             'instansi_id' => $instansi->id,
             'package_id' => $request->target_package_id, // Target package
             'subscription_id' => $currentSubscription->id,
@@ -338,7 +333,7 @@ class SubscriptionController extends Controller
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan Upgrade Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name} - " . route('superadmin.subscriptions.subscription-requests'),
+            'message' => "Instansi {$instansi->nama_instansi} mengajukan upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}. Klik untuk melihat detail.",
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
@@ -354,7 +349,7 @@ class SubscriptionController extends Controller
     public function processPayment($paymentId)
     {
         $user = auth()->user();
-        $payment = DB::table('payment_history')
+        $payment = DB::table('subscription_requests')
             ->where('id', $paymentId)
             ->where('instansi_id', $user->instansi_id)
             ->where('payment_status', 'pending')
@@ -386,7 +381,7 @@ class SubscriptionController extends Controller
     {
         $user = auth()->user();
 
-        $updated = DB::table('payment_history')
+        $updated = DB::table('subscription_requests')
             ->where('id', $paymentId)
             ->where('instansi_id', $user->instansi_id)
             ->where('payment_status', 'pending')
@@ -456,7 +451,7 @@ class SubscriptionController extends Controller
         $pendingPayment = session('pending_payment');
         if ($pendingPayment && $pendingPayment->id) {
             // Update payment status to paid and set payment method
-            DB::table('payment_history')
+            DB::table('subscription_requests')
                 ->where('id', $pendingPayment->id)
                 ->update([
                     'payment_status' => 'paid',

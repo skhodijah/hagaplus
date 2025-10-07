@@ -357,7 +357,6 @@
         $isPackagesActive = request()->routeIs('superadmin.packages.*');
         $isFinancialActive = request()->routeIs('superadmin.financial.*');
         $isReportsActive = request()->routeIs('superadmin.analytics.*') || request()->routeIs('superadmin.reports.*');
-        $isSystemActive = request()->routeIs('superadmin.system.*');
     @endphp
     <div class="flex h-screen overflow-hidden">
         <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
@@ -382,10 +381,12 @@
                     <x-layout.sidebar-subitem :href="route('superadmin.support_requests.index')" label="Support Requests" :active="request()->routeIs('superadmin.support_requests.*')" />
                 </x-layout.sidebar-accordion>
 
+                <x-layout.sidebar-link :href="route('superadmin.users.index')" icon="fa-solid fa-users" label="User Management" :active="request()->routeIs('superadmin.users.*')" />
+
                 <x-layout.sidebar-accordion icon="fa-solid fa-receipt" label="Subscription Management" :open="$isSubscriptionsActive" target="menu-subscriptions">
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="All Subscriptions" :active="request()->routeIs('superadmin.subscriptions.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.analytics')" label="Subscription Analytics" :active="request()->routeIs('superadmin.subscriptions.analytics')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.subscription-requests')" label="Subscription Requests" :active="request()->routeIs('superadmin.subscriptions.subscription-requests')" :badge="\DB::table('payment_history')->where('payment_status', 'pending')->count()" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.subscription-requests')" label="Subscription Requests" :active="request()->routeIs('superadmin.subscriptions.subscription-requests')" :badge="\DB::table('subscription_requests')->where('payment_status', 'pending')->count()" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">
@@ -406,10 +407,6 @@
                     <x-layout.sidebar-subitem :href="route('superadmin.notifications.bulk')" label="Bulk Notifications" :active="request()->routeIs('superadmin.notifications.bulk')" />
                 </x-layout.sidebar-accordion>
 
-                <x-layout.sidebar-accordion icon="fa-solid fa-gear" label="System" :open="$isSystemActive" target="menu-system">
-                    <x-layout.sidebar-subitem :href="route('superadmin.system.health')" label="System Health" :active="request()->routeIs('superadmin.system.health')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.system.settings.index')" label="Settings" :active="request()->routeIs('superadmin.system.settings.*')" />
-                </x-layout.sidebar-accordion>
             </nav>
         </aside>
 
