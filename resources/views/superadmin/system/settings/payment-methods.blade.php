@@ -1,6 +1,6 @@
 <x-superadmin-layout>
     <div class="py-6 md:py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Header -->
             <div class="mb-6 md:mb-8">
                 <div class="flex items-center justify-between">
@@ -8,76 +8,152 @@
                         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Payment Methods</h1>
                         <p class="mt-1 text-gray-600 dark:text-gray-400">Manage available payment methods for subscriptions</p>
                     </div>
-                    <a href="{{ route('superadmin.system.settings.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                        <i class="fa-solid fa-arrow-left mr-2"></i>Back to Settings
-                    </a>
+                    <div class="flex space-x-3">
+                        <a href="{{ route('superadmin.subscriptions.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fa-solid fa-arrow-left mr-2"></i>Back to Subscriptions
+                        </a>
+                        <a href="{{ route('superadmin.payment-methods.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fa-solid fa-plus mr-2"></i>Add Payment Method
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Payment Methods List -->
-            <div class="bg-white dark:bg-gray-900 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Payment Methods</h2>
-                    <button type="button" onclick="showAddModal()" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fa-solid fa-plus mr-2"></i>Add Payment Method
-                    </button>
-                </div>
-
-                <form id="paymentMethodsForm" method="POST" action="{{ route('superadmin.system.settings.update-payment-methods') }}">
-                    @csrf
-                    <div id="paymentMethodsList" class="space-y-4">
-                        @foreach($paymentMethods as $index => $method)
-                        <div class="payment-method-item flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <div class="flex items-center space-x-4">
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="payment_methods[{{ $index }}][enabled]"
-                                           value="1"
-                                           {{ $method['enabled'] ?? true ? 'checked' : '' }}
-                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <input type="hidden" name="payment_methods[{{ $index }}][enabled]" value="0">
-                                </div>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="flex-1">
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value</label>
-                                            <input type="text"
-                                                   name="payment_methods[{{ $index }}][value]"
-                                                   value="{{ $method['value'] }}"
-                                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                                                   required>
-                                        </div>
-                                        <div class="flex-1">
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Label</label>
-                                            <input type="text"
-                                                   name="payment_methods[{{ $index }}][label]"
-                                                   value="{{ $method['label'] }}"
-                                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white text-sm"
-                                                   required>
-                                        </div>
+            <!-- Payment Methods Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @forelse($paymentMethods as $paymentMethod)
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                @if($paymentMethod->type === 'qris')
+                                    <div class="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-qrcode text-purple-600 dark:text-purple-400"></i>
                                     </div>
+                                @elseif($paymentMethod->type === 'bank_transfer')
+                                    <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-building-columns text-blue-600 dark:text-blue-400"></i>
+                                    </div>
+                                @else
+                                    <div class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fa-solid fa-mobile-screen-button text-green-600 dark:text-green-400"></i>
+                                    </div>
+                                @endif
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $paymentMethod->name }}</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 capitalize">{{ str_replace('_', ' ', $paymentMethod->type) }}</p>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2">
-                                @if(count($paymentMethods) > 1)
-                                <button type="button" onclick="deletePaymentMethod('{{ $method['value'] }}', this)" class="text-red-600 hover:text-red-800 p-2">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                                @endif
-                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                    <i class="fa-solid fa-grip-vertical"></i>
-                                </div>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $paymentMethod->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' }}">
+                                    {{ $paymentMethod->is_active ? 'Active' : 'Inactive' }}
+                                </span>
                             </div>
                         </div>
-                        @endforeach
                     </div>
 
-                    <div class="mt-6 flex items-center justify-end space-x-3">
-                        <button type="submit" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                            <i class="fa-solid fa-save mr-2"></i>Save Changes
-                        </button>
+                    <!-- Content -->
+                    <div class="px-6 py-4">
+                        @if($paymentMethod->type === 'bank_transfer')
+                            <div class="space-y-2">
+                                @if($paymentMethod->account_name)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account Name</label>
+                                        <p class="text-sm text-gray-900 dark:text-white">{{ $paymentMethod->account_name }}</p>
+                                    </div>
+                                @endif
+                                @if($paymentMethod->account_number)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account Number</label>
+                                        <p class="text-sm text-gray-900 dark:text-white font-mono">{{ $paymentMethod->account_number }}</p>
+                                    </div>
+                                @endif
+                                @if($paymentMethod->bank_name)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bank</label>
+                                        <p class="text-sm text-gray-900 dark:text-white">{{ $paymentMethod->bank_name }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @elseif($paymentMethod->type === 'qris')
+                            <div class="space-y-2">
+                                @if($paymentMethod->qris_image)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">QRIS Code</label>
+                                        <div class="mt-2">
+                                            <img src="{{ $paymentMethod->qris_image_url }}" alt="QRIS Code" class="w-24 h-24 object-contain border border-gray-200 dark:border-gray-600 rounded">
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="text-center py-4">
+                                        <i class="fa-solid fa-qrcode text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">No QRIS image uploaded</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="space-y-2">
+                                @if($paymentMethod->account_number)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Phone/Account</label>
+                                        <p class="text-sm text-gray-900 dark:text-white">{{ $paymentMethod->account_number }}</p>
+                                    </div>
+                                @endif
+                                @if($paymentMethod->account_name)
+                                    <div>
+                                        <label class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Account Name</label>
+                                        <p class="text-sm text-gray-900 dark:text-white">{{ $paymentMethod->account_name }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if($paymentMethod->description)
+                            <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ $paymentMethod->description }}</p>
+                            </div>
+                        @endif
                     </div>
-                </form>
+
+                    <!-- Actions -->
+                    <div class="px-6 py-3 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                        <div class="flex items-center justify-between">
+                            <form method="POST" action="{{ route('superadmin.payment-methods.toggle-status', $paymentMethod) }}" class="inline">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="text-sm {{ $paymentMethod->is_active ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800' }} font-medium">
+                                    {{ $paymentMethod->is_active ? 'Deactivate' : 'Activate' }}
+                                </button>
+                            </form>
+                            <div class="flex space-x-3">
+                                <a href="{{ route('superadmin.payment-methods.edit', $paymentMethod) }}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Edit
+                                </a>
+                                <form method="POST" action="{{ route('superadmin.payment-methods.destroy', $paymentMethod) }}"
+                                      onsubmit="return confirm('Are you sure you want to delete this payment method?')" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="col-span-full">
+                    <div class="text-center py-12">
+                        <i class="fa-solid fa-credit-card text-gray-400 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Payment Methods</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">Get started by adding your first payment method.</p>
+                        <a href="{{ route('superadmin.payment-methods.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fa-solid fa-plus mr-2"></i>Add Payment Method
+                        </a>
+                    </div>
+                </div>
+                @endforelse
             </div>
 
             <!-- Information Card -->
@@ -101,111 +177,9 @@
         </div>
     </div>
 
-    <!-- Add Payment Method Modal -->
-    <div id="addModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Add Payment Method</h3>
-                    <button onclick="closeAddModal()" class="text-gray-400 hover:text-gray-600">
-                        <i class="fa-solid fa-times"></i>
-                    </button>
-                </div>
-
-                <form id="addPaymentMethodForm" class="space-y-4">
-                    @csrf
-                    <div>
-                        <label for="new_value" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Value *</label>
-                        <input type="text" id="new_value" name="value" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Internal identifier (e.g., 'transfer', 'cash')</p>
-                    </div>
-
-                    <div>
-                        <label for="new_label" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Label *</label>
-                        <input type="text" id="new_label" name="label" class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Display name (e.g., 'Transfer Bank', 'Tunai')</p>
-                    </div>
-
-                    <div class="flex items-center justify-end space-x-3 pt-4">
-                        <button type="button" onclick="closeAddModal()" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-400 dark:hover:bg-gray-500">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                            <i class="fa-solid fa-plus mr-1"></i>Add Method
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <script>
-        // Show add modal
-        function showAddModal() {
-            document.getElementById('addModal').classList.remove('hidden');
-        }
 
-        // Close add modal
-        function closeAddModal() {
-            document.getElementById('addModal').classList.add('hidden');
-            document.getElementById('addPaymentMethodForm').reset();
-        }
-
-        // Delete payment method
-        function deletePaymentMethod(value, buttonElement) {
-            if (confirm('Are you sure you want to delete this payment method? This action cannot be undone.')) {
-                fetch('{{ route("superadmin.system.settings.delete-payment-method") }}', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ value: value })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Remove the payment method item from DOM
-                        buttonElement.closest('.payment-method-item').remove();
-                        alert('Payment method deleted successfully.');
-                    } else {
-                        alert('Error deleting payment method.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error deleting payment method.');
-                });
-            }
-        }
-
-        // Handle add payment method form
-        document.getElementById('addPaymentMethodForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-
-            fetch('{{ route("superadmin.system.settings.add-payment-method") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload the page to show the new payment method
-                    location.reload();
-                } else {
-                    alert('Error adding payment method: ' + (data.message || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error adding payment method.');
-            });
-        });
 
         // Make payment method items sortable (drag and drop)
         document.addEventListener('DOMContentLoaded', function() {

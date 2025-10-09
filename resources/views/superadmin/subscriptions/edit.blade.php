@@ -94,21 +94,6 @@
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Harga akan otomatis terupdate saat paket dipilih</p>
                         </div>
 
-                        <div>
-                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Metode Pembayaran <span class="text-red-500">*</span></label>
-                            <select name="payment_method" id="payment_method" required
-                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('payment_method') border-red-300 dark:border-red-600 @enderror">
-                                <option value="">Pilih Metode Pembayaran</option>
-                                @foreach($enabledPaymentMethods as $method)
-                                    <option value="{{ $method['value'] }}" {{ old('payment_method', (isset($pendingPayment) && $pendingPayment ? $pendingPayment->payment_method : '')) == $method['value'] ? 'selected' : '' }}>
-                                        {{ $method['label'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('payment_method')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
 
                         <div class="md:col-span-2">
                             <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">

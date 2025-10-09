@@ -309,9 +309,15 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         @if($payment->payment_status == 'pending')
                                             <div class="flex space-x-2">
-                                                <button onclick="showPaymentDetail({{ $payment->id }})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                                                    Detail
-                                                </button>
+                                                @if($payment->payment_proof)
+                                                    <button onclick="showPaymentDetail({{ $payment->id }})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
+                                                        Detail
+                                                    </button>
+                                                @else
+                                                    <a href="{{ route('admin.subscription.transaction', $payment->id) }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
+                                                        Continue Payment
+                                                    </a>
+                                                @endif
                                                 <form method="POST" action="{{ route('admin.subscription.cancel-payment', $payment->id) }}" class="inline"
                                                       onsubmit="return confirm('Apakah Anda yakin ingin membatalkan permintaan ini?')">
                                                     @csrf

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PayrollController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\SubscriptionController;
+use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\EmployeePolicyController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
     // Settings
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/settings/profile', [SettingsController::class, 'profileSettings'])->name('settings.profile');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/reset', [SettingsController::class, 'reset'])->name('settings.reset');
 
@@ -40,6 +42,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::post('/subscription/upgrade', [SubscriptionController::class, 'requestUpgrade'])->name('subscription.upgrade');
     Route::post('/subscription/payment/{paymentId}/process', [SubscriptionController::class, 'processPayment'])->name('subscription.process-payment');
     Route::post('/subscription/payment/{paymentId}/cancel', [SubscriptionController::class, 'cancelPayment'])->name('subscription.cancel-payment');
+
+    // Transaction management
+    Route::get('/subscription/transaction/{requestId}', [TransactionController::class, 'show'])->name('subscription.transaction');
+    Route::post('/subscription/transaction/{requestId}/process', [TransactionController::class, 'processPayment'])->name('subscription.transaction.process');
 
     // Employee Policies
     Route::resource('employee-policies', EmployeePolicyController::class);

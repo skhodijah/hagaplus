@@ -152,7 +152,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
     <script src="https://kit.fontawesome.com/8c8ccf764d.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-Sl1fL0x2y5m0mXQmZs7q8w9mK3Yk8wVqf9VQf8lYp4mDk8Qxg3m6Jrj0D7n6o2o1g7l5xj5m1n9m0z2yXb7aYw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Global loader management
@@ -353,7 +353,7 @@
     </div>
     @php
         $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.support_requests.*');
-        $isSubscriptionsActive = request()->routeIs('superadmin.subscriptions.*');
+        $isSubscriptionsActive = request()->routeIs('superadmin.subscriptions.*') || request()->routeIs('superadmin.payment-methods.*');
         $isPackagesActive = request()->routeIs('superadmin.packages.*');
         $isFinancialActive = request()->routeIs('superadmin.financial.*');
         $isReportsActive = request()->routeIs('superadmin.analytics.*') || request()->routeIs('superadmin.reports.*');
@@ -386,7 +386,8 @@
                 <x-layout.sidebar-accordion icon="fa-solid fa-receipt" label="Subscription Management" :open="$isSubscriptionsActive" target="menu-subscriptions">
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.index')" label="All Subscriptions" :active="request()->routeIs('superadmin.subscriptions.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.analytics')" label="Subscription Analytics" :active="request()->routeIs('superadmin.subscriptions.analytics')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.subscription-requests')" label="Subscription Requests" :active="request()->routeIs('superadmin.subscriptions.subscription-requests')" :badge="\DB::table('subscription_requests')->where('payment_status', 'pending')->count()" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.subscriptions.subscription-requests')" label="Transaction Requests" :active="request()->routeIs('superadmin.subscriptions.subscription-requests')" :badge="\DB::table('subscription_requests')->where('payment_status', 'pending')->count()" />
+                    <x-layout.sidebar-subitem :href="route('superadmin.payment-methods.index')" label="Payment Methods" :active="request()->routeIs('superadmin.payment-methods.*')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">

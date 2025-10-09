@@ -14,15 +14,16 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            // Core system data
+                // Core system data
             PackageSeeder::class,
             InstansiSeeder::class,
             UserSeeder::class,
             SubscriptionSeeder::class,
             SupportRequestSeeder::class,
             SettingsSeeder::class,
+            PaymentMethodSeeder::class,
 
-            // Existing seeders (keeping for compatibility)
+                // Existing seeders (keeping for compatibility)
             AttendancePolicySeeder::class,
             WorkShiftSeeder::class,
             EmployeeScheduleSeeder::class,

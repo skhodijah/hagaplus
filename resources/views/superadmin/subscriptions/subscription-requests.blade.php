@@ -140,6 +140,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment Method</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Payment Proof</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Created By</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
@@ -169,7 +170,16 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $payment->payment_method ?? 'N/A' }}
+                                        {{ $payment->payment_method_name ?? 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                                        @if($payment->payment_proof)
+                                            <button onclick="viewPaymentProof('{{ asset('storage/' . $payment->payment_proof) }}')" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline">
+                                                View Proof
+                                            </button>
+                                        @else
+                                            <span class="text-gray-400">-</span>
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                                         {{ $payment->created_at->format('d M Y H:i') }}
@@ -179,12 +189,9 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         @if($payment->payment_status == 'pending')
-                                            <form method="POST" action="{{ route('superadmin.subscriptions.process-payment', $payment->id) }}" class="inline">
-                                                @csrf
-                                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                                                    Process
-                                                </button>
-                                            </form>
+                                            <a href="{{ route('superadmin.subscriptions.process-transaction', $payment->id) }}" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors inline-block">
+                                                Process
+                                            </a>
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
@@ -192,13 +199,35 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                        No subscription requests found.
+                                    <td colspan="10" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                        No subscription requests with payment proof found.
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Payment Proof Modal -->
+                <div id="paymentProofModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+                    <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">Payment Proof</h3>
+                                <button onclick="closePaymentProofModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    <i class="fa-solid fa-times text-xl"></i>
+                                </button>
+                            </div>
+                            <div class="flex justify-center">
+                                <img id="paymentProofImage" src="" alt="Payment Proof" class="max-w-full max-h-96 object-contain">
+                            </div>
+                            <div class="flex justify-end mt-4">
+                                <button onclick="closePaymentProofModal()" class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded hover:bg-gray-600">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Pagination -->
@@ -210,4 +239,15 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function viewPaymentProof(imageUrl) {
+            document.getElementById('paymentProofImage').src = imageUrl;
+            document.getElementById('paymentProofModal').classList.remove('hidden');
+        }
+
+        function closePaymentProofModal() {
+            document.getElementById('paymentProofModal').classList.add('hidden');
+        }
+    </script>
 </x-superadmin-layout>

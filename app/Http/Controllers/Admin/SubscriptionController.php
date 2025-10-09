@@ -70,7 +70,7 @@ class SubscriptionController extends Controller
         $instansi = $user->instansi;
 
         // Check if there are already pending requests
-        $existingPendingRequest = DB::table('payment_history')
+        $existingPendingRequest = DB::table('subscription_requests')
             ->where('instansi_id', $instansi->id)
             ->where('payment_status', 'pending')
             ->exists();
@@ -108,14 +108,14 @@ class SubscriptionController extends Controller
                 'instansi_id' => $instansi->id,
                 'package_id' => $currentSubscription->package_id,
                 'subscription_id' => $currentSubscription->id,
+                'extension_months' => $extensionMonths,
+                'target_package_id' => null,
                 'amount' => $totalAmount,
                 'payment_method' => 'pending',
                 'payment_status' => 'pending',
                 'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
                 'notes' => $notes,
                 'created_by' => $user->id,
-                'start_date' => $currentSubscription->end_date,
-                'end_date' => \Carbon\Carbon::parse($currentSubscription->end_date)->addMonths($extensionMonths)->format('Y-m-d'),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -165,16 +165,16 @@ class SubscriptionController extends Controller
             // Create pending payment record
             $paymentId = DB::table('subscription_requests')->insertGetId([
                 'instansi_id' => $instansi->id,
-                'package_id' => $request->target_package_id,
+                'package_id' => $currentSubscription->package_id,
                 'subscription_id' => $currentSubscription->id,
+                'extension_months' => $extensionMonths,
+                'target_package_id' => $request->target_package_id,
                 'amount' => $totalAmount,
                 'payment_method' => 'pending',
                 'payment_status' => 'pending',
                 'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
                 'notes' => $notes,
                 'created_by' => $user->id,
-                'start_date' => $currentSubscription->end_date,
-                'end_date' => \Carbon\Carbon::parse($currentSubscription->end_date)->addMonths($extensionMonths)->format('Y-m-d'),
                 'created_at' => now(),
                 'updated_at' => now()
             ]);
@@ -191,8 +191,8 @@ class SubscriptionController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Return success message - request has been created and superadmin will be notified
-        return redirect()->back()->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
+        // Redirect to transaction page instead of showing success message
+        return redirect()->route('admin.subscription.transaction', $paymentId)->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
 
     /**
@@ -242,14 +242,14 @@ class SubscriptionController extends Controller
             'instansi_id' => $instansi->id,
             'package_id' => $currentSubscription->package_id,
             'subscription_id' => $currentSubscription->id,
+            'extension_months' => $request->extension_months,
+            'target_package_id' => null,
             'amount' => $totalPrice,
             'payment_method' => 'pending',
             'payment_status' => 'pending',
             'transaction_id' => 'EXT-' . $currentSubscription->id . '-' . time(),
             'notes' => "Perpanjangan subscription {$request->extension_months} bulan. " . ($request->notes ?? ''),
             'created_by' => $user->id,
-            'start_date' => $currentSubscription->end_date,
-            'end_date' => $newEndDate->format('Y-m-d'),
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -265,8 +265,8 @@ class SubscriptionController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Return success message - request has been created and superadmin will be notified
-        return redirect()->back()->with('success', 'Permintaan perpanjangan subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
+        // Redirect to transaction page instead of showing success message
+        return redirect()->route('admin.subscription.transaction', $paymentId)->with('success', 'Permintaan perpanjangan subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
 
     /**
@@ -280,10 +280,10 @@ class SubscriptionController extends Controller
         ]);
 
         $user = auth()->user();
-        $instansi = $user->instansi;
+        $instansi = $user->instansi->load('package');
 
         // Check if there are already pending requests
-        $existingPendingRequest = DB::table('payment_history')
+        $existingPendingRequest = DB::table('subscription_requests')
             ->where('instansi_id', $instansi->id)
             ->where('payment_status', 'pending')
             ->exists();
@@ -314,16 +314,16 @@ class SubscriptionController extends Controller
         // Create pending payment record for upgrade
         $paymentId = DB::table('subscription_requests')->insertGetId([
             'instansi_id' => $instansi->id,
-            'package_id' => $request->target_package_id, // Target package
+            'package_id' => $currentSubscription->package_id,
             'subscription_id' => $currentSubscription->id,
+            'extension_months' => null,
+            'target_package_id' => $request->target_package_id,
             'amount' => $priceDifference,
             'payment_method' => 'pending',
             'payment_status' => 'pending',
             'transaction_id' => 'UPG-' . $currentSubscription->id . '-' . time(),
             'notes' => "Upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}. " . ($request->notes ?? ''),
             'created_by' => $user->id,
-            'start_date' => $currentSubscription->start_date,
-            'end_date' => $currentSubscription->end_date,
             'created_at' => now(),
             'updated_at' => now()
         ]);
@@ -339,8 +339,8 @@ class SubscriptionController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Return success message - request has been created and superadmin will be notified
-        return redirect()->back()->with('success', 'Permintaan upgrade subscription telah berhasil diajukan. Superadmin akan segera memproses permintaan Anda.');
+        // Redirect to transaction page instead of showing success message
+        return redirect()->route('admin.subscription.transaction', $paymentId)->with('success', 'Permintaan upgrade subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
 
     /**

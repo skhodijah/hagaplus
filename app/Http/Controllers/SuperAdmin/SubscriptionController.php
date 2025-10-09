@@ -127,8 +127,8 @@ class SubscriptionController extends Controller
                 'instansi_id' => $validated['instansi_id'],
                 'package_id' => $validated['package_id'],
                 'subscription_id' => $subscription->id,
-                'start_date' => $validated['start_date'] . ' 00:00:00',
-                'end_date' => $validated['end_date'] . ' 00:00:00',
+                'extension_months' => null,
+                'target_package_id' => null,
                 'amount' => $validated['price'],
                 'payment_method' => $validated['payment_method'],
                 'payment_status' => 'paid', // Assuming payment is completed when subscription is created
@@ -162,8 +162,8 @@ class SubscriptionController extends Controller
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
         // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('system_settings')
-            ->where('key', 'payment_methods')
+        $paymentMethodsSetting = DB::table('settings')
+            ->where('key', 'system.payment_methods')
             ->value('value');
 
         if ($paymentMethodsSetting) {
@@ -231,8 +231,8 @@ class SubscriptionController extends Controller
         $subscription = Subscription::findOrFail($id);
 
         // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('system_settings')
-            ->where('key', 'payment_methods')
+        $paymentMethodsSetting = DB::table('settings')
+            ->where('key', 'system.payment_methods')
             ->value('value');
 
         if ($paymentMethodsSetting) {
@@ -251,7 +251,6 @@ class SubscriptionController extends Controller
             'end_date' => 'required|date|after:start_date',
             'status' => 'required|in:pending_verification,active,inactive,expired,cancelled',
             'price' => 'nullable|numeric|min:0',
-            'payment_method' => 'required|in:' . implode(',', $availablePaymentMethods),
         ]);
 
         // Prevent overlapping periods with other subscriptions for same instansi
@@ -286,12 +285,11 @@ class SubscriptionController extends Controller
             ->first();
 
         if ($pendingPayment) {
-            // Update payment status to paid and set payment method
+            // Update payment status to paid
             DB::table('subscription_requests')
                 ->where('id', $pendingPayment->id)
                 ->update([
                     'payment_status' => 'paid',
-                    'payment_method' => $validated['payment_method'],
                     'updated_at' => now()
                 ]);
         }
@@ -431,11 +429,14 @@ class SubscriptionController extends Controller
             ->leftJoin('instansis', 'subscription_requests.instansi_id', '=', 'instansis.id')
             ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
             ->leftJoin('users', 'subscription_requests.created_by', '=', 'users.id')
+            ->leftJoin('payment_methods', 'subscription_requests.payment_method_id', '=', 'payment_methods.id')
+            ->whereNotNull('subscription_requests.payment_proof') // Only show requests with payment proof uploaded
             ->select(
                 'subscription_requests.*',
                 'instansis.nama_instansi',
                 'packages.name as package_name',
-                'users.name as created_by_name'
+                'users.name as created_by_name',
+                'payment_methods.name as payment_method_name'
             );
 
         // Apply filters
