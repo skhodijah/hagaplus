@@ -28,15 +28,15 @@
             </div>
         </x-action-button>
         
-        <x-action-button 
-            href="{{ route('superadmin.support_requests.index') }}" 
+        <x-action-button
+            href="{{ route('superadmin.notifications.index') }}"
             color="orange"
-            icon="fas fa-headset"
+            icon="fas fa-bell"
             class="h-full"
         >
             <div class="space-y-1">
-                <div class="font-semibold text-sm">Support Center</div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Lihat tiket support</p>
+                <div class="font-semibold text-sm">Notifikasi</div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Kelola notifikasi sistem</p>
             </div>
         </x-action-button>
         

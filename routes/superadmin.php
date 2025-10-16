@@ -4,7 +4,6 @@ use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\InstansiController;
 use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
-use App\Http\Controllers\SuperAdmin\SupportRequestController;
 use App\Http\Controllers\SuperAdmin\NotificationController;
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\SuperAdmin\PaymentMethodController;
@@ -12,7 +11,8 @@ use App\Http\Controllers\SuperAdmin\TransactionProcessingController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Analytics
     Route::get('/analytics', [DashboardController::class, 'analytics'])->name('analytics.index');
@@ -62,11 +62,6 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::get('/subscriptions/process-transaction/{requestId}', [TransactionProcessingController::class, 'show'])->name('subscriptions.process-transaction');
     Route::post('/subscriptions/process-transaction/{requestId}/approve', [TransactionProcessingController::class, 'approve'])->name('subscriptions.process-transaction.approve');
     Route::post('/subscriptions/process-transaction/{requestId}/reject', [TransactionProcessingController::class, 'reject'])->name('subscriptions.process-transaction.reject');
-
-    // Support Requests
-    Route::get('/support-requests', [SupportRequestController::class, 'index'])->name('support_requests.index');
-    Route::get('/support-requests/{id}', [SupportRequestController::class, 'show'])->name('support_requests.show');
-    Route::patch('/support-requests/{id}', [SupportRequestController::class, 'update'])->name('support_requests.update');
 
     // Reports extras
     Route::get('/reports/usage', function () {

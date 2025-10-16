@@ -85,7 +85,7 @@
                                                 </span>
                                             </p>
                                             <p class="text-xs text-gray-500 dark:text-gray-400">
-                                                {{ $subscription->package->nama_paket ?? 'Paket Tidak Ditemukan' }} • 
+                                                {{ $subscription->package->name ?? 'Paket Tidak Ditemukan' }} •
                                                 {{ $subscription->start_date->format('d M Y') }} - {{ $subscription->end_date->format('d M Y') }}
                                             </p>
                                         </div>

@@ -352,7 +352,7 @@
         </div>
     </div>
     @php
-        $isInstansiActive = request()->routeIs('superadmin.instansi.*') || request()->routeIs('superadmin.support_requests.*');
+        $isInstansiActive = request()->routeIs('superadmin.instansi.*');
         $isSubscriptionsActive = request()->routeIs('superadmin.subscriptions.*') || request()->routeIs('superadmin.payment-methods.*');
         $isPackagesActive = request()->routeIs('superadmin.packages.*');
         $isFinancialActive = request()->routeIs('superadmin.financial.*');
@@ -378,7 +378,6 @@
                 <x-layout.sidebar-accordion icon="fa-solid fa-building" label="Instansi Management" :open="$isInstansiActive" target="menu-instansi">
                     <x-layout.sidebar-subitem :href="route('superadmin.instansi.index')" label="All Instansi" :active="request()->routeIs('superadmin.instansi.index')" />
                     <x-layout.sidebar-subitem :href="route('superadmin.instansi.monitoring')" label="Usage Monitoring" :active="request()->routeIs('superadmin.instansi.monitoring')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.support_requests.index')" label="Support Requests" :active="request()->routeIs('superadmin.support_requests.*')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-link :href="route('superadmin.users.index')" icon="fa-solid fa-users" label="User Management" :active="request()->routeIs('superadmin.users.*')" />

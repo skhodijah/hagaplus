@@ -95,59 +95,34 @@ class DashboardController extends Controller
             ->orderBy('ym')
             ->get();
 
+        // Monthly instansi creation counts for the last 6 months (for growth chart)
+        $monthlyInstansiCounts = Instansi::select(
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as ym'),
+            DB::raw('count(*) as total')
+        )
+            ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get();
+
         // Monthly revenue data for the last 12 months
         $monthlyRevenue = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $revenue = Schema::hasTable('subscription_history')
-                ? DB::table('subscription_history')
-                    ->whereMonth('created_at', $date->month)
-                    ->whereYear('created_at', $date->year)
-                    ->sum('amount')
-                : 0;
+            $revenue = DB::table('subscription_requests')
+                ->where('payment_status', 'paid')
+                ->whereMonth('created_at', $date->month)
+                ->whereYear('created_at', $date->year)
+                ->sum('amount');
             $monthlyRevenue[] = [
                 'month' => $date->format('M Y'),
                 'revenue' => $revenue
             ];
         }
 
-        // If no revenue data, create sample data for demonstration
-        if (empty(array_filter(array_column($monthlyRevenue, 'revenue')))) {
-            $monthlyRevenue = [];
-            for ($i = 11; $i >= 0; $i--) {
-                $date = now()->subMonths($i);
-                $revenue = rand(1000000, 5000000); // Sample revenue data
-                $monthlyRevenue[] = [
-                    'month' => $date->format('M Y'),
-                    'revenue' => $revenue
-                ];
-            }
-        }
+        // Use actual data or empty if no subscriptions
 
-        // If no subscription counts, create sample data
-        if ($monthlySubscriptionCounts->isEmpty()) {
-            $monthlySubscriptionCounts = collect();
-            for ($i = 5; $i >= 0; $i--) {
-                $date = now()->subDays($i * 5);
-                $monthlySubscriptionCounts->push((object) [
-                    'ym' => $date->format('Y-m'),
-                    'total' => rand(1, 10)
-                ]);
-            }
-        }
-
-        // If no package distribution, create sample data
-        if ($packageDistribution->isEmpty()) {
-            $packages = Package::take(3)->get();
-            $packageDistribution = collect();
-            foreach ($packages as $package) {
-                $packageDistribution->push((object) [
-                    'package_id' => $package->id,
-                    'total' => rand(1, 5),
-                    'package' => $package
-                ]);
-            }
-        }
+        // Use actual data or empty if no packages
 
         // Financial summaries
         $pendingPayments = Schema::hasTable('subscription_history')
@@ -163,14 +138,10 @@ class DashboardController extends Controller
         // Customer lists
         $instansiWithStatus = Instansi::select('id', 'nama_instansi', 'subdomain', 'status_langganan', 'created_at')
             ->latest()->take(10)->get();
-        $overduePayments = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->where('payment_status', 'pending')->latest()->take(10)->get()
-            : collect();
+        $overduePayments = DB::table('subscription_requests')->where('payment_status', 'pending')->latest()->take(10)->get();
 
         // Activities & notifications
-        $recentSubscriptionLogs = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->latest()->take(10)->get()
-            : collect();
+        $recentSubscriptionLogs = DB::table('subscription_requests')->latest()->take(10)->get();
         $superAdminId = DB::table('users')->where('role', 'superadmin')->value('id');
         $recentNotifications = Schema::hasTable('notifications')
             ? DB::table('notifications')
@@ -195,9 +166,6 @@ class DashboardController extends Controller
         $totalInactiveInstansi = Instansi::where('status_langganan', 'inactive')->count();
         $totalSuspendedInstansi = Instansi::where('status_langganan', 'suspended')->count();
 
-        // Get support requests data
-        $totalSupportRequests = DB::table('support_requests')->count();
-        $openSupportRequests = DB::table('support_requests')->where('status', 'open')->count();
 
         // Calculate growth percentages
         $currentMonthInstansi = Instansi::whereMonth('created_at', now()->month)->count();
@@ -229,7 +197,7 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->first();
 
-        $mostPopularPackage = $mostPopularPackageData ? $mostPopularPackageData->package->nama_paket : 'N/A';
+        $mostPopularPackage = $mostPopularPackageData ? $mostPopularPackageData->package->name : 'N/A';
         $mostPopularPackageCount = $mostPopularPackageData ? $mostPopularPackageData->total : 0;
 
         // Calculate average MRR per instansi
@@ -241,14 +209,13 @@ class DashboardController extends Controller
         return view('superadmin.dashboard.index', [
             'period' => $period,
             'totalInstansi' => $totalInstansi,
+            'totalPackages' => $totalPackages,
             'totalActiveInstansi' => $totalActiveInstansi,
             'totalInactiveInstansi' => $totalInactiveInstansi,
             'totalSuspendedInstansi' => $totalSuspendedInstansi,
             'newCompanies7d' => $newCompanies7d,
             'expiring30d' => $expiring30d,
             'thisMonthRevenueFormatted' => $thisMonthRevenueFormatted,
-            'openSupportRequests' => $openSupportRequests,
-            'totalSupportRequests' => $totalSupportRequests,
             'notifications' => $notifications,
             'unreadCount' => $unreadCount,
             'instansiGrowth' => $instansiGrowth,
@@ -259,6 +226,7 @@ class DashboardController extends Controller
             'avgMrrFormatted' => $avgMrrFormatted,
             'monthlyRevenue' => $monthlyRevenue,
             'packageDistribution' => $packageDistribution,
+            'monthlyInstansiCounts' => $monthlyInstansiCounts,
             'recentInstansi' => $recentInstansi,
             'recentSubscriptions' => $recentSubscriptions
         ]);
@@ -291,11 +259,21 @@ class DashboardController extends Controller
             ->orderBy('ym')
             ->get();
 
-        // Monthly revenue data for the last 12 months from subscription_history
+        // Monthly instansi creation counts for the last 6 months (for growth chart)
+        $monthlyInstansiCounts = Instansi::select(
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") as ym'),
+            DB::raw('count(*) as total')
+        )
+            ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
+            ->groupBy('ym')
+            ->orderBy('ym')
+            ->get();
+
+        // Monthly revenue data for the last 12 months from subscription_requests
         $monthlyRevenue = [];
         for ($i = 11; $i >= 0; $i--) {
             $date = now()->subMonths($i);
-            $revenue = DB::table('subscription_history')
+            $revenue = DB::table('subscription_requests')
                 ->where('payment_status', 'paid')
                 ->whereMonth('created_at', $date->month)
                 ->whereYear('created_at', $date->year)
@@ -306,9 +284,6 @@ class DashboardController extends Controller
             ];
         }
 
-        // Get support requests data
-        $totalSupportRequests = DB::table('support_requests')->count();
-        $openSupportRequests = DB::table('support_requests')->where('status', 'open')->count();
 
         return view('superadmin.analytics.index', compact(
             'packageDistribution',
@@ -319,12 +294,8 @@ class DashboardController extends Controller
     public function financial(Request $request)
     {
         // Financial summaries
-        $pendingPayments = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->where('payment_status', 'pending')->count()
-            : 0;
-        $outstandingInvoicesAmount = Schema::hasTable('subscription_history')
-            ? DB::table('subscription_history')->where('payment_status', 'pending')->sum('amount')
-            : 0;
+        $pendingPayments = DB::table('subscription_requests')->where('payment_status', 'pending')->count();
+        $outstandingInvoicesAmount = DB::table('subscription_requests')->where('payment_status', 'pending')->sum('amount');
         $outstandingInvoicesAmountFormatted = $outstandingInvoicesAmount > 0 ? 'Rp ' . number_format($outstandingInvoicesAmount, 0, ',', '.') : '—';
         $revenueForecast = Subscription::where('status', 'active')->sum('price');
         $revenueForecastFormatted = $revenueForecast > 0 ? 'Rp ' . number_format($revenueForecast, 0, ',', '.') : '—';
@@ -441,41 +412,6 @@ class DashboardController extends Controller
 
         $allActivities = array_merge($allActivities, $paymentActivities->toArray());
 
-        // Support Request Activities
-        $supportCreations = DB::table('support_requests')
-            ->leftJoin('instansis', 'support_requests.instansi_id', '=', 'instansis.id')
-            ->selectRaw("
-                CASE
-                    WHEN support_requests.status = 'open' THEN 'Support Request Opened'
-                    WHEN support_requests.status = 'in_progress' THEN 'Support Request In Progress'
-                    WHEN support_requests.status = 'resolved' THEN 'Support Request Resolved'
-                    WHEN support_requests.status = 'closed' THEN 'Support Request Closed'
-                    ELSE 'Support Request Created'
-                END as activity_type,
-                'support' as entity_type,
-                support_requests.id as entity_id,
-                CONCAT('Support request from ', COALESCE(instansis.nama_instansi, 'Unknown Instansi'), ': ', LEFT(support_requests.subject, 50)) as description,
-                support_requests.created_at as activity_date,
-                support_requests.status as status
-            ")
-            ->where('support_requests.created_at', '>=', $since)
-            ->get();
-
-        $supportUpdates = DB::table('support_requests')
-            ->leftJoin('instansis', 'support_requests.instansi_id', '=', 'instansis.id')
-            ->selectRaw("
-                'Support Request Updated' as activity_type,
-                'support' as entity_type,
-                support_requests.id as entity_id,
-                CONCAT('Updated support request from ', COALESCE(instansis.nama_instansi, 'Unknown Instansi')) as description,
-                support_requests.updated_at as activity_date,
-                support_requests.status as status
-            ")
-            ->where('support_requests.updated_at', '>=', $since)
-            ->whereColumn('support_requests.updated_at', '>', 'support_requests.created_at')
-            ->get();
-
-        $allActivities = array_merge($allActivities, $supportCreations->toArray(), $supportUpdates->toArray());
 
         // Instansi Activities
         $instansiCreations = DB::table('instansis')
@@ -554,7 +490,6 @@ class DashboardController extends Controller
             'users' => count($userCreations) + count($userUpdates),
             'subscriptions' => count($subscriptionCreations) + count($subscriptionUpdates),
             'payments' => count($paymentActivities),
-            'support' => count($supportCreations) + count($supportUpdates),
             'instansis' => count($instansiCreations) + count($instansiUpdates),
             'employees' => count($employeeCreations) + count($employeeUpdates),
         ];
@@ -571,7 +506,6 @@ class DashboardController extends Controller
             $dayActivities += DB::table('users')->whereDate('created_at', $date)->count();
             $dayActivities += DB::table('subscriptions')->whereDate('created_at', $date)->count();
             $dayActivities += DB::table('subscription_requests')->whereDate('created_at', $date)->count();
-            $dayActivities += DB::table('support_requests')->whereDate('created_at', $date)->count();
             $dayActivities += DB::table('instansis')->whereDate('created_at', $date)->count();
             $dayActivities += DB::table('employees')->whereDate('created_at', $date)->count();
 

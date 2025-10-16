@@ -19,7 +19,6 @@ class DatabaseSeeder extends Seeder
             InstansiSeeder::class,
             UserSeeder::class,
             SubscriptionSeeder::class,
-            SupportRequestSeeder::class,
             SettingsSeeder::class,
             PaymentMethodSeeder::class,
 

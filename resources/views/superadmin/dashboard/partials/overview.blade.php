@@ -31,10 +31,10 @@
     />
 
     <x-stat-card
-        title="Support Aktif"
-        :value="$openSupportRequests"
-        subtitle="Tiket terbuka"
-        icon="fas fa-headset"
+        title="Paket Tersedia"
+        :value="$totalPackages ?? 0"
+        subtitle="Total paket sistem"
+        icon="fas fa-box"
         color="orange"
         trend=""
     />

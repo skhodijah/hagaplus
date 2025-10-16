@@ -17,12 +17,22 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Instansi Growth Chart -->
         @php
+            $instansiLabels = [];
+            $instansiData = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $date = now()->subMonths($i);
+                $monthKey = $date->format('Y-m');
+                $count = $monthlyInstansiCounts->where('ym', $monthKey)->first()->total ?? 0;
+                $instansiLabels[] = $date->format('M Y');
+                $instansiData[] = $count;
+            }
+
             $instansiChartData = [
-                'labels' => ['6 Bulan Lalu', '5 Bulan Lalu', '4 Bulan Lalu', '3 Bulan Lalu', '2 Bulan Lalu', 'Bulan Ini'],
+                'labels' => $instansiLabels,
                 'datasets' => [
                     [
                         'label' => 'Instansi Baru',
-                        'data' => [5, 8, 12, 7, 15, 10],
+                        'data' => $instansiData,
                         'borderColor' => 'rgb(59, 130, 246)',
                         'backgroundColor' => 'rgba(59, 130, 246, 0.1)',
                         'tension' => 0.4,
@@ -30,11 +40,21 @@
                     ]
                 ]
             ];
-            
+
             $instansiChartOptions = [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => [
+                    'intersect' => false,
+                    'mode' => 'index'
+                ],
                 'plugins' => [
                     'legend' => ['display' => false],
                     'tooltip' => [
+                        'enabled' => true,
+                        'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
+                        'titleColor' => '#fff',
+                        'bodyColor' => '#fff',
                         'callbacks' => [
                             'label' => 'function(context) { return context.parsed.y + " instansi baru"; }'
                         ]
@@ -45,6 +65,9 @@
                         'beginAtZero' => true,
                         'ticks' => ['precision' => 0],
                         'title' => ['display' => true, 'text' => 'Jumlah Instansi']
+                    ],
+                    'x' => [
+                        'title' => ['display' => true, 'text' => 'Bulan']
                     ]
                 ]
             ];
@@ -61,30 +84,47 @@
 
         <!-- Package Distribution Chart -->
         @php
+            $packageLabels = [];
+            $packageData = [];
+            $colors = [
+                'rgb(59, 130, 246)',   // Blue
+                'rgb(16, 185, 129)',   // Green
+                'rgb(245, 158, 11)',   // Yellow
+                'rgb(239, 68, 68)',    // Red
+                'rgb(147, 51, 234)',  // Purple
+                'rgb(236, 72, 153)',  // Pink
+            ];
+
+            foreach ($packageDistribution as $index => $pkg) {
+                $packageLabels[] = $pkg->package->name ?? 'Unknown Package';
+                $packageData[] = $pkg->total;
+            }
+
             $packageChartData = [
-                'labels' => ['Basic', 'Pro', 'Enterprise', 'Premium'],
+                'labels' => $packageLabels,
                 'datasets' => [
                     [
-                        'data' => [25, 35, 20, 20],
-                        'backgroundColor' => [
-                            'rgb(59, 130, 246)',   // Blue
-                            'rgb(16, 185, 129)',   // Green
-                            'rgb(245, 158, 11)',   // Yellow
-                            'rgb(239, 68, 68)'     // Red
-                        ],
+                        'data' => $packageData,
+                        'backgroundColor' => array_slice($colors, 0, count($packageData)),
                         'borderWidth' => 2,
                         'borderColor' => 'rgb(255, 255, 255)',
                     ]
                 ]
             ];
-            
+
             $packageChartOptions = [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
                 'plugins' => [
                     'legend' => [
                         'position' => 'bottom',
                         'labels' => ['padding' => 20]
                     ],
                     'tooltip' => [
+                        'enabled' => true,
+                        'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
+                        'titleColor' => '#fff',
+                        'bodyColor' => '#fff',
                         'callbacks' => [
                             'label' => 'function(context) { return context.label + ": " + context.parsed + " instansi"; }'
                         ]
@@ -106,12 +146,19 @@
     <!-- Revenue Chart -->
     <div class="grid grid-cols-1 gap-6">
         @php
+            $revenueLabels = [];
+            $revenueData = [];
+            foreach ($monthlyRevenue as $revenue) {
+                $revenueLabels[] = $revenue['month'];
+                $revenueData[] = (float) $revenue['revenue'];
+            }
+
             $revenueChartData = [
-                'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'],
+                'labels' => $revenueLabels,
                 'datasets' => [
                     [
                         'label' => 'Pendapatan',
-                        'data' => [12500000, 15000000, 18000000, 21000000, 19500000, 23000000, 25000000, 27000000, 24000000, 26000000, 28000000, 30000000],
+                        'data' => $revenueData,
                         'backgroundColor' => 'rgba(79, 70, 229, 0.7)',
                         'borderColor' => 'rgb(79, 70, 229)',
                         'borderWidth' => 1,
@@ -119,11 +166,21 @@
                     ]
                 ]
             ];
-            
+
             $revenueChartOptions = [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => [
+                    'intersect' => false,
+                    'mode' => 'index'
+                ],
                 'plugins' => [
                     'legend' => ['display' => false],
                     'tooltip' => [
+                        'enabled' => true,
+                        'backgroundColor' => 'rgba(0, 0, 0, 0.8)',
+                        'titleColor' => '#fff',
+                        'bodyColor' => '#fff',
                         'callbacks' => [
                             'label' => 'function(context) { return "Pendapatan: Rp " + context.parsed.y.toLocaleString("id-ID"); }'
                         ]
@@ -136,6 +193,9 @@
                             'callback' => 'function(value) { return "Rp " + (value / 1000000).toFixed(1) + " jt"; }'
                         ],
                         'title' => ['display' => true, 'text' => 'Jumlah Pendapatan']
+                    ],
+                    'x' => [
+                        'title' => ['display' => true, 'text' => 'Bulan']
                     ]
                 ]
             ];
