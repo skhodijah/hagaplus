@@ -1,10 +1,10 @@
-<!-- Camera Modal for Quick Check-in -->
+<!-- Camera Modal for Quick Check-in/Check-out -->
 <div id="camera-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white dark:bg-gray-800">
         <div class="mt-3">
             <!-- Modal Header -->
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Check In Cepat</h3>
+                <h3 id="modal-title" class="text-lg font-medium text-gray-900 dark:text-white">Check In Cepat</h3>
                 <button id="close-camera-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -62,8 +62,6 @@
 
                 <!-- Hidden inputs -->
                 <input type="file" id="quick-selfie" name="selfie" class="hidden" accept="image/*">
-                <input type="hidden" id="quick-latitude" name="latitude">
-                <input type="hidden" id="quick-longitude" name="longitude">
 
                 <!-- Submit Button -->
                 <button type="submit" id="quick-submit-checkin"
@@ -71,7 +69,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Check In Sekarang
+                    <span id="submit-button-text">Check In Sekarang</span>
                 </button>
             </div>
         </div>
@@ -83,21 +81,51 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('camera-modal');
     const closeBtn = document.getElementById('close-camera-modal');
     const cameraTrigger = document.querySelector('[data-camera-trigger]');
+    const checkoutTrigger = document.querySelector('[data-camera-checkout]');
     const startCameraBtn = document.getElementById('quick-start-camera');
     const captureBtn = document.getElementById('quick-capture-photo');
     const submitBtn = document.getElementById('quick-submit-checkin');
     const video = document.getElementById('quick-camera-video');
     const canvas = document.getElementById('quick-camera-canvas');
     const uploadInput = document.getElementById('quick-upload-photo');
+    const modalTitle = document.getElementById('modal-title');
+    const submitButtonText = document.getElementById('submit-button-text');
 
     let quickStream = null;
+    let isCheckout = false;
+    let branchName = '';
 
-    // Open modal
-    cameraTrigger.addEventListener('click', function(e) {
-        e.preventDefault();
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    });
+    console.log('Camera modal initialized');
+    console.log('Check-in trigger:', cameraTrigger);
+    console.log('Check-out trigger:', checkoutTrigger);
+
+    // Open modal for check-in
+    if (cameraTrigger) {
+        cameraTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Check-in button clicked');
+            isCheckout = false;
+            branchName = cameraTrigger.getAttribute('data-branch') || 'Unknown Branch';
+            modalTitle.textContent = 'Check In Cepat';
+            submitButtonText.textContent = 'Check In Sekarang';
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    // Open modal for check-out
+    if (checkoutTrigger) {
+        checkoutTrigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Check-out button clicked');
+            isCheckout = true;
+            branchName = checkoutTrigger.getAttribute('data-branch') || 'Unknown Branch';
+            modalTitle.textContent = 'Check Out Cepat';
+            submitButtonText.textContent = 'Check Out Sekarang';
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+    }
 
     // Close modal
     closeBtn.addEventListener('click', function() {
@@ -145,6 +173,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 audio: false
             };
 
+            // Check if camera is available
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+            if (videoDevices.length === 0) {
+                alert('Tidak ada kamera yang tersedia di perangkat ini.');
+                return;
+            }
+
             quickStream = await navigator.mediaDevices.getUserMedia(constraints);
             video.srcObject = quickStream;
             video.classList.remove('hidden');
@@ -160,6 +197,10 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Quick camera error:', error);
             if (error.name === 'NotAllowedError') {
                 alert('Akses kamera ditolak. Silakan izinkan akses kamera di browser Anda.');
+            } else if (error.name === 'NotFoundError') {
+                alert('Kamera tidak ditemukan. Pastikan perangkat Anda memiliki kamera yang terhubung.');
+            } else if (error.name === 'NotReadableError') {
+                alert('Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.');
             } else {
                 alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message);
             }
@@ -240,31 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.addEventListener('click', function(e) {
         e.preventDefault();
         console.log('Submit button clicked');
-
-        // Get location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    document.getElementById('quick-latitude').value = position.coords.latitude;
-                    document.getElementById('quick-longitude').value = position.coords.longitude;
-                    submitQuickCheckin();
-                },
-                function(error) {
-                    console.log('Location error:', error);
-                    submitQuickCheckin(); // Submit without location
-                }
-            );
-        } else {
-            submitQuickCheckin();
-        }
+        submitQuickCheckin();
     });
 
     function submitQuickCheckin() {
         console.log('Submitting check-in...');
         const formData = new FormData();
         const selfieInput = document.getElementById('quick-selfie');
-        const latitudeInput = document.getElementById('quick-latitude');
-        const longitudeInput = document.getElementById('quick-longitude');
 
         console.log('Selfie input:', selfieInput);
         console.log('Selfie files:', selfieInput.files);
@@ -288,20 +311,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (latitudeInput.value) {
-            formData.append('latitude', latitudeInput.value);
-        }
-        if (longitudeInput.value) {
-            formData.append('longitude', longitudeInput.value);
-        }
-
         submitFormData(formData);
     }
 
     function submitFormData(formData) {
         console.log('Submitting form data...');
 
-        fetch('{{ route("employee.attendance.check-in") }}', {
+        const url = isCheckout ? '{{ route("employee.attendance.check-out") }}' : '{{ route("employee.attendance.check-in") }}';
+        fetch(url, {
             method: 'POST',
             body: formData,
             headers: {
@@ -322,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const data = JSON.parse(text);
                 console.log('Parsed response data:', data);
                 if (data.success) {
-                    alert('Check in berhasil!');
+                    alert(isCheckout ? 'Check out berhasil!' : 'Check in berhasil!');
                     modal.classList.add('hidden');
                     document.body.style.overflow = 'auto';
                     location.reload();

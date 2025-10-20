@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class SubscriptionController extends Controller
 {
@@ -15,6 +16,13 @@ class SubscriptionController extends Controller
     {
         $user = auth()->user();
         $instansi = $user->instansi;
+
+        // Update expired subscriptions
+        DB::table('subscriptions')
+            ->where('instansi_id', $instansi->id)
+            ->where('end_date', '<', now())
+            ->where('status', '!=', 'expired')
+            ->update(['status' => 'expired']);
 
         // Get current subscription
         $currentSubscription = DB::table('subscriptions')
@@ -35,8 +43,13 @@ class SubscriptionController extends Controller
         // Get payment history
         $paymentHistory = DB::table('subscription_requests')
             ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
+            ->leftJoin('payment_methods', 'subscription_requests.payment_method_id', '=', 'payment_methods.id')
             ->where('subscription_requests.instansi_id', $instansi->id)
-            ->select('subscription_requests.*', 'packages.name as package_name')
+            ->select(
+                'subscription_requests.*', 
+                'packages.name as package_name',
+                'payment_methods.name as payment_method_name'
+            )
             ->orderBy('subscription_requests.created_at', 'desc')
             ->get();
 
@@ -72,7 +85,7 @@ class SubscriptionController extends Controller
         // Check if there are already pending requests
         $existingPendingRequest = DB::table('subscription_requests')
             ->where('instansi_id', $instansi->id)
-            ->where('payment_status', 'pending')
+            ->whereIn('payment_status', ['pending', 'pending_verification'])
             ->exists();
 
         if ($existingPendingRequest) {
@@ -92,64 +105,116 @@ class SubscriptionController extends Controller
 
         $requestType = $request->request_type;
         $totalAmount = 0;
-        $notes = '';
+        $notes = [];
         $transactionPrefix = '';
+        $newEndDate = null;
+        $whatsappDetails = [];
+        
+        // Initialize payment data with default values
+        $paymentData = [
+            'instansi_id' => $instansi->id,
+            'subscription_id' => $currentSubscription->id,
+            'package_id' => $currentSubscription->package_id,
+            'amount' => 0,
+            'payment_method' => 'pending',
+            'payment_status' => 'pending',
+            'transaction_id' => '',
+            'notes' => '',
+            'created_by' => $user->id,
+            'start_date' => $currentSubscription->start_date,
+            'end_date' => $currentSubscription->end_date,
+            'created_at' => now(),
+            'updated_at' => now()
+        ];
 
-        if ($requestType === 'extension') {
-            // Calculate extension cost
+        // Handle extension (if requested)
+        if (in_array($requestType, ['extension', 'both'])) {
             $extensionMonths = (int) $request->extension_months;
-            $totalAmount = $currentSubscription->price * $extensionMonths;
-            $notes = "Perpanjangan subscription {$extensionMonths} bulan. " . ($request->notes ?? '');
-            $transactionPrefix = 'EXT';
-            $whatsappDetails = "perpanjangan subscription {$extensionMonths} bulan";
+            $currentDate = now();
+            $currentEndDate = Carbon::parse($currentSubscription->end_date);
+            
+            // Always use the current date for extension to prevent gaps in subscription
+            $newEndDate = $currentDate->copy()->addMonths($extensionMonths);
+            $notes[] = "Perpanjangan subscription {$extensionMonths} bulan (dari tanggal permintaan)";
+            
+            // Add a note if the subscription has already expired
+            if ($currentDate->gt($currentEndDate)) {
+                $notes[] = "Masa aktif sebelumnya telah berakhir pada {$currentEndDate->format('d M Y')}";
+            }
+            
+            $extensionCost = $currentSubscription->price * $extensionMonths;
+            $totalAmount += $extensionCost;
+            
+            $paymentData['extension_months'] = $extensionMonths;
+            $paymentData['new_end_date'] = $newEndDate->format('Y-m-d');
+            $whatsappDetails[] = "perpanjangan subscription {$extensionMonths} bulan";
+            $transactionPrefix = $requestType === 'extension' ? 'EXT' : 'BOTH';
+        }
 
-            // Create pending payment record
-            $paymentId = DB::table('subscription_requests')->insertGetId([
-                'instansi_id' => $instansi->id,
-                'package_id' => $currentSubscription->package_id,
-                'subscription_id' => $currentSubscription->id,
-                'extension_months' => $extensionMonths,
-                'target_package_id' => null,
-                'amount' => $totalAmount,
-                'payment_method' => 'pending',
-                'payment_status' => 'pending',
-                'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
-                'notes' => $notes,
-                'created_by' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-
-        } elseif ($requestType === 'upgrade') {
-            // Calculate upgrade cost
+        // Handle upgrade (if requested)
+        if (in_array($requestType, ['upgrade', 'both'])) {
             $targetPackage = DB::table('packages')->find($request->target_package_id);
-            $priceDifference = $targetPackage->price - $currentSubscription->price;
-            $totalAmount = max(0, $priceDifference); // No charge for downgrade
-            $notes = "Upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}. " . ($request->notes ?? '');
-            $transactionPrefix = 'UPG';
-            $whatsappDetails = "upgrade subscription dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}";
+            
+            if ($targetPackage) {
+                // Calculate upgrade cost (difference in monthly price)
+                $upgradeCost = max(0, $targetPackage->price - $currentSubscription->price);
+                $totalAmount += $upgradeCost;
+                
+                $paymentData['target_package_id'] = $targetPackage->id;
+                
+                $notes[] = "Upgrade ke paket {$targetPackage->name}";
+                $whatsappDetails[] = "upgrade ke paket {$targetPackage->name}";
+                $transactionPrefix = $requestType === 'upgrade' ? 'UPG' : 'BOTH';
+            }
+        }
 
-            // Create pending payment record
-            $paymentId = DB::table('subscription_requests')->insertGetId([
-                'instansi_id' => $instansi->id,
-                'package_id' => $request->target_package_id,
-                'subscription_id' => $currentSubscription->id,
-                'amount' => $totalAmount,
-                'payment_method' => 'pending',
-                'payment_status' => 'pending',
-                'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
-                'notes' => $notes,
-                'created_by' => $user->id,
-                'start_date' => $currentSubscription->start_date,
-                'end_date' => $currentSubscription->end_date,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
+        // Add any additional notes
+        if ($request->notes) {
+            $notes[] = $request->notes;
+        }
 
-        } elseif ($requestType === 'both') {
-            // Calculate both extension and upgrade cost
-            $extensionMonths = (int) $request->extension_months;
-            $targetPackage = DB::table('packages')->find($request->target_package_id);
+        // Set final payment data
+        $paymentData['amount'] = $totalAmount;
+        $paymentData['notes'] = implode('. ', array_filter($notes)) . '.';
+        $paymentData['transaction_id'] = $transactionPrefix . '-' . $currentSubscription->id . '-' . time();
+
+        // Add required fields to payment data
+        $paymentData['created_by'] = $user->id;
+        $paymentData['created_at'] = now();
+        $paymentData['updated_at'] = now();
+        
+        // Remove any fields that don't exist in the table
+        unset($paymentData['start_date'], $paymentData['end_date'], $paymentData['new_end_date']);
+        
+        // Create the subscription request
+        $paymentId = DB::table('subscription_requests')->insertGetId($paymentData);
+
+        // Create notification for superadmin
+        $notificationMessage = !empty($whatsappDetails) 
+            ? "Instansi {$instansi->name} mengajukan " . implode(' dan ', $whatsappDetails) . ". Total biaya: Rp " . number_format($totalAmount, 0, ',', '.')
+            : "Instansi {$instansi->name} mengajukan perubahan subscription";
+            
+        DB::table('notifications')->insert([
+            'type' => 'subscription.request',
+            'notifiable_type' => 'App\\Models\\User',
+            'notifiable_id' => 1, // Superadmin ID
+            'data' => json_encode([
+                'title' => 'Permintaan Subscription Baru',
+                'message' => $notificationMessage,
+                'url' => route('superadmin.subscriptions.process-transaction', $paymentId)
+            ]),
+            'created_at' => now(),
+            'updated_at' => now(),
+            'read_at' => null
+        ]);
+
+        // Redirect to payment page
+        return redirect()->route('admin.subscription.transaction', $paymentId)
+            ->with('success', 'Permintaan subscription berhasil dibuat. Silakan lakukan pembayaran.');
+
+            // For extension, always extend from current date (when request is made)
+            $extensionStartDate = now();
+            $newEndDate = $extensionStartDate->copy()->addMonths($extensionMonths);
 
             // Extension cost
             $extensionCost = $currentSubscription->price * $extensionMonths;
@@ -175,24 +240,24 @@ class SubscriptionController extends Controller
                 'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
                 'notes' => $notes,
                 'created_by' => $user->id,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]);
-        }
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
 
         // Create notification for superadmin
         DB::table('notifications')->insert([
             'user_id' => null, // null means for all superadmins
             'type' => 'subscription_request',
             'title' => 'Permintaan ' . ucfirst($requestType) . ' Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan " . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . " subscription - " . route('superadmin.subscriptions.subscription-requests'),
+            'message' => "Instansi {$instansi->name} mengajukan " . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . " subscription - " . route('superadmin.subscriptions.subscription-requests'),
             'is_read' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         // Redirect to transaction page instead of showing success message
-        return redirect()->route('admin.subscription.transaction', $paymentId)->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah dibuat. Silakan lengkapi pembayaran.');
+        return redirect()->route('admin.subscription.transaction', $paymentId)
+            ->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
 
     /**
@@ -229,10 +294,10 @@ class SubscriptionController extends Controller
             return redirect()->back()->with('error', 'Tidak ada subscription untuk diperpanjang. Silakan hubungi superadmin untuk membuat subscription baru.');
         }
 
-        // Calculate new end date
-        $currentEndDate = \Carbon\Carbon::parse($currentSubscription->end_date);
+        // For extension, always extend from current date (when request is made)
+        $extensionStartDate = now();
         $extensionMonths = (int) $request->extension_months;
-        $newEndDate = $currentEndDate->copy()->addMonths($extensionMonths);
+        $newEndDate = $extensionStartDate->copy()->addMonths($extensionMonths);
 
         // Calculate price (use current subscription price)
         $totalPrice = $currentSubscription->price * $extensionMonths;

@@ -101,12 +101,29 @@ class TransactionProcessingController extends Controller
                     'updated_at' => now()
                 ];
 
-                // Use structured fields instead of parsing notes
+                // Handle subscription extension
                 if ($subscriptionRequest->extension_months) {
-                    $newEndDate = \Carbon\Carbon::parse($subscription->end_date)
+                    $currentDate = now();
+                    $currentEndDate = \Carbon\Carbon::parse($subscription->end_date);
+                    
+                    // If subscription has already expired, extend from current date
+                    // Otherwise, extend from the current end date
+                    $startDate = $currentDate->gt($currentEndDate) ? $currentDate : $currentEndDate;
+                    
+                    $newEndDate = $startDate->copy()
                         ->addMonths($subscriptionRequest->extension_months)
                         ->format('Y-m-d');
+                        
                     $subscriptionUpdate['end_date'] = $newEndDate;
+                    
+                    // Log the extension details
+                    \Log::info('Extending subscription', [
+                        'current_end_date' => $currentEndDate->format('Y-m-d'),
+                        'current_date' => $currentDate->format('Y-m-d'),
+                        'extension_months' => $subscriptionRequest->extension_months,
+                        'new_end_date' => $newEndDate,
+                        'extended_from_expired' => $currentDate->gt($currentEndDate)
+                    ]);
                 }
 
                 if ($subscriptionRequest->target_package_id) {

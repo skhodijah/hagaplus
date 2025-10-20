@@ -19,6 +19,7 @@ class Employee extends BaseModel
         'salary',
         'hire_date',
         'status',
+        'attendance_policy_id',
     ];
 
     protected $casts = [
@@ -45,5 +46,10 @@ class Employee extends BaseModel
     public function payrolls()
     {
         return $this->hasMany(Payroll::class);
+    }
+
+    public function attendancePolicy()
+    {
+        return $this->belongsTo(\App\Models\Admin\AttendancePolicy::class);
     }
 }

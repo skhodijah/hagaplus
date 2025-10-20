@@ -14,6 +14,11 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
+        // Update expired subscriptions
+        Subscription::where('end_date', '<', now())
+            ->where('status', '!=', 'expired')
+            ->update(['status' => 'expired']);
+
         // Ambil data subscription dengan relasi instansi & package
         $subscriptions = Subscription::with(['instansi', 'package'])->paginate(10);
 

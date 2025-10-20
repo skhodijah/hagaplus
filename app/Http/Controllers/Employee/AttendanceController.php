@@ -15,6 +15,16 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
+        $attendancePolicy = null;
+
+        if ($employee) {
+            $attendancePolicy = $employee->attendancePolicy;
+            
+            // If no specific policy, get default policy
+            if (!$attendancePolicy) {
+                $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
+            }
+        }
 
         // Get today's attendance
         $todayAttendance = Attendance::where('user_id', $user->id)
@@ -27,15 +37,88 @@ class AttendanceController extends Controller
             ->take(10)
             ->get();
 
-        return view('employee.attendance.index', compact('todayAttendance', 'recentAttendance', 'employee'));
+        return view('employee.attendance.index', compact(
+            'todayAttendance', 
+            'recentAttendance', 
+            'employee',
+            'attendancePolicy'
+        ));
+    }
+    
+    /**
+     * Show the attendance policy for the employee
+     */
+    public function showPolicy()
+    {
+        $user = Auth::user();
+        $employee = $user->employee;
+        
+        if (!$employee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data karyawan tidak ditemukan'
+            ], 404);
+        }
+        
+        $attendancePolicy = $employee->attendancePolicy;
+        
+        // If no specific policy, get default policy
+        if (!$attendancePolicy) {
+            $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
+        }
+        
+        if (!$attendancePolicy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kebijakan kehadiran tidak ditemukan'
+            ], 404);
+        }
+        
+        // Format work days
+        $daysMap = [
+            1 => 'Senin',
+            2 => 'Selasa',
+            3 => 'Rabu',
+            4 => 'Kamis',
+            5 => 'Jumat',
+            6 => 'Sabtu',
+            7 => 'Minggu',
+        ];
+        
+        $workDays = collect($attendancePolicy->work_days ?? [])
+            ->map(function($day) use ($daysMap) {
+                return $daysMap[$day] ?? $day;
+            })
+            ->implode(', ');
+        
+        $policyData = [
+            'name' => $attendancePolicy->name,
+            'work_days' => $workDays,
+            'start_time' => \Carbon\Carbon::parse($attendancePolicy->start_time)->format('H:i'),
+            'end_time' => \Carbon\Carbon::parse($attendancePolicy->end_time)->format('H:i'),
+            'late_tolerance' => $attendancePolicy->late_tolerance . ' menit',
+            'early_checkout_tolerance' => $attendancePolicy->early_checkout_tolerance . ' menit',
+            'break_duration' => $attendancePolicy->break_duration . ' menit',
+            'overtime_after' => $attendancePolicy->overtime_after_minutes . ' menit setelah jam kerja',
+            'attendance_methods' => is_array($attendancePolicy->attendance_methods) 
+                ? implode(', ', $attendancePolicy->attendance_methods)
+                : $attendancePolicy->attendance_methods,
+            'auto_checkout' => $attendancePolicy->auto_checkout ? 'Aktif' : 'Tidak Aktif',
+            'auto_checkout_time' => $attendancePolicy->auto_checkout_time 
+                ? \Carbon\Carbon::parse($attendancePolicy->auto_checkout_time)->format('H:i')
+                : '-',
+        ];
+        
+        return response()->json([
+            'success' => true,
+            'data' => $policyData
+        ]);
     }
 
     public function checkIn(Request $request)
     {
         $request->validate([
             'selfie' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
         ]);
 
         $user = Auth::user();
@@ -56,15 +139,45 @@ class AttendanceController extends Controller
             // Store selfie photo
             $selfiePath = $request->file('selfie')->store('attendance-selfies', 'public');
 
+            $checkInTime = now();
+            $lateMinutes = 0;
+            $attendancePolicy = null;
+
+            // Get employee's attendance policy
+            if ($user->employee && $user->employee->attendancePolicy) {
+                $attendancePolicy = $user->employee->attendancePolicy;
+            } else {
+                // Fallback to default policy if no specific policy is set
+                $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
+            }
+
+            // Calculate late minutes if policy exists
+            if ($attendancePolicy) {
+                $workStartTime = Carbon::parse($attendancePolicy->start_time);
+                $lateTolerance = $attendancePolicy->late_tolerance ?? 15;
+
+                $graceTime = $workStartTime->copy()->addMinutes($lateTolerance);
+
+                if ($checkInTime->greaterThan($workStartTime)) {
+                    $lateMinutes = $workStartTime->diffInMinutes($checkInTime);
+                    
+                    // Only count as late if after grace period
+                    if ($checkInTime->greaterThan($graceTime)) {
+                        $lateMinutes = $workStartTime->diffInMinutes($checkInTime);
+                    } else {
+                        $lateMinutes = 0; // Within grace period
+                    }
+                }
+            }
+
             if ($existingAttendance) {
                 // Update existing record
                 $existingAttendance->update([
-                    'check_in_time' => now(),
+                    'check_in_time' => $checkInTime,
                     'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
-                    'check_in_location' => $request->latitude && $request->longitude ?
-                        $request->latitude . ',' . $request->longitude : null,
-                    'status' => 'present',
+                    'late_minutes' => $lateMinutes,
+                    'status' => $lateMinutes > 0 ? 'late' : 'present',
                 ]);
 
                 $attendance = $existingAttendance;
@@ -74,12 +187,11 @@ class AttendanceController extends Controller
                     'user_id' => $user->id,
                     'branch_id' => $user->employee->branch_id ?? 1,
                     'attendance_date' => today(),
-                    'check_in_time' => now(),
+                    'check_in_time' => $checkInTime,
                     'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
-                    'check_in_location' => $request->latitude && $request->longitude ?
-                        $request->latitude . ',' . $request->longitude : null,
-                    'status' => 'present',
+                    'late_minutes' => $lateMinutes,
+                    'status' => $lateMinutes > 0 ? 'late' : 'present',
                 ]);
             }
 
@@ -88,7 +200,8 @@ class AttendanceController extends Controller
                 'message' => 'Check in berhasil!',
                 'data' => [
                     'check_in_time' => $attendance->check_in_time->format('H:i:s'),
-                    'status' => 'present'
+                    'late_minutes' => $lateMinutes,
+                    'status' => $attendance->status
                 ]
             ]);
 
@@ -104,8 +217,6 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'selfie' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
         ]);
 
         $user = Auth::user();
@@ -139,14 +250,42 @@ class AttendanceController extends Controller
             $checkOutTime = now();
             $workDuration = $checkInTime->diffInMinutes($checkOutTime);
 
+            // Get employee schedule and attendance policy for early checkout calculation
+            $employeeSchedule = \DB::table('employee_schedules')
+                ->where('user_id', $user->id)
+                ->where('is_active', true)
+                ->where('effective_date', '<=', today())
+                ->orderBy('effective_date', 'desc')
+                ->first();
+
+            $earlyCheckoutMinutes = 0;
+
+            // Calculate early checkout minutes if schedule and policy exist
+            if ($employeeSchedule) {
+                $attendancePolicy = \DB::table('attendance_policies')
+                    ->where('id', $employeeSchedule->policy_id)
+                    ->first();
+
+                if ($attendancePolicy) {
+                    $workEndTime = Carbon::createFromTimeString($attendancePolicy->end_time);
+                    $earlyCheckoutTolerance = $attendancePolicy->early_checkout_tolerance ?? 15;
+
+                    $graceTime = $workEndTime->copy()->subMinutes($earlyCheckoutTolerance);
+
+                    if ($checkOutTime->lessThan($graceTime)) {
+                        $earlyCheckoutMinutes = $workEndTime->diffInMinutes($checkOutTime, false);
+                        $earlyCheckoutMinutes = max(0, $earlyCheckoutMinutes); // Ensure non-negative
+                    }
+                }
+            }
+
             $attendance->update([
                 'check_out_time' => $checkOutTime,
                 'check_out_method' => 'selfie',
                 'check_out_photo' => $selfiePath,
-                'check_out_location' => $request->latitude && $request->longitude ?
-                    $request->latitude . ',' . $request->longitude : null,
                 'work_duration' => $workDuration,
-                'status' => 'present',
+                'early_checkout_minutes' => $earlyCheckoutMinutes,
+                'status' => $attendance->late_minutes > 0 ? 'late' : 'present', // Keep existing status or update if needed
             ]);
 
             return response()->json([
@@ -155,7 +294,8 @@ class AttendanceController extends Controller
                 'data' => [
                     'check_out_time' => $attendance->check_out_time->format('H:i:s'),
                     'work_duration' => $workDuration,
-                    'status' => 'present'
+                    'early_checkout_minutes' => $earlyCheckoutMinutes,
+                    'status' => $attendance->status
                 ]
             ]);
 

@@ -11,6 +11,7 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
 
     // Employee's own attendance
     Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::get('/attendance/policy', [AttendanceController::class, 'showPolicy'])->name('attendance.policy');
     Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
     Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.check-out');
     Route::post('/attendance/scan', [AttendanceController::class, 'processScan'])->name('attendance.scan');

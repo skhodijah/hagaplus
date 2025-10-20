@@ -5,7 +5,7 @@
             <!-- Profile Photo Column -->
             <div class="col-span-3 flex justify-center">
                 <div class="w-82 h-82 overflow-hidden rounded-xl">
-                    <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&color=FFFFFF&background=008159' }}"
+                    <img src="{{ auth()->user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&color=FFFFFF&background=008159' }}"
                         alt="Profile Photo"
                         class="h-full w-full object-cover">
                 </div>
@@ -15,7 +15,7 @@
             <div class="col-span-5 space-y-6">
                 <!-- Name and Position -->
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{{ $user->name }}</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ auth()->user()->name }}</h1>
                     <p class="text-gray-600 mt-1">
                         {{ $employee->position ?? 'Karyawan' }}
                         @if($employee->department)
@@ -40,7 +40,7 @@
                                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                             </svg>
-                            <span class="text-sm">{{ $user->email }}</span>
+                            <span class="text-sm">{{ auth()->user()->email }}</span>
                         </div>
                     </div>
                     
@@ -51,7 +51,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                             </svg>
-                            <span class="text-sm">{{ $user->phone }}</span>
+                            <span class="text-sm">{{ auth()->user()->phone }}</span>
                         </div>
                     </div>
                     @endif
@@ -99,7 +99,7 @@
             <!-- Profile Photo -->
             <div class="flex-shrink-0">
                 <div class="h-16 w-16 rounded-lg overflow-hidden border border-gray-200">
-                    <img src="{{ $user->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&color=FFFFFF&background=008159' }}"
+                    <img src="{{ auth()->user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&color=FFFFFF&background=008159' }}"
                          alt="Profile Photo"
                          class="h-full w-full object-cover">
                 </div>
@@ -109,7 +109,7 @@
             <div class="flex-1">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-lg font-semibold text-gray-900">{{ $user->name }}</h2>
+                        <h2 class="text-lg font-semibold text-gray-900">{{ auth()->user()->name }}</h2>
                         <p class="text-sm text-gray-600">
                             {{ $employee->position ?? 'Karyawan' }}
                             @if($employee->department)
@@ -128,7 +128,7 @@
                             <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                             <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                         </svg>
-                        <span class="truncate">{{ $user->email }}</span>
+                        <span class="truncate">{{ auth()->user()->email }}</span>
                     </div>
                     
                     @if($user->phone)
@@ -136,7 +136,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
                             <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                         </svg>
-                        <span>{{ $user->phone }}</span>
+                        <span>{{ auth()->user()->phone }}</span>
                     </div>
                     @endif
                 </div>

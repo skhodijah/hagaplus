@@ -7,7 +7,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <!-- Profile Summary -->
             <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                @include('employee.partials.profile')
+                @include('employee.partials.profile', ['employee' => $employee, 'user' => $user])
             </div>
 
             <!-- Today's Status -->
@@ -17,20 +17,51 @@
 
             <!-- Quick Actions - Moved to prominent position -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="#" data-camera-trigger
-                    class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl p-6 text-white transition-all duration-200 transform hover:scale-105">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-lg font-semibold mb-1">Check In Sekarang</h3>
-                            <p class="text-green-100 text-sm">Lakukan absensi harian</p>
+                @if($todayStatus === 'Belum Check In')
+                    <a href="#" data-camera-trigger
+                        class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 rounded-xl p-6 text-white transition-all duration-200 transform hover:scale-105">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-1">Check In Sekarang</h3>
+                                <p class="text-green-100 text-sm">Lakukan absensi harian</p>
+                            </div>
+                            <div class="bg-white/20 rounded-full p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10a2 2 0 002 2h4a2 2 0 002-2V11M9 11h6" />
+                                </svg>
+                            </div>
                         </div>
-                        <div class="bg-white/20 rounded-full p-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 4v10a2 2 0 002 2h4a2 2 0 002-2V11M9 11h6" />
-                            </svg>
+                    </a>
+                @elseif($todayStatus === 'Sedang Bekerja')
+                    <button type="button" data-camera-checkout
+                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-xl p-6 text-white transition-all duration-200 transform hover:scale-105 w-full text-left">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-1">Check Out Sekarang</h3>
+                                <p class="text-red-100 text-sm">Selesaikan absensi harian</p>
+                            </div>
+                            <div class="bg-white/20 rounded-full p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </div>
+                        </div>
+                    </button>
+                @else
+                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-1">Absensi Selesai</h3>
+                                <p class="text-gray-200 text-sm">Anda sudah check out hari ini</p>
+                            </div>
+                            <div class="bg-white/20 rounded-full p-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
                         </div>
                     </div>
-                </a>
+                @endif
 
                 <a href="{{ route('employee.attendance.index') }}"
                     class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-200">

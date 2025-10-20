@@ -9,7 +9,13 @@
                         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">Absensi Karyawan</h1>
                         <p class="text-gray-600 dark:text-gray-300">Lakukan check in dan check out dengan foto selfie</p>
                     </div>
-                    <div class="mt-4 md:mt-0">
+                    <div class="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
+                        <button type="button" id="show-policy" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-haga-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Lihat Kebijakan Absensi
+                        </button>
                         <div class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white" style="background-color: var(--color-haga-1, #008159)">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -91,7 +97,7 @@
                                     <div class="inline-block">
                                         <img src="{{ Storage::url($todayAttendance->check_in_photo) }}"
                                              alt="Check In Photo"
-                                             class="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                             class="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
                                     </div>
                                 @endif
                             </div>
@@ -217,7 +223,7 @@
                                     <div class="inline-block">
                                         <img src="{{ Storage::url($todayAttendance->check_out_photo) }}"
                                              alt="Check Out Photo"
-                                             class="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                             class="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
                                     </div>
                                 @endif
                             </div>
@@ -281,7 +287,7 @@
 
                                     <!-- Submit Button -->
                                     <button type="submit" id="submit-checkout"
-                                            class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
+                                            class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                         </svg>
@@ -361,11 +367,167 @@
         </div>
     </div>
 
+    <!-- Policy Modal -->
+    <div id="policy-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white dark:bg-gray-800">
+            <div class="flex justify-between items-center pb-3">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Kebijakan Absensi</h3>
+                <button id="close-policy-modal" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-4">
+                <div id="policy-loading" class="text-center py-8">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-haga-500 mx-auto"></div>
+                    <p class="mt-2 text-gray-600 dark:text-gray-300">Memuat kebijakan absensi...</p>
+                </div>
+                <div id="policy-content" class="hidden space-y-4">
+                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-900 dark:text-white mb-2" id="policy-name"></h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Hari Kerja:</p>
+                                <p class="font-medium" id="policy-work-days"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Jam Masuk:</p>
+                                <p class="font-medium" id="policy-start-time"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Jam Pulang:</p>
+                                <p class="font-medium" id="policy-end-time"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Toleransi Keterlambatan:</p>
+                                <p class="font-medium" id="policy-late-tolerance"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Durasi Istirahat:</p>
+                                <p class="font-medium" id="policy-break-duration"></p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Metode Absensi:</p>
+                                <p class="font-medium" id="policy-methods"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-400 dark:border-yellow-500">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Perhatian</h4>
+                                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>Pastikan untuk mematuhi jadwal dan aturan absensi yang telah ditetapkan. Keterlambatan atau pelanggaran lainnya akan dicatat dalam sistem.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="policy-error" class="hidden text-center py-8">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
+                        <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="mt-3 text-lg font-medium text-gray-900 dark:text-white">Gagal memuat kebijakan</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Terjadi kesalahan saat memuat kebijakan absensi. Silakan coba lagi nanti.</p>
+                    <div class="mt-6">
+                        <button type="button" id="retry-policy" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-haga-600 hover:bg-haga-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-haga-500">
+                            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Coba Lagi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         // Attendance functionality with selfie camera
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Attendance JavaScript loaded successfully');
+
+            // Policy Modal
+            const policyModal = document.getElementById('policy-modal');
+            const showPolicyBtn = document.getElementById('show-policy');
+            const closePolicyModal = document.getElementById('close-policy-modal');
+            const retryPolicyBtn = document.getElementById('retry-policy');
+            const policyLoading = document.getElementById('policy-loading');
+            const policyContent = document.getElementById('policy-content');
+            const policyError = document.getElementById('policy-error');
+
+            // Show policy modal
+            showPolicyBtn.addEventListener('click', function() {
+                policyModal.classList.remove('hidden');
+                loadPolicy();
+            });
+
+            // Close modal when clicking the close button
+            closePolicyModal.addEventListener('click', function() {
+                policyModal.classList.add('hidden');
+            });
+
+            // Close modal when clicking outside the modal
+            window.addEventListener('click', function(event) {
+                if (event.target === policyModal) {
+                    policyModal.classList.add('hidden');
+                }
+            });
+
+            // Retry loading policy
+            retryPolicyBtn?.addEventListener('click', loadPolicy);
+
+            // Load policy data
+            function loadPolicy() {
+                policyLoading.classList.remove('hidden');
+                policyContent.classList.add('hidden');
+                policyError.classList.add('hidden');
+
+                fetch('{{ route("employee.attendance.policy") }}', {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.data) {
+                        // Update the modal with policy data
+                        document.getElementById('policy-name').textContent = data.data.name || 'Kebijakan Standar';
+                        document.getElementById('policy-work-days').textContent = data.data.work_days || 'Senin - Jumat';
+                        document.getElementById('policy-start-time').textContent = data.data.start_time || '08:00';
+                        document.getElementById('policy-end-time').textContent = data.data.end_time || '17:00';
+                        document.getElementById('policy-late-tolerance').textContent = data.data.late_tolerance || '15 menit';
+                        document.getElementById('policy-break-duration').textContent = data.data.break_duration || '60 menit';
+                        document.getElementById('policy-methods').textContent = data.data.attendance_methods || 'Selfie';
+                        
+                        policyLoading.classList.add('hidden');
+                        policyContent.classList.remove('hidden');
+                    } else {
+                        throw new Error('Invalid policy data');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading policy:', error);
+                    policyLoading.classList.add('hidden');
+                    policyError.classList.remove('hidden');
+                });
+            }
 
             // Test camera availability
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {

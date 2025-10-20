@@ -122,7 +122,17 @@
                                         @php
                                             $changes = [];
                                             if ($subscriptionRequest->extension_months) {
-                                                $newEndDate = \Carbon\Carbon::parse($currentSubscription->end_date)->addMonths($subscriptionRequest->extension_months)->format('d M Y');
+                                                $currentDate = now();
+                                                $currentEndDate = \Carbon\Carbon::parse($currentSubscription->end_date);
+                                                
+                                                // If subscription has already expired, extend from current date
+                                                // Otherwise, extend from the current end date
+                                                $startDate = $currentDate->gt($currentEndDate) ? $currentDate : $currentEndDate;
+                                                
+                                                $newEndDate = $startDate->copy()
+                                                    ->addMonths($subscriptionRequest->extension_months)
+                                                    ->format('d M Y');
+                                                    
                                                 $changes[] = "Extend subscription by {$subscriptionRequest->extension_months} months (until {$newEndDate})";
                                             }
                                             if ($subscriptionRequest->target_package_name) {

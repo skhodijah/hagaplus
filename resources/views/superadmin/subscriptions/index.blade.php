@@ -38,12 +38,13 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                            @if($subscription->current_status == 'active') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
-                                            @elseif($subscription->current_status == 'inactive') bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300
-                                            @elseif($subscription->current_status == 'expired') bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300
-                                            @elseif($subscription->current_status == 'suspended') bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300
+                                            @if($subscription->status == 'active') bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300
+                                            @elseif($subscription->status == 'inactive') bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300
+                                            @elseif($subscription->status == 'expired') bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300
+                                            @elseif($subscription->status == 'cancelled') bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300
+                                            @elseif($subscription->status == 'pending_verification') bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300
                                             @else bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 @endif">
-                                            {{ ucfirst($subscription->current_status) }}
+                                            {{ ucfirst($subscription->status) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">

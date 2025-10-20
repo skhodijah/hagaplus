@@ -11,8 +11,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('support_requests', function (Blueprint $table) {
-            $table->dropForeign(['chat_id']);
-            $table->dropColumn('chat_id');
+            if (Schema::hasColumn('support_requests', 'chat_id')) {
+                $table->dropForeign(['chat_id']);
+                $table->dropColumn('chat_id');
+            }
         });
     }
 

@@ -122,8 +122,8 @@ return new class extends Migration {
                 WHERE s1.id > s2.id AND s1.key = s2.key
             ");
 
-            // Add new unique constraint on key only (for global settings)
-            $table->unique('key');
+            // Add new unique constraint on instansi_id and key (for per-instansi settings)
+            $table->unique(['instansi_id', 'key']);
         });
 
         if (Schema::hasTable('system_settings')) {
@@ -183,8 +183,12 @@ return new class extends Migration {
 
         // Simplify subscriptions table - make it cleaner
         Schema::table('subscriptions', function (Blueprint $table) {
-            // Modify existing status enum to include more values
-            DB::statement("ALTER TABLE subscriptions MODIFY COLUMN status ENUM('pending_verification', 'active', 'inactive', 'expired', 'cancelled') DEFAULT 'pending_verification'");
+            if (!Schema::hasColumn('subscriptions', 'status')) {
+                $table->enum('status', ['pending_verification', 'active', 'inactive', 'expired', 'cancelled'])->default('pending_verification')->after('end_date');
+            } else {
+                // Modify existing status enum to include more values
+                DB::statement("ALTER TABLE subscriptions MODIFY COLUMN status ENUM('pending_verification', 'active', 'inactive', 'expired', 'cancelled') DEFAULT 'pending_verification'");
+            }
 
             if (!Schema::hasColumn('subscriptions', 'payment_method')) {
                 $table->string('payment_method')->default('transfer')->after('price');
