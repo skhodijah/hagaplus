@@ -120,6 +120,48 @@
                             <p class="mt-1 text-sm text-gray-900 dark:text-white">{{ $attendance->notes }}</p>
                         </div>
                     @endif
+
+                    <!-- Selfie Photos Section -->
+                    @if($attendance->check_in_photo || $attendance->check_out_photo)
+                        <div class="mt-6">
+                            <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Attendance Photos</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                @if($attendance->check_in_photo)
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-in Photo</h5>
+                                        <div class="aspect-w-4 aspect-h-3">
+                                            <img src="{{ asset('storage/' . $attendance->check_in_photo) }}"
+                                                 alt="Check-in selfie"
+                                                 class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                                 onclick="openImageModal('{{ asset('storage/' . $attendance->check_in_photo) }}', 'Check-in Photo')">
+                                        </div>
+                                        @if($attendance->check_in_time)
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                                Taken at {{ $attendance->check_in_time->format('H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endif
+
+                                @if($attendance->check_out_photo)
+                                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                                        <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-out Photo</h5>
+                                        <div class="aspect-w-4 aspect-h-3">
+                                            <img src="{{ asset('storage/' . $attendance->check_out_photo) }}"
+                                                 alt="Check-out selfie"
+                                                 class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                                 onclick="openImageModal('{{ asset('storage/' . $attendance->check_out_photo) }}', 'Check-out Photo')">
+                                        </div>
+                                        @if($attendance->check_out_time)
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                                Taken at {{ $attendance->check_out_time->format('H:i') }}
+                                            </p>
+                                        @endif
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -158,4 +200,44 @@
             </a>
         </div>
     </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-auto max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="modalTitle" class="text-lg font-medium text-gray-900 dark:text-white">Attendance Photo</h3>
+                    <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <i class="fa-solid fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="flex justify-center">
+                    <img id="modalImage" src="" alt="Attendance photo" class="max-w-full max-h-96 object-contain rounded-lg">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script src="{{ asset('js/attendance.js') }}"></script>
+    <script>
+        function openImageModal(imageSrc, title) {
+            document.getElementById('modalImage').src = imageSrc;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.getElementById('modalImage').src = '';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    </script>
+    @endpush
 </x-admin-layout>

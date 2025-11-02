@@ -35,7 +35,21 @@ class AttendanceController extends Controller
                 });
             });
 
-        return view('admin.attendance.index', compact('employees', 'attendances', 'month'));
+        // Get attendances with photos for the selfie gallery
+        $attendancesWithPhotos = Attendance::whereHas('user', function ($query) use ($instansiId) {
+            $query->where('instansi_id', $instansiId);
+        })
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
+            ->where(function ($query) {
+                $query->whereNotNull('check_in_photo')
+                    ->orWhereNotNull('check_out_photo');
+            })
+            ->with('user')
+            ->orderBy('attendance_date', 'desc')
+            ->orderBy('check_in_time', 'desc')
+            ->get();
+
+        return view('admin.attendance.index', compact('employees', 'attendances', 'month', 'attendancesWithPhotos'));
     }
 
     public function create()

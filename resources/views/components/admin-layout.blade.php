@@ -205,6 +205,7 @@
                                         'info': 'fa-info-circle text-blue-600 dark:text-blue-400',
                                         'attendance': 'fa-calendar-check text-blue-600 dark:text-blue-400',
                                         'leave': 'fa-calendar-times text-orange-600 dark:text-orange-400',
+                                        'leaves': 'fa-calendar-times text-orange-600 dark:text-orange-400',
                                         'payroll': 'fa-money-bill-wave text-green-600 dark:text-green-400',
                                         'user': 'fa-user-plus text-purple-600 dark:text-purple-400'
                                     };
@@ -219,6 +220,7 @@
                                         'info': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                                         'attendance': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
                                         'leave': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+                                        'leaves': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
                                         'payroll': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
                                         'user': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
                                     };

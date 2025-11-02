@@ -20,39 +20,50 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function changeMonth(direction) {
-        const currentMonth = currentMonthSpan.textContent;
-        const [monthName, year] = currentMonth.split(" ");
-        const monthNames = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
-        const monthIndex = monthNames.indexOf(monthName);
-        let newMonthIndex = monthIndex + direction;
-        let newYear = parseInt(year);
+        // Get current month from data attribute or fallback to parsing text
+        let currentMonth =
+            prevMonthBtn.getAttribute("data-month") ||
+            nextMonthBtn.getAttribute("data-month");
 
-        if (newMonthIndex < 0) {
-            newMonthIndex = 11;
+        if (!currentMonth) {
+            // Fallback to parsing text content
+            const currentMonthText = currentMonthSpan.textContent;
+            const [monthName, year] = currentMonthText.split(" ");
+            const monthNames = [
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            ];
+            const monthIndex = monthNames.indexOf(monthName);
+            currentMonth = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+        }
+
+        const [year, month] = currentMonth.split("-");
+        let newYear = parseInt(year);
+        let newMonth = parseInt(month) + direction;
+
+        if (newMonth < 1) {
+            newMonth = 12;
             newYear--;
-        } else if (newMonthIndex > 11) {
-            newMonthIndex = 0;
+        } else if (newMonth > 12) {
+            newMonth = 1;
             newYear++;
         }
 
-        const newMonth = `${newYear}-${String(newMonthIndex + 1).padStart(
+        const newMonthFormatted = `${newYear}-${String(newMonth).padStart(
             2,
             "0"
         )}`;
-        window.location.href = `${window.location.pathname}?month=${newMonth}`;
+        window.location.href = `${window.location.pathname}?month=${newMonthFormatted}`;
     }
 
     // Initialize any other attendance-related functionality here

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\BranchController;
 use App\Http\Controllers\Admin\SubscriptionController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\EmployeePolicyController;
+use App\Http\Controllers\Admin\LeaveController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -50,6 +51,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Employee Policies
     Route::resource('employee-policies', EmployeePolicyController::class);
     Route::patch('employee-policies/{employee_policy}/toggle-status', [EmployeePolicyController::class, 'toggleStatus'])->name('employee-policies.toggle-status');
+
+    // Leave management
+    Route::resource('leaves', LeaveController::class);
+    Route::patch('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
+    Route::patch('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
 
     // Notifications
     Route::get('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
