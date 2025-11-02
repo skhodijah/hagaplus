@@ -212,7 +212,18 @@
                     </button>
                 </div>
                 <div class="flex justify-center">
-                    <img id="modalImage" src="" alt="Attendance photo" class="max-w-full max-h-96 object-contain rounded-lg">
+                    <img id="modalImage" src="" alt="Attendance photo" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-lg">
+                </div>
+                <div class="mt-4 flex justify-center space-x-4">
+                    <button onclick="zoomIn()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-magnifying-glass-plus mr-2"></i>Zoom In
+                    </button>
+                    <button onclick="zoomOut()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-magnifying-glass-minus mr-2"></i>Zoom Out
+                    </button>
+                    <button onclick="resetZoom()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                        <i class="fa-solid fa-rotate-left mr-2"></i>Reset
+                    </button>
                 </div>
             </div>
         </div>
@@ -221,20 +232,70 @@
     @push('scripts')
     <script src="{{ asset('js/attendance.js') }}"></script>
     <script>
+        let currentZoom = 1;
+        const zoomStep = 0.25;
+        const maxZoom = 3;
+        const minZoom = 0.5;
+
         function openImageModal(imageSrc, title) {
             document.getElementById('modalImage').src = imageSrc;
             document.getElementById('modalTitle').textContent = title;
             document.getElementById('imageModal').classList.remove('hidden');
+            resetZoom();
         }
 
         function closeImageModal() {
             document.getElementById('imageModal').classList.add('hidden');
             document.getElementById('modalImage').src = '';
+            resetZoom();
+        }
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom += zoomStep;
+                updateZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom -= zoomStep;
+                updateZoom();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            updateZoom();
+        }
+
+        function updateZoom() {
+            const modalImage = document.getElementById('modalImage');
+            modalImage.style.transform = `scale(${currentZoom})`;
+            modalImage.style.transition = 'transform 0.3s ease';
         }
 
         // Close modal when clicking outside
         document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
+                closeImageModal();
+            }
+        });
+
+        // Keyboard shortcuts for zoom
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('imageModal').classList.contains('hidden')) return;
+
+            if (e.key === '+' || e.key === '=') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === '-') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key === '0') {
+                e.preventDefault();
+                resetZoom();
+            } else if (e.key === 'Escape') {
                 closeImageModal();
             }
         });
