@@ -54,6 +54,8 @@
 
                 <x-layout.sidebar-link :href="route('admin.attendance.index')" icon="fa-solid fa-calendar-check" label="Attendance" :active="request()->routeIs('admin.attendance.*')" />
 
+                <x-layout.sidebar-link :href="route('admin.leaves.index')" icon="fa-solid fa-calendar-times" label="Leave Management" :active="request()->routeIs('admin.leaves.*')" />
+
                 <x-layout.sidebar-link :href="route('admin.payroll.index')" icon="fa-solid fa-money-bill-wave" label="Payroll" :active="request()->routeIs('admin.payroll.*')" />
 
                 <x-layout.sidebar-link :href="route('admin.branches.index')" icon="fa-solid fa-building" label="Branches" :active="request()->routeIs('admin.branches.*')" />
