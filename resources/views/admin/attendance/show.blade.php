@@ -130,10 +130,13 @@
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-in Photo</h5>
                                         <div class="aspect-w-4 aspect-h-3">
-                                            <img src="{{ asset('storage/' . $attendance->check_in_photo) }}"
-                                                 alt="Check-in selfie"
-                                                 class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                                 onclick="openImageModal('{{ asset('storage/' . $attendance->check_in_photo) }}', 'Check-in Photo')">
+                                            <a href="{{ asset('storage/' . $attendance->check_in_photo) }}" 
+                                               data-fancybox="attendance-photos" 
+                                               data-caption="Check-in Photo @if($attendance->check_in_time) - Taken at {{ $attendance->check_in_time->format('H:i') }}@endif">
+                                                <img src="{{ asset('storage/' . $attendance->check_in_photo) }}"
+                                                     alt="Check-in selfie"
+                                                     class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                                            </a>
                                         </div>
                                         @if($attendance->check_in_time)
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -147,10 +150,13 @@
                                     <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
                                         <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Check-out Photo</h5>
                                         <div class="aspect-w-4 aspect-h-3">
-                                            <img src="{{ asset('storage/' . $attendance->check_out_photo) }}"
-                                                 alt="Check-out selfie"
-                                                 class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                                 onclick="openImageModal('{{ asset('storage/' . $attendance->check_out_photo) }}', 'Check-out Photo')">
+                                            <a href="{{ asset('storage/' . $attendance->check_out_photo) }}" 
+                                               data-fancybox="attendance-photos" 
+                                               data-caption="Check-out Photo @if($attendance->check_out_time) - Taken at {{ $attendance->check_out_time->format('H:i') }}@endif">
+                                                <img src="{{ asset('storage/' . $attendance->check_out_photo) }}"
+                                                     alt="Check-out selfie"
+                                                     class="w-full h-48 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity">
+                                            </a>
                                         </div>
                                         @if($attendance->check_out_time)
                                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
@@ -200,105 +206,4 @@
             </a>
         </div>
     </div>
-
-    <!-- Image Modal -->
-    <div id="imageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-auto max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="modalTitle" class="text-lg font-medium text-gray-900 dark:text-white">Attendance Photo</h3>
-                    <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <i class="fa-solid fa-times text-xl"></i>
-                    </button>
-                </div>
-                <div class="flex justify-center">
-                    <img id="modalImage" src="" alt="Attendance photo" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-lg">
-                </div>
-                <div class="mt-4 flex justify-center space-x-4">
-                    <button onclick="zoomIn()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-magnifying-glass-plus mr-2"></i>Zoom In
-                    </button>
-                    <button onclick="zoomOut()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-magnifying-glass-minus mr-2"></i>Zoom Out
-                    </button>
-                    <button onclick="resetZoom()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-rotate-left mr-2"></i>Reset
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @push('scripts')
-    <script src="{{ asset('js/attendance.js') }}"></script>
-    <script>
-        let currentZoom = 1;
-        const zoomStep = 0.25;
-        const maxZoom = 3;
-        const minZoom = 0.5;
-
-        function openImageModal(imageSrc, title) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('imageModal').classList.remove('hidden');
-            resetZoom();
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-            document.getElementById('modalImage').src = '';
-            resetZoom();
-        }
-
-        function zoomIn() {
-            if (currentZoom < maxZoom) {
-                currentZoom += zoomStep;
-                updateZoom();
-            }
-        }
-
-        function zoomOut() {
-            if (currentZoom > minZoom) {
-                currentZoom -= zoomStep;
-                updateZoom();
-            }
-        }
-
-        function resetZoom() {
-            currentZoom = 1;
-            updateZoom();
-        }
-
-        function updateZoom() {
-            const modalImage = document.getElementById('modalImage');
-            modalImage.style.transform = `scale(${currentZoom})`;
-            modalImage.style.transition = 'transform 0.3s ease';
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeImageModal();
-            }
-        });
-
-        // Keyboard shortcuts for zoom
-        document.addEventListener('keydown', function(e) {
-            if (document.getElementById('imageModal').classList.contains('hidden')) return;
-
-            if (e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                zoomIn();
-            } else if (e.key === '-') {
-                e.preventDefault();
-                zoomOut();
-            } else if (e.key === '0') {
-                e.preventDefault();
-                resetZoom();
-            } else if (e.key === 'Escape') {
-                closeImageModal();
-            }
-        });
-    </script>
-    @endpush
 </x-admin-layout>

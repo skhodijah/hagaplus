@@ -19,7 +19,7 @@ class AttendanceController extends Controller
 
         if ($employee) {
             $attendancePolicy = $employee->attendancePolicy;
-            
+
             // If no specific policy, get default policy
             if (!$attendancePolicy) {
                 $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
@@ -38,13 +38,13 @@ class AttendanceController extends Controller
             ->get();
 
         return view('employee.attendance.index', compact(
-            'todayAttendance', 
-            'recentAttendance', 
+            'todayAttendance',
+            'recentAttendance',
             'employee',
             'attendancePolicy'
         ));
     }
-    
+
     /**
      * Show the attendance policy for the employee
      */
@@ -52,28 +52,28 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
         $employee = $user->employee;
-        
+
         if (!$employee) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data karyawan tidak ditemukan'
             ], 404);
         }
-        
+
         $attendancePolicy = $employee->attendancePolicy;
-        
+
         // If no specific policy, get default policy
         if (!$attendancePolicy) {
             $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
         }
-        
+
         if (!$attendancePolicy) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kebijakan kehadiran tidak ditemukan'
             ], 404);
         }
-        
+
         // Format work days
         $daysMap = [
             1 => 'Senin',
@@ -84,13 +84,13 @@ class AttendanceController extends Controller
             6 => 'Sabtu',
             7 => 'Minggu',
         ];
-        
+
         $workDays = collect($attendancePolicy->work_days ?? [])
-            ->map(function($day) use ($daysMap) {
+            ->map(function ($day) use ($daysMap) {
                 return $daysMap[$day] ?? $day;
             })
             ->implode(', ');
-        
+
         $policyData = [
             'name' => $attendancePolicy->name,
             'work_days' => $workDays,
@@ -100,15 +100,15 @@ class AttendanceController extends Controller
             'early_checkout_tolerance' => $attendancePolicy->early_checkout_tolerance . ' menit',
             'break_duration' => $attendancePolicy->break_duration . ' menit',
             'overtime_after' => $attendancePolicy->overtime_after_minutes . ' menit setelah jam kerja',
-            'attendance_methods' => is_array($attendancePolicy->attendance_methods) 
+            'attendance_methods' => is_array($attendancePolicy->attendance_methods)
                 ? implode(', ', $attendancePolicy->attendance_methods)
                 : $attendancePolicy->attendance_methods,
             'auto_checkout' => $attendancePolicy->auto_checkout ? 'Aktif' : 'Tidak Aktif',
-            'auto_checkout_time' => $attendancePolicy->auto_checkout_time 
+            'auto_checkout_time' => $attendancePolicy->auto_checkout_time
                 ? \Carbon\Carbon::parse($attendancePolicy->auto_checkout_time)->format('H:i')
                 : '-',
         ];
-        
+
         return response()->json([
             'success' => true,
             'data' => $policyData
@@ -119,6 +119,8 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'selfie' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $user = Auth::user();
@@ -136,20 +138,49 @@ class AttendanceController extends Controller
         }
 
         try {
+            $employee = $user->employee;
+            $branch = $employee ? $employee->branch : null;
+            $attendancePolicy = null;
+
+            if ($employee && $employee->attendancePolicy) {
+                $attendancePolicy = $employee->attendancePolicy;
+            } else {
+                $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
+            }
+
+            $hasBranchCoordinates = $branch && $branch->latitude && $branch->longitude && $branch->radius;
+            $requiresLocation = $hasBranchCoordinates || ($attendancePolicy && $attendancePolicy->require_location_check);
+
+            if ($requiresLocation) {
+                if (!$request->filled(['latitude', 'longitude'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Lokasi tidak ditemukan. Aktifkan layanan lokasi pada perangkat Anda untuk melakukan absensi.'
+                    ], 400);
+                }
+
+                if ($hasBranchCoordinates) {
+                    $distance = $this->calculateDistance(
+                        (float) $request->latitude,
+                        (float) $request->longitude,
+                        (float) $branch->latitude,
+                        (float) $branch->longitude
+                    );
+
+                    if ($distance > (float) $branch->radius) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Lokasi Anda berada di luar radius yang diizinkan untuk absensi. Jarak dari lokasi kerja: ' . round($distance, 1) . ' meter.'
+                        ], 403);
+                    }
+                }
+            }
+
             // Store selfie photo
             $selfiePath = $request->file('selfie')->store('attendance-selfies', 'public');
 
             $checkInTime = now();
             $lateMinutes = 0;
-            $attendancePolicy = null;
-
-            // Get employee's attendance policy
-            if ($user->employee && $user->employee->attendancePolicy) {
-                $attendancePolicy = $user->employee->attendancePolicy;
-            } else {
-                // Fallback to default policy if no specific policy is set
-                $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
-            }
 
             // Calculate late minutes if policy exists
             if ($attendancePolicy) {
@@ -160,7 +191,7 @@ class AttendanceController extends Controller
 
                 if ($checkInTime->greaterThan($workStartTime)) {
                     $lateMinutes = $workStartTime->diffInMinutes($checkInTime);
-                    
+
                     // Only count as late if after grace period
                     if ($checkInTime->greaterThan($graceTime)) {
                         $lateMinutes = $workStartTime->diffInMinutes($checkInTime);
@@ -170,12 +201,18 @@ class AttendanceController extends Controller
                 }
             }
 
+            $locationString = null;
+            if ($request->filled(['latitude', 'longitude'])) {
+                $locationString = $request->latitude . ',' . $request->longitude;
+            }
+
             if ($existingAttendance) {
                 // Update existing record
                 $existingAttendance->update([
                     'check_in_time' => $checkInTime,
                     'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
+                    'check_in_location' => $locationString,
                     'late_minutes' => $lateMinutes,
                     'status' => $lateMinutes > 0 ? 'late' : 'present',
                 ]);
@@ -190,6 +227,7 @@ class AttendanceController extends Controller
                     'check_in_time' => $checkInTime,
                     'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
+                    'check_in_location' => $locationString,
                     'late_minutes' => $lateMinutes,
                     'status' => $lateMinutes > 0 ? 'late' : 'present',
                 ]);
@@ -217,6 +255,8 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'selfie' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         $user = Auth::user();
@@ -242,6 +282,44 @@ class AttendanceController extends Controller
         }
 
         try {
+            $employee = $user->employee;
+            $attendancePolicy = null;
+
+            if ($employee && $employee->attendancePolicy) {
+                $attendancePolicy = $employee->attendancePolicy;
+            } else {
+                $attendancePolicy = \App\Models\Admin\AttendancePolicy::where('is_default', true)->first();
+            }
+
+                $branch = $employee ? $employee->branch : null;
+            $hasBranchCoordinates = $branch && $branch->latitude && $branch->longitude && $branch->radius;
+            $requiresLocation = $hasBranchCoordinates || ($attendancePolicy && $attendancePolicy->require_location_check);
+
+            if ($requiresLocation) {
+                if (!$request->filled(['latitude', 'longitude'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Lokasi tidak ditemukan. Aktifkan layanan lokasi pada perangkat Anda untuk melakukan absensi.'
+                    ], 400);
+                }
+
+                if ($hasBranchCoordinates) {
+                    $distance = $this->calculateDistance(
+                        (float) $request->latitude,
+                        (float) $request->longitude,
+                        (float) $branch->latitude,
+                        (float) $branch->longitude
+                    );
+
+                    if ($distance > (float) $branch->radius) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Lokasi Anda berada di luar radius yang diizinkan untuk absensi. Jarak dari lokasi kerja: ' . round($distance, 1) . ' meter.'
+                        ], 403);
+                    }
+                }
+            }
+
             // Store selfie photo
             $selfiePath = $request->file('selfie')->store('attendance-selfies', 'public');
 
@@ -279,10 +357,16 @@ class AttendanceController extends Controller
                 }
             }
 
+            $locationString = null;
+            if ($request->filled(['latitude', 'longitude'])) {
+                $locationString = $request->latitude . ',' . $request->longitude;
+            }
+
             $attendance->update([
                 'check_out_time' => $checkOutTime,
                 'check_out_method' => 'selfie',
                 'check_out_photo' => $selfiePath,
+                'check_out_location' => $locationString,
                 'work_duration' => $workDuration,
                 'early_checkout_minutes' => $earlyCheckoutMinutes,
                 'status' => $attendance->late_minutes > 0 ? 'late' : 'present', // Keep existing status or update if needed
@@ -311,5 +395,24 @@ class AttendanceController extends Controller
     {
         // Keep existing QR scan functionality if needed
         return response()->json(['message' => 'QR scan not implemented yet']);
+    }
+
+    /**
+     * Calculate distance between two coordinates using Haversine formula
+     */
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371000; // Earth radius in meters
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lonDelta = deg2rad($lon2 - $lon1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($lonDelta / 2) * sin($lonDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c; // Distance in meters
     }
 }

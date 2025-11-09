@@ -1,4 +1,13 @@
 <x-employee-layout>
+@php
+    $branchData = ($employee && $employee->branch) ? [
+        'id' => $employee->branch->id,
+        'name' => $employee->branch->name,
+        'latitude' => $employee->branch->latitude ? (float) $employee->branch->latitude : null,
+        'longitude' => $employee->branch->longitude ? (float) $employee->branch->longitude : null,
+        'radius' => $employee->branch->radius ? (float) $employee->branch->radius : null,
+    ] : null;
+@endphp
     <div class="py-6 md:py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
@@ -31,30 +40,36 @@
                 @include('employee.partials.status')
             </div>
 
-            <!-- Camera Test Section -->
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
-                <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🧪 Test Kamera</h3>
-                <p class="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                    Cek apakah kamera berfungsi dengan baik sebelum melakukan absensi. Pastikan menggunakan HTTPS atau localhost.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-2 mb-2">
-                    <button type="button" id="test-camera"
-                            class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                        Test Kamera Sederhana
-                    </button>
-                    <button type="button" id="check-browser-support"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                        Cek Dukungan Browser
-                    </button>
+            <!-- Location Information -->
+            @if($employee && $employee->branch)
+            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
+                <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">📍 Lokasi Cabang</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nama Cabang</p>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $employee->branch->name }}</p>
+                    </div>
+                    @if($employee->branch->latitude && $employee->branch->longitude)
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Koordinat</p>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ number_format($employee->branch->latitude, 6) }}, {{ number_format($employee->branch->longitude, 6) }}
+                        </p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Radius Absensi</p>
+                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $employee->branch->radius }} meter</p>
+                    </div>
+                    @endif
                 </div>
-                <div id="test-result" class="mt-2 text-sm"></div>
-                <div id="browser-info" class="mt-2 text-xs text-gray-600 dark:text-gray-400 hidden">
-                    <strong>Info Browser:</strong><br>
-                    <span id="protocol-info"></span><br>
-                    <span id="camera-api-info"></span><br>
-                    <span id="secure-context-info"></span>
+                <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Penting:</strong> Anda harus berada dalam radius {{ $employee->branch->radius }} meter dari lokasi cabang untuk dapat melakukan absensi.
+                    </p>
                 </div>
             </div>
+            @endif
+
 
             <!-- Attendance Actions -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -106,6 +121,29 @@
                             <form id="checkin-form" enctype="multipart/form-data">
                                 @csrf
                                 <div class="space-y-4">
+                                    <div id="checkin-location-status" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+                                        <div class="flex flex-wrap items-center gap-4 text-sm">
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Koordinat Anda:</span>
+                                                <span id="checkin-coordinates">Menunggu lokasi...</span>
+                                            </div>
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Jarak ke kantor:</span>
+                                                <span id="checkin-distance">-</span>
+                                            </div>
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Status:</span>
+                                                <span id="checkin-radius-status" class="font-semibold">Menunggu lokasi...</span>
+                                            </div>
+                                        </div>
+                                        <p id="checkin-location-message" class="text-xs text-gray-600 dark:text-gray-300">
+                                            Pastikan Anda berada dalam radius lokasi cabang sebelum melakukan absensi.
+                                        </p>
+                                    </div>
+                                    <div id="checkin-location-alert" class="hidden bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-200">
+                                        Lokasi Anda berada di luar radius absensi yang diizinkan.
+                                    </div>
+
                                     <!-- Camera Preview -->
                                     <div class="relative">
                                         <div id="camera-preview" class="w-full aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -116,6 +154,11 @@
                                                 </svg>
                                                 <p class="text-gray-500 dark:text-gray-400 text-sm">Klik tombol di bawah untuk mengaktifkan kamera</p>
                                             </div>
+                                        </div>
+                                        <div id="checkin-live-overlay" class="hidden absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-2 rounded-lg space-y-1">
+                                            <div id="checkin-overlay-coordinates">Lat: -, Lng: -</div>
+                                            <div id="checkin-overlay-distance">Jarak: -</div>
+                                            <div id="checkin-overlay-status">Status: -</div>
                                         </div>
                                         <video id="checkin-video" class="hidden w-full rounded-lg"></video>
                                         <canvas id="checkin-canvas" class="hidden"></canvas>
@@ -144,7 +187,7 @@
                                         <!-- Alternative: Upload Photo -->
                                         <div class="text-center">
                                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Atau</p>
-                                            <label for="upload-checkin-photo" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
+                                            <label for="upload-checkin-photo" id="upload-checkin-label" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                                 </svg>
@@ -232,6 +275,29 @@
                             <form id="checkout-form" enctype="multipart/form-data">
                                 @csrf
                                 <div class="space-y-4">
+                                    <div id="checkout-location-status" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+                                        <div class="flex flex-wrap items-center gap-4 text-sm">
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Koordinat Anda:</span>
+                                                <span id="checkout-coordinates">Menunggu lokasi...</span>
+                                            </div>
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Jarak ke kantor:</span>
+                                                <span id="checkout-distance">-</span>
+                                            </div>
+                                            <div class="text-gray-700 dark:text-gray-200">
+                                                <span class="font-semibold">Status:</span>
+                                                <span id="checkout-radius-status" class="font-semibold">Menunggu lokasi...</span>
+                                            </div>
+                                        </div>
+                                        <p id="checkout-location-message" class="text-xs text-gray-600 dark:text-gray-300">
+                                            Pastikan Anda berada dalam radius lokasi cabang sebelum melakukan absensi.
+                                        </p>
+                                    </div>
+                                    <div id="checkout-location-alert" class="hidden bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-200">
+                                        Lokasi Anda berada di luar radius absensi yang diizinkan.
+                                    </div>
+
                                     <!-- Camera Preview -->
                                     <div class="relative">
                                         <div id="camera-preview-checkout" class="w-full aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -242,6 +308,11 @@
                                                 </svg>
                                                 <p class="text-gray-500 dark:text-gray-400 text-sm">Klik tombol di bawah untuk mengaktifkan kamera</p>
                                             </div>
+                                        </div>
+                                        <div id="checkout-live-overlay" class="hidden absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-2 rounded-lg space-y-1">
+                                            <div id="checkout-overlay-coordinates">Lat: -, Lng: -</div>
+                                            <div id="checkout-overlay-distance">Jarak: -</div>
+                                            <div id="checkout-overlay-status">Status: -</div>
                                         </div>
                                         <video id="checkout-video" class="hidden w-full rounded-lg"></video>
                                         <canvas id="checkout-canvas" class="hidden"></canvas>
@@ -270,7 +341,7 @@
                                         <!-- Alternative: Upload Photo -->
                                         <div class="text-center">
                                             <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Atau</p>
-                                            <label for="upload-checkout-photo" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
+                                            <label for="upload-checkout-photo" id="upload-checkout-label" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                                 </svg>
@@ -452,598 +523,756 @@
 
     @push('scripts')
     <script>
-        // Attendance functionality with selfie camera
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('Attendance JavaScript loaded successfully');
+        window.branchInfo = window.branchInfo || @json($branchData);
+        window.branchName = window.branchName || @json($branchData['name'] ?? null);
 
-            // Policy Modal
-            const policyModal = document.getElementById('policy-modal');
-            const showPolicyBtn = document.getElementById('show-policy');
-            const closePolicyModal = document.getElementById('close-policy-modal');
-            const retryPolicyBtn = document.getElementById('retry-policy');
-            const policyLoading = document.getElementById('policy-loading');
-            const policyContent = document.getElementById('policy-content');
-            const policyError = document.getElementById('policy-error');
-
-            // Show policy modal
-            showPolicyBtn.addEventListener('click', function() {
-                policyModal.classList.remove('hidden');
-                loadPolicy();
-            });
-
-            // Close modal when clicking the close button
-            closePolicyModal.addEventListener('click', function() {
-                policyModal.classList.add('hidden');
-            });
-
-            // Close modal when clicking outside the modal
-            window.addEventListener('click', function(event) {
-                if (event.target === policyModal) {
-                    policyModal.classList.add('hidden');
+        if (!window.calculateDistanceMeters) {
+            window.calculateDistanceMeters = function(lat1, lon1, lat2, lon2) {
+                if ([lat1, lon1, lat2, lon2].some(function(value) { return value === null || value === undefined || isNaN(parseFloat(value)); })) {
+                    return null;
                 }
-            });
+                const toRad = function(value) { return (value * Math.PI) / 180; };
+                const earthRadius = 6371000; // meters
+                const dLat = toRad(lat2 - lat1);
+                const dLon = toRad(lon2 - lon1);
+                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                return earthRadius * c;
+            };
+        }
 
-            // Retry loading policy
-            retryPolicyBtn?.addEventListener('click', loadPolicy);
+        if (!window.AttendanceLocationManager) {
+            window.AttendanceLocationManager = (function() {
+                let branchInfo = null;
+                let watchStarted = false;
+                let watchId = null;
+                let data = { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: null };
+                const listeners = [];
 
-            // Load policy data
-            function loadPolicy() {
-                policyLoading.classList.remove('hidden');
-                policyContent.classList.add('hidden');
-                policyError.classList.add('hidden');
+                function normalizeBranchInfo(info) {
+                    if (!info) {
+                        return null;
+                    }
+                    const latitude = info.latitude !== undefined && info.latitude !== null ? parseFloat(info.latitude) : null;
+                    const longitude = info.longitude !== undefined && info.longitude !== null ? parseFloat(info.longitude) : null;
+                    const radius = info.radius !== undefined && info.radius !== null ? parseFloat(info.radius) : null;
+                    if ([latitude, longitude, radius].some(function(value) { return value === null || Number.isNaN(value); })) {
+                        return null;
+                    }
+                    return {
+                        ...info,
+                        latitude,
+                        longitude,
+                        radius,
+                    };
+                }
 
-                fetch('{{ route("employee.attendance.policy") }}', {
+                function notify() {
+                    listeners.forEach(function(listener) {
+                        listener({ ...data });
+                    });
+                }
+
+                function ensureWatcher() {
+                    if (watchStarted) {
+                        return;
+                    }
+                    watchStarted = true;
+
+                    if (!('geolocation' in navigator)) {
+                        data.error = 'Perangkat tidak mendukung geolokasi.';
+                        data.available = false;
+                        data.distance = null;
+                        data.insideRadius = false;
+                        notify();
+                        return;
+                    }
+
+                    watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+                        enableHighAccuracy: true,
+                        maximumAge: 5000,
+                        timeout: 10000,
+                    });
+                }
+
+                function handleSuccess(position) {
+                    data.lat = position.coords.latitude;
+                    data.lng = position.coords.longitude;
+                    data.available = true;
+                    data.error = null;
+
+                    if (branchInfo && branchInfo.latitude !== null && branchInfo.longitude !== null && branchInfo.radius !== null) {
+                        data.distance = window.calculateDistanceMeters(data.lat, data.lng, branchInfo.latitude, branchInfo.longitude);
+                        data.insideRadius = data.distance !== null ? data.distance <= branchInfo.radius : false;
+                    } else {
+                        data.distance = null;
+                        data.insideRadius = true;
+                    }
+
+                    notify();
+                }
+
+                function handleError(error) {
+                    data.error = (error && error.message) ? error.message : 'Tidak dapat memperoleh lokasi.';
+                    data.available = false;
+                    data.distance = null;
+                    data.insideRadius = false;
+                    notify();
+                }
+
+                return {
+                    setBranchInfo(info) {
+                        branchInfo = normalizeBranchInfo(info);
+                        ensureWatcher();
+                        notify();
+                    },
+                    subscribe(listener) {
+                        if (typeof listener === 'function') {
+                            listeners.push(listener);
+                            listener({ ...data });
+                        }
+                        ensureWatcher();
+                    },
+                    getData() {
+                        return { ...data };
+                    },
+                    hasBranchInfo() {
+                        return !!branchInfo;
+                    }
+                };
+            })();
+        }
+
+        if (window.branchInfo) {
+            window.AttendanceLocationManager.setBranchInfo(window.branchInfo);
+        } else {
+            window.AttendanceLocationManager.subscribe(function() {});
+        }
+
+        if (!window.drawAttendanceOverlay) {
+            window.drawAttendanceOverlay = function(ctx, width, height, options = {}) {
+                if (!ctx) {
+                    return;
+                }
+
+                const now = options.timestamp ? new Date(options.timestamp) : new Date();
+                const timestampText = now.toLocaleString();
+                const hasCoords = typeof options.latitude === 'number' && typeof options.longitude === 'number';
+                const coordsText = hasCoords ? `Lat: ${options.latitude.toFixed(6)}, Lng: ${options.longitude.toFixed(6)}` : 'Koordinat tidak tersedia';
+                const distanceText = typeof options.distance === 'number' ? `Jarak: ${options.distance.toFixed(1)} m` : null;
+                const statusText = typeof options.insideRadius === 'boolean'
+                    ? (options.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius')
+                    : null;
+                const labelText = options.label ? String(options.label) : null;
+
+                const lines = [labelText, timestampText, coordsText, distanceText, statusText].filter(Boolean);
+                if (!lines.length) {
+                    return;
+                }
+
+                const padding = 16;
+                const lineHeight = 18;
+                const boxHeight = padding + lineHeight * lines.length;
+
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                ctx.fillRect(0, height - boxHeight, width, boxHeight);
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = '16px sans-serif';
+                lines.forEach(function(line, index) {
+                    ctx.fillText(line, padding, height - boxHeight + padding + lineHeight * (index + 0.5));
+                });
+                ctx.restore();
+            };
+        }
+    </script>
+    <script src="{{ asset('js/attendance.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const locationManager = window.AttendanceLocationManager;
+            const branchLabel = window.branchName || 'Lokasi Kantor';
+            let currentLocation = locationManager ? locationManager.getData() : { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: 'Lokasi belum tersedia.' };
+
+            const checkInElements = {
+                form: document.getElementById('checkin-form'),
+                startBtn: document.getElementById('start-camera-checkin'),
+                captureBtn: document.getElementById('capture-checkin'),
+                submitBtn: document.getElementById('submit-checkin'),
+                video: document.getElementById('checkin-video'),
+                canvas: document.getElementById('checkin-canvas'),
+                preview: document.getElementById('camera-preview'),
+                overlay: document.getElementById('checkin-live-overlay'),
+                overlayCoords: document.getElementById('checkin-overlay-coordinates'),
+                overlayDistance: document.getElementById('checkin-overlay-distance'),
+                overlayStatus: document.getElementById('checkin-overlay-status'),
+                coordsText: document.getElementById('checkin-coordinates'),
+                distanceText: document.getElementById('checkin-distance'),
+                statusText: document.getElementById('checkin-radius-status'),
+                messageText: document.getElementById('checkin-location-message'),
+                alertBox: document.getElementById('checkin-location-alert'),
+                uploadInput: document.getElementById('upload-checkin-photo'),
+                uploadLabel: document.getElementById('upload-checkin-label'),
+                latInput: document.getElementById('checkin-latitude'),
+                lngInput: document.getElementById('checkin-longitude'),
+                selfieInput: document.getElementById('checkin-selfie')
+            };
+
+            const checkOutElements = {
+                form: document.getElementById('checkout-form'),
+                startBtn: document.getElementById('start-camera-checkout'),
+                captureBtn: document.getElementById('capture-checkout'),
+                submitBtn: document.getElementById('submit-checkout'),
+                video: document.getElementById('checkout-video'),
+                canvas: document.getElementById('checkout-canvas'),
+                preview: document.getElementById('camera-preview-checkout'),
+                overlay: document.getElementById('checkout-live-overlay'),
+                overlayCoords: document.getElementById('checkout-overlay-coordinates'),
+                overlayDistance: document.getElementById('checkout-overlay-distance'),
+                overlayStatus: document.getElementById('checkout-overlay-status'),
+                coordsText: document.getElementById('checkout-coordinates'),
+                distanceText: document.getElementById('checkout-distance'),
+                statusText: document.getElementById('checkout-radius-status'),
+                messageText: document.getElementById('checkout-location-message'),
+                alertBox: document.getElementById('checkout-location-alert'),
+                uploadInput: document.getElementById('upload-checkout-photo'),
+                uploadLabel: document.getElementById('upload-checkout-label'),
+                latInput: document.getElementById('checkout-latitude'),
+                lngInput: document.getElementById('checkout-longitude'),
+                selfieInput: document.getElementById('checkout-selfie')
+            };
+
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : null;
+            const checkInUrl = '{{ route("employee.attendance.check-in") }}';
+            const checkOutUrl = '{{ route("employee.attendance.check-out") }}';
+
+            let checkInStream = null;
+            let checkOutStream = null;
+
+            const videoConstraints = {
+                video: {
+                    width: { ideal: 640, min: 320 },
+                    height: { ideal: 480, min: 240 },
+                    facingMode: 'user'
+                },
+                audio: false
+            };
+
+            function setButtonState(button, enabled) {
+                if (!button) {
+                    return;
+                }
+                if (enabled) {
+                    button.removeAttribute('disabled');
+                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    button.setAttribute('disabled', 'disabled');
+                    button.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            function setLabelState(label, input, enabled) {
+                if (!label) {
+                    return;
+                }
+                if (enabled) {
+                    label.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                    if (input) {
+                        input.removeAttribute('disabled');
+                    }
+                } else {
+                    label.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                    if (input) {
+                        input.setAttribute('disabled', 'disabled');
+                        input.value = '';
+                    }
+                }
+            }
+
+            function formatCoordinate(value, fallback) {
+                if (typeof value === 'number' && !Number.isNaN(value)) {
+                    return value.toFixed(6);
+                }
+                return fallback;
+            }
+
+            function formatDistance(value) {
+                if (typeof value === 'number' && !Number.isNaN(value)) {
+                    return value.toFixed(1) + ' m';
+                }
+                return '-';
+            }
+
+            function updateStatusBadge(element, location) {
+                if (!element) {
+                    return;
+                }
+                element.classList.remove('text-green-600', 'dark:text-green-300', 'text-red-600', 'dark:text-red-300', 'text-yellow-600', 'dark:text-yellow-300');
+                if (!location.available) {
+                    element.textContent = 'Menunggu lokasi';
+                    element.classList.add('text-yellow-600', 'dark:text-yellow-300');
+                } else if (location.insideRadius) {
+                    element.textContent = 'Dalam radius';
+                    element.classList.add('text-green-600', 'dark:text-green-300');
+                } else {
+                    element.textContent = 'Di luar radius';
+                    element.classList.add('text-red-600', 'dark:text-red-300');
+                }
+            }
+
+            function updateHiddenInputs(elements, location) {
+                if (elements.latInput) {
+                    elements.latInput.value = location.available ? location.lat : '';
+                }
+                if (elements.lngInput) {
+                    elements.lngInput.value = location.available ? location.lng : '';
+                }
+            }
+
+            function stopCamera(elements, type) {
+                if (type === 'checkin' && checkInStream) {
+                    checkInStream.getTracks().forEach(function(track) { track.stop(); });
+                    checkInStream = null;
+                }
+                if (type === 'checkout' && checkOutStream) {
+                    checkOutStream.getTracks().forEach(function(track) { track.stop(); });
+                    checkOutStream = null;
+                }
+                if (elements.video) {
+                    elements.video.pause();
+                    elements.video.srcObject = null;
+                    elements.video.classList.add('hidden');
+                }
+                if (elements.preview) {
+                    elements.preview.classList.remove('hidden');
+                }
+                if (elements.captureBtn) {
+                    elements.captureBtn.classList.add('hidden');
+                }
+                if (elements.submitBtn) {
+                    elements.submitBtn.classList.add('hidden');
+                }
+                if (elements.overlay) {
+                    elements.overlay.classList.add('hidden');
+                }
+            }
+
+            function updateOverlay(elements, location) {
+                if (!elements.overlay) {
+                    return;
+                }
+                if (location.available && elements.video && !elements.video.classList.contains('hidden')) {
+                    elements.overlay.classList.remove('hidden');
+                    if (elements.overlayCoords) {
+                        elements.overlayCoords.textContent = `Lat: ${formatCoordinate(location.lat, '-')} | Lng: ${formatCoordinate(location.lng, '-')}`;
+                    }
+                    if (elements.overlayDistance) {
+                        elements.overlayDistance.textContent = location.distance !== null ? `Jarak: ${formatDistance(location.distance)}` : 'Jarak: -';
+                    }
+                    if (elements.overlayStatus) {
+                        elements.overlayStatus.textContent = location.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius';
+                        elements.overlayStatus.classList.toggle('text-green-300', location.insideRadius);
+                        elements.overlayStatus.classList.toggle('text-red-300', !location.insideRadius);
+                    }
+                } else {
+                    elements.overlay.classList.add('hidden');
+                }
+            }
+
+            function updateLocationPanel(elements, location, type) {
+                if (!elements.form) {
+                    return;
+                }
+
+                const enabled = location.available && location.insideRadius;
+
+                if (elements.coordsText) {
+                    elements.coordsText.textContent = location.available
+                        ? `${formatCoordinate(location.lat, '-')} , ${formatCoordinate(location.lng, '-')}`
+                        : 'Menunggu lokasi...';
+                }
+
+                if (elements.distanceText) {
+                    elements.distanceText.textContent = location.distance !== null ? formatDistance(location.distance) : '-';
+                }
+
+                if (elements.messageText) {
+                    if (!location.available) {
+                        elements.messageText.textContent = 'Aktifkan layanan lokasi pada perangkat dan pastikan browser memiliki izin lokasi.';
+                    } else if (!location.insideRadius) {
+                        elements.messageText.textContent = 'Anda berada di luar radius absensi. Silakan mendekati lokasi cabang.';
+                    } else {
+                        elements.messageText.textContent = 'Anda berada dalam radius absensi. Silakan lanjutkan proses check in/out.';
+                    }
+                }
+
+                if (elements.alertBox) {
+                    elements.alertBox.classList.toggle('hidden', !location.available || location.insideRadius);
+                }
+
+                updateStatusBadge(elements.statusText, location);
+                updateHiddenInputs(elements, location);
+                setButtonState(elements.startBtn, enabled);
+                setLabelState(elements.uploadLabel, elements.uploadInput, enabled);
+                updateOverlay(elements, location);
+
+                if (!enabled) {
+                    stopCamera(elements, type);
+                }
+            }
+
+            if (locationManager) {
+                locationManager.subscribe(function(location) {
+                    currentLocation = location;
+                    updateLocationPanel(checkInElements, location, 'checkin');
+                    updateLocationPanel(checkOutElements, location, 'checkout');
+                });
+            } else {
+                updateLocationPanel(checkInElements, currentLocation, 'checkin');
+                updateLocationPanel(checkOutElements, currentLocation, 'checkout');
+            }
+
+            function ensureSecureContext() {
+                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                if (!isSecure) {
+                    alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
+                }
+                return isSecure;
+            }
+
+            function handleCameraError(error) {
+                console.error('Camera error:', error);
+                if (error.name === 'NotAllowedError') {
+                    alert('Akses kamera ditolak. Silakan izinkan akses kamera di browser Anda.');
+                } else if (error.name === 'NotFoundError') {
+                    alert('Tidak ada kamera yang ditemukan. Pastikan perangkat Anda memiliki kamera.');
+                } else if (error.name === 'NotReadableError') {
+                    alert('Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.');
+                } else if (error.name === 'OverconstrainedError') {
+                    alert('Kamera tidak mendukung resolusi yang diminta. Coba gunakan kamera lain.');
+                } else if (error.name === 'SecurityError') {
+                    alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
+                } else {
+                    alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message);
+                }
+            }
+
+            async function startCamera(elements, type) {
+                if (!elements.startBtn) {
+                    return;
+                }
+
+                if (!currentLocation.available) {
+                    alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
+                    return;
+                }
+                if (!currentLocation.insideRadius) {
+                    alert('Anda berada di luar radius absensi yang diizinkan.');
+                    return;
+                }
+                if (!ensureSecureContext()) {
+                    return;
+                }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+                    if (type === 'checkin') {
+                        if (checkInStream) {
+                            checkInStream.getTracks().forEach(function(track) { track.stop(); });
+                        }
+                        checkInStream = stream;
+                    } else {
+                        if (checkOutStream) {
+                            checkOutStream.getTracks().forEach(function(track) { track.stop(); });
+                        }
+                        checkOutStream = stream;
+                    }
+
+                    if (elements.video) {
+                        elements.video.srcObject = stream;
+                        elements.video.classList.remove('hidden');
+                        elements.video.onloadedmetadata = function() {
+                            elements.video.play();
+                            updateOverlay(elements, currentLocation);
+                        };
+                    }
+                    if (elements.preview) {
+                        elements.preview.classList.add('hidden');
+                    }
+                    if (elements.startBtn) {
+                        elements.startBtn.classList.add('hidden');
+                    }
+                    if (elements.captureBtn) {
+                        elements.captureBtn.classList.remove('hidden');
+                    }
+
+                } catch (error) {
+                    handleCameraError(error);
+                }
+            }
+
+            function assignCanvasToInput(canvas, input, filename, callback) {
+                if (!canvas || !input) {
+                    if (typeof callback === 'function') {
+                        callback(false);
+                    }
+                    return;
+                }
+                canvas.toBlob(function(blob) {
+                    if (!blob) {
+                        if (typeof callback === 'function') {
+                            callback(false);
+                        }
+                        return;
+                    }
+                    const file = new File([blob], filename, { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    input.files = dataTransfer.files;
+                    if (typeof callback === 'function') {
+                        callback(true);
+                    }
+                }, 'image/jpeg', 0.9);
+            }
+
+            function capturePhoto(elements, type) {
+                if (!elements.video || elements.video.classList.contains('hidden') || !elements.canvas) {
+                    return;
+                }
+                const canvas = elements.canvas;
+                const context = canvas.getContext('2d');
+                const width = elements.video.videoWidth || 640;
+                const height = elements.video.videoHeight || 480;
+                canvas.width = width;
+                canvas.height = height;
+                context.drawImage(elements.video, 0, 0, width, height);
+
+                window.drawAttendanceOverlay(context, width, height, {
+                    timestamp: Date.now(),
+                    latitude: currentLocation.lat,
+                    longitude: currentLocation.lng,
+                    distance: currentLocation.distance,
+                    insideRadius: currentLocation.insideRadius,
+                    label: branchLabel
+                });
+
+                assignCanvasToInput(canvas, elements.selfieInput, `${type}-selfie.jpg`, function(success) {
+                    if (success) {
+                        if (elements.video) {
+                            elements.video.pause();
+                            elements.video.srcObject = null;
+                            elements.video.classList.add('hidden');
+                        }
+                        if (elements.overlay) {
+                            elements.overlay.classList.add('hidden');
+                        }
+                        if (elements.captureBtn) {
+                            elements.captureBtn.classList.add('hidden');
+                        }
+                        if (elements.submitBtn) {
+                            elements.submitBtn.classList.remove('hidden');
+                        }
+                        canvas.classList.remove('hidden');
+                    }
+                });
+
+                stopCamera(elements, type);
+            }
+
+            function handleUpload(elements, file, type) {
+                if (!file || !elements.canvas) {
+                    return;
+                }
+                if (!currentLocation.available || !currentLocation.insideRadius) {
+                    alert('Anda berada di luar radius absensi yang diizinkan.');
+                    elements.uploadInput.value = '';
+                    return;
+                }
+
+                if (!file.type.startsWith('image/')) {
+                    alert('Silakan pilih file gambar yang valid.');
+                    elements.uploadInput.value = '';
+                    return;
+                }
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Ukuran file maksimal 5MB.');
+                    elements.uploadInput.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = elements.canvas;
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = 640;
+                        canvas.height = 480;
+                        const aspectRatio = img.width / img.height;
+                        let drawWidth = canvas.width;
+                        let drawHeight = canvas.height;
+                        if (aspectRatio > 1) {
+                            drawHeight = drawWidth / aspectRatio;
+                        } else {
+                            drawWidth = drawHeight * aspectRatio;
+                        }
+                        const x = (canvas.width - drawWidth) / 2;
+                        const y = (canvas.height - drawHeight) / 2;
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, x, y, drawWidth, drawHeight);
+
+                        window.drawAttendanceOverlay(ctx, canvas.width, canvas.height, {
+                            timestamp: Date.now(),
+                            latitude: currentLocation.lat,
+                            longitude: currentLocation.lng,
+                            distance: currentLocation.distance,
+                            insideRadius: currentLocation.insideRadius,
+                            label: branchLabel
+                        });
+
+                        assignCanvasToInput(canvas, elements.selfieInput, `${type}-selfie.jpg`, function(success) {
+                            if (success) {
+                                canvas.classList.remove('hidden');
+                                if (elements.preview) {
+                                    elements.preview.classList.add('hidden');
+                                }
+                                if (elements.video) {
+                                    elements.video.classList.add('hidden');
+                                }
+                                if (elements.captureBtn) {
+                                    elements.captureBtn.classList.add('hidden');
+                                }
+                                if (elements.submitBtn) {
+                                    elements.submitBtn.classList.remove('hidden');
+                                }
+                            }
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function submitAttendance(elements, type, url) {
+                if (!elements.form || !elements.selfieInput) {
+                    return;
+                }
+
+                if (!currentLocation.available) {
+                    alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
+                    return;
+                }
+                if (!currentLocation.insideRadius) {
+                    alert('Anda berada di luar radius absensi yang diizinkan.');
+                    return;
+                }
+                if (!elements.selfieInput.files || !elements.selfieInput.files.length) {
+                    alert('Silakan ambil atau unggah foto selfie terlebih dahulu.');
+                    return;
+                }
+                if (!csrfToken) {
+                    alert('Token CSRF tidak ditemukan. Muat ulang halaman dan coba lagi.');
+                    return;
+                }
+
+                updateHiddenInputs(elements, currentLocation);
+
+                const formData = new FormData(elements.form);
+                if (currentLocation.available) {
+                    formData.set('latitude', currentLocation.lat);
+                    formData.set('longitude', currentLocation.lng);
+                }
+
+                if (elements.submitBtn) {
+                    elements.submitBtn.setAttribute('disabled', 'disabled');
+                    elements.submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
                     headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': csrfToken
                     }
                 })
-                .then(response => {
+                .then(function(response) {
                     if (!response.ok) {
-                        throw new Error('Network response was not ok');
+                        throw new Error('HTTP error! status: ' + response.status);
                     }
                     return response.json();
                 })
-                .then(data => {
-                    if (data.success && data.data) {
-                        // Update the modal with policy data
-                        document.getElementById('policy-name').textContent = data.data.name || 'Kebijakan Standar';
-                        document.getElementById('policy-work-days').textContent = data.data.work_days || 'Senin - Jumat';
-                        document.getElementById('policy-start-time').textContent = data.data.start_time || '08:00';
-                        document.getElementById('policy-end-time').textContent = data.data.end_time || '17:00';
-                        document.getElementById('policy-late-tolerance').textContent = data.data.late_tolerance || '15 menit';
-                        document.getElementById('policy-break-duration').textContent = data.data.break_duration || '60 menit';
-                        document.getElementById('policy-methods').textContent = data.data.attendance_methods || 'Selfie';
-                        
-                        policyLoading.classList.add('hidden');
-                        policyContent.classList.remove('hidden');
+                .then(function(data) {
+                    if (data.success) {
+                        alert(type === 'checkin' ? 'Check in berhasil!' : 'Check out berhasil!');
+                        window.location.reload();
                     } else {
-                        throw new Error('Invalid policy data');
+                        alert('Error: ' + (data.message || 'Terjadi kesalahan tak dikenal.'));
                     }
                 })
-                .catch(error => {
-                    console.error('Error loading policy:', error);
-                    policyLoading.classList.add('hidden');
-                    policyError.classList.remove('hidden');
+                .catch(function(error) {
+                    console.error('Attendance submit error:', error);
+                    alert('Terjadi kesalahan saat mengirim data: ' + error.message);
+                })
+                .finally(function() {
+                    if (elements.submitBtn) {
+                        elements.submitBtn.removeAttribute('disabled');
+                        elements.submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
                 });
             }
 
-            // Test camera availability
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                console.log('Camera API is supported');
+            // Initialize panels once
+            updateLocationPanel(checkInElements, currentLocation, 'checkin');
+            updateLocationPanel(checkOutElements, currentLocation, 'checkout');
 
-                // Check if we're on HTTPS or localhost
-                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                console.log('Is secure context:', isSecure);
-
-                // Enumerate devices
-                navigator.mediaDevices.enumerateDevices()
-                    .then(function(devices) {
-                        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                        console.log('Available video devices:', videoDevices.length);
-                        videoDevices.forEach(function(device, index) {
-                            console.log('Camera ' + (index + 1) + ':', device.label || 'Camera ' + (index + 1));
-                        });
-                    })
-                    .catch(function(err) {
-                        console.log('Error enumerating devices:', err);
-                    });
-            } else {
-                console.log('Camera API is NOT supported');
+            // Event bindings for check-in
+            if (checkInElements.startBtn) {
+                checkInElements.startBtn.addEventListener('click', function() {
+                    startCamera(checkInElements, 'checkin');
+                });
+            }
+            if (checkInElements.captureBtn) {
+                checkInElements.captureBtn.addEventListener('click', function() {
+                    capturePhoto(checkInElements, 'checkin');
+                });
+            }
+            if (checkInElements.uploadInput) {
+                checkInElements.uploadInput.addEventListener('change', function(event) {
+                    const file = event.target.files ? event.target.files[0] : null;
+                    handleUpload(checkInElements, file, 'checkin');
+                });
+            }
+            if (checkInElements.form) {
+                checkInElements.form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    submitAttendance(checkInElements, 'checkin', checkInUrl);
+                });
             }
 
-            let checkinStream = null;
-            let checkoutStream = null;
-            let testStream = null;
-
-            // Camera test functionality
-            const testCameraBtn = document.getElementById('test-camera');
-            const checkBrowserBtn = document.getElementById('check-browser-support');
-            const testResultDiv = document.getElementById('test-result');
-            const browserInfoDiv = document.getElementById('browser-info');
-            const protocolInfoSpan = document.getElementById('protocol-info');
-            const cameraApiInfoSpan = document.getElementById('camera-api-info');
-            const secureContextInfoSpan = document.getElementById('secure-context-info');
-
-            testCameraBtn.addEventListener('click', async function() {
-                try {
-                    testResultDiv.innerHTML = '<span class="text-blue-600">🔄 Menguji kamera...</span>';
-
-                    // Check if we're on HTTPS or localhost
-                    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                    console.log('Testing camera - Is secure context:', isSecure);
-
-                    if (!isSecure) {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost.</span>';
-                        return;
-                    }
-
-                    // Stop any existing test stream
-                    if (testStream) {
-                        testStream.getTracks().forEach(track => track.stop());
-                    }
-
-                    // More specific camera constraints
-                    const constraints = {
-                        video: {
-                            width: { ideal: 640 },
-                            height: { ideal: 480 },
-                            facingMode: 'user' // Use front camera
-                        },
-                        audio: false
-                    };
-
-                    console.log('Requesting camera with constraints:', constraints);
-                    testStream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                    console.log('Camera test successful, tracks:', testStream.getTracks().length);
-                    testResultDiv.innerHTML = '<span class="text-green-600">✅ Kamera berhasil! Coba gunakan fitur absensi di atas.</span>';
-
-                    // Stop test stream after 3 seconds
-                    setTimeout(() => {
-                        if (testStream) {
-                            testStream.getTracks().forEach(track => track.stop());
-                            testStream = null;
-                        }
-                        testResultDiv.innerHTML = '';
-                    }, 3000);
-
-                } catch (error) {
-                    console.error('Camera test failed:', error);
-                    console.error('Error name:', error.name);
-                    console.error('Error message:', error.message);
-
-                    if (error.name === 'NotAllowedError') {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Akses kamera ditolak. Izinkan akses kamera di browser Anda dan refresh halaman.</span>';
-                    } else if (error.name === 'NotFoundError') {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Tidak ada kamera yang ditemukan. Pastikan kamera terhubung.</span>';
-                    } else if (error.name === 'NotReadableError') {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.</span>';
-                    } else if (error.name === 'OverconstrainedError') {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera tidak mendukung resolusi yang diminta. Coba gunakan kamera lain.</span>';
-                    } else if (error.name === 'SecurityError') {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost.</span>';
-                    } else {
-                        testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera gagal: ' + error.name + ' - ' + error.message + '</span>';
-                    }
-                }
-            });
-
-            // Browser support check functionality
-            checkBrowserBtn.addEventListener('click', function() {
-                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                const hasGetUserMedia = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-                const isSecureContext = window.isSecureContext;
-
-                protocolInfoSpan.textContent = 'Protocol: ' + location.protocol + ' (Hostname: ' + location.hostname + ')';
-                cameraApiInfoSpan.textContent = 'Camera API (getUserMedia): ' + (hasGetUserMedia ? '✅ Supported' : '❌ Not supported');
-                secureContextInfoSpan.textContent = 'Secure Context: ' + (isSecureContext ? '✅ Yes' : '❌ No');
-
-                browserInfoDiv.classList.remove('hidden');
-
-                // Overall assessment
-                if (!hasGetUserMedia) {
-                    testResultDiv.innerHTML = '<span class="text-red-600">❌ Browser tidak mendukung Camera API. Gunakan browser modern seperti Chrome, Firefox, atau Edge.</span>';
-                } else if (!isSecureContext) {
-                    testResultDiv.innerHTML = '<span class="text-red-600">❌ Kamera memerlukan secure context (HTTPS atau localhost).</span>';
-                } else if (!isSecure) {
-                    testResultDiv.innerHTML = '<span class="text-yellow-600">⚠️ Browser mendukung kamera tapi direkomendasikan menggunakan HTTPS untuk performa terbaik.</span>';
-                } else {
-                    testResultDiv.innerHTML = '<span class="text-green-600">✅ Browser mendukung kamera dengan baik. Jika masih bermasalah, coba test kamera di atas.</span>';
-                }
-            });
-
-            // Check-in functionality
-            const startCameraCheckinBtn = document.getElementById('start-camera-checkin');
-            const captureCheckinBtn = document.getElementById('capture-checkin');
-            const submitCheckinBtn = document.getElementById('submit-checkin');
-            const checkinVideo = document.getElementById('checkin-video');
-            const checkinCanvas = document.getElementById('checkin-canvas');
-            const checkinForm = document.getElementById('checkin-form');
-            const uploadCheckinPhoto = document.getElementById('upload-checkin-photo');
-
-            // Check-out functionality
-            const startCameraCheckoutBtn = document.getElementById('start-camera-checkout');
-            const captureCheckoutBtn = document.getElementById('capture-checkout');
-            const submitCheckoutBtn = document.getElementById('submit-checkout');
-            const checkoutVideo = document.getElementById('checkout-video');
-            const checkoutCanvas = document.getElementById('checkout-canvas');
-            const checkoutForm = document.getElementById('checkout-form');
-            const uploadCheckoutPhoto = document.getElementById('upload-checkout-photo');
-
-            // Start camera for check-in
-            startCameraCheckinBtn.addEventListener('click', async function() {
-                try {
-                    console.log('Requesting camera access for check-in...');
-
-                    // Check if we're on HTTPS or localhost
-                    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                    console.log('Check-in camera - Is secure context:', isSecure);
-
-                    if (!isSecure) {
-                        alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                        return;
-                    }
-
-                    // More specific camera constraints for better compatibility
-                    const constraints = {
-                        video: {
-                            width: { ideal: 640, min: 320 },
-                            height: { ideal: 480, min: 240 },
-                            facingMode: 'user' // Use front camera
-                        },
-                        audio: false
-                    };
-
-                    console.log('Check-in camera constraints:', constraints);
-                    checkinStream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                    console.log('Camera access granted for check-in, tracks:', checkinStream.getTracks().length);
-                    checkinVideo.srcObject = checkinStream;
-                    checkinVideo.classList.remove('hidden');
-                    document.getElementById('camera-preview').classList.add('hidden');
-                    startCameraCheckinBtn.classList.add('hidden');
-                    captureCheckinBtn.classList.remove('hidden');
-
-                    // Play video when ready
-                    checkinVideo.onloadedmetadata = function() {
-                        console.log('Check-in video metadata loaded, playing...');
-                        checkinVideo.play();
-                    };
-
-                } catch (error) {
-                    console.error('Check-in camera error:', error);
-                    console.error('Error name:', error.name);
-                    console.error('Error message:', error.message);
-
-                    // Detailed error messages
-                    if (error.name === 'NotAllowedError') {
-                        alert('Akses kamera ditolak. Silakan izinkan akses kamera di browser Anda dan refresh halaman.');
-                    } else if (error.name === 'NotFoundError') {
-                        alert('Tidak ada kamera yang ditemukan. Pastikan kamera terhubung dan coba gunakan opsi upload foto.');
-                    } else if (error.name === 'NotReadableError') {
-                        alert('Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain yang menggunakan kamera dan coba lagi.');
-                    } else if (error.name === 'OverconstrainedError') {
-                        alert('Kamera tidak mendukung resolusi yang diminta. Coba gunakan kamera lain atau opsi upload foto.');
-                    } else if (error.name === 'SecurityError') {
-                        alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                    } else {
-                        alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message + '. Coba gunakan opsi upload foto.');
-                    }
-                }
-            });
-
-            // Capture photo for check-in
-            captureCheckinBtn.addEventListener('click', function() {
-                const context = checkinCanvas.getContext('2d');
-                checkinCanvas.width = checkinVideo.videoWidth;
-                checkinCanvas.height = checkinVideo.videoHeight;
-                context.drawImage(checkinVideo, 0, 0);
-
-                // Convert to blob
-                checkinCanvas.toBlob(function(blob) {
-                    const file = new File([blob], 'checkin-selfie.jpg', { type: 'image/jpeg' });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    document.getElementById('checkin-selfie').files = dataTransfer.files;
-
-                    // Stop camera
-                    if (checkinStream) {
-                        checkinStream.getTracks().forEach(track => track.stop());
-                    }
-                    checkinVideo.classList.add('hidden');
-                    checkinCanvas.classList.remove('hidden');
-
-                    captureCheckinBtn.classList.add('hidden');
-                    submitCheckinBtn.classList.remove('hidden');
-                }, 'image/jpeg', 0.8);
-            });
-
-            // Handle file upload for check-in
-            uploadCheckinPhoto.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    // Validate file type
-                    if (!file.type.startsWith('image/')) {
-                        alert('Silakan pilih file gambar yang valid.');
-                        return;
-                    }
-
-                    // Validate file size (5MB max)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Ukuran file maksimal 5MB.');
-                        return;
-                    }
-
-                    // Create preview
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        checkinCanvas.width = 640;
-                        checkinCanvas.height = 480;
-                        const ctx = checkinCanvas.getContext('2d');
-                        const img = new Image();
-                        img.onload = function() {
-                            // Calculate aspect ratio to fit canvas
-                            const aspectRatio = img.width / img.height;
-                            let drawWidth = checkinCanvas.width;
-                            let drawHeight = checkinCanvas.height;
-
-                            if (aspectRatio > 1) {
-                                drawHeight = drawWidth / aspectRatio;
-                            } else {
-                                drawWidth = drawHeight * aspectRatio;
-                            }
-
-                            // Center the image
-                            const x = (checkinCanvas.width - drawWidth) / 2;
-                            const y = (checkinCanvas.height - drawHeight) / 2;
-
-                            ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-                            // Show canvas and submit button
-                            checkinCanvas.classList.remove('hidden');
-                            document.getElementById('camera-preview').classList.add('hidden');
-                            submitCheckinBtn.classList.remove('hidden');
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-
-                    // Set file to form
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    document.getElementById('checkin-selfie').files = dataTransfer.files;
-                }
-            });
-
-            // Start camera for check-out
-            startCameraCheckoutBtn.addEventListener('click', async function() {
-                try {
-                    console.log('Requesting camera access for check-out...');
-
-                    // Check if we're on HTTPS or localhost
-                    const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                    console.log('Check-out camera - Is secure context:', isSecure);
-
-                    if (!isSecure) {
-                        alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                        return;
-                    }
-
-                    // More specific camera constraints for better compatibility
-                    const constraints = {
-                        video: {
-                            width: { ideal: 640, min: 320 },
-                            height: { ideal: 480, min: 240 },
-                            facingMode: 'user' // Use front camera
-                        },
-                        audio: false
-                    };
-
-                    console.log('Check-out camera constraints:', constraints);
-                    checkoutStream = await navigator.mediaDevices.getUserMedia(constraints);
-
-                    console.log('Camera access granted for check-out, tracks:', checkoutStream.getTracks().length);
-                    checkoutVideo.srcObject = checkoutStream;
-                    checkoutVideo.classList.remove('hidden');
-                    document.getElementById('camera-preview-checkout').classList.add('hidden');
-                    startCameraCheckoutBtn.classList.add('hidden');
-                    captureCheckoutBtn.classList.remove('hidden');
-
-                    // Play video when ready
-                    checkoutVideo.onloadedmetadata = function() {
-                        console.log('Check-out video metadata loaded, playing...');
-                        checkoutVideo.play();
-                    };
-
-                } catch (error) {
-                    console.error('Check-out camera error:', error);
-                    console.error('Error name:', error.name);
-                    console.error('Error message:', error.message);
-
-                    // Detailed error messages
-                    if (error.name === 'NotAllowedError') {
-                        alert('Akses kamera ditolak. Silakan izinkan akses kamera di browser Anda dan refresh halaman.');
-                    } else if (error.name === 'NotFoundError') {
-                        alert('Tidak ada kamera yang ditemukan. Pastikan kamera terhubung dan coba gunakan opsi upload foto.');
-                    } else if (error.name === 'NotReadableError') {
-                        alert('Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain yang menggunakan kamera dan coba lagi.');
-                    } else if (error.name === 'OverconstrainedError') {
-                        alert('Kamera tidak mendukung resolusi yang diminta. Coba gunakan kamera lain atau opsi upload foto.');
-                    } else if (error.name === 'SecurityError') {
-                        alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                    } else {
-                        alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message + '. Coba gunakan opsi upload foto.');
-                    }
-                }
-            });
-
-            // Capture photo for check-out
-            captureCheckoutBtn.addEventListener('click', function() {
-                const context = checkoutCanvas.getContext('2d');
-                checkoutCanvas.width = checkoutVideo.videoWidth;
-                checkoutCanvas.height = checkoutVideo.videoHeight;
-                context.drawImage(checkoutVideo, 0, 0);
-
-                // Convert to blob
-                checkoutCanvas.toBlob(function(blob) {
-                    const file = new File([blob], 'checkout-selfie.jpg', { type: 'image/jpeg' });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    document.getElementById('checkout-selfie').files = dataTransfer.files;
-
-                    // Stop camera
-                    if (checkoutStream) {
-                        checkoutStream.getTracks().forEach(track => track.stop());
-                    }
-                    checkoutVideo.classList.add('hidden');
-                    checkoutCanvas.classList.remove('hidden');
-
-                    captureCheckoutBtn.classList.add('hidden');
-                    submitCheckoutBtn.classList.remove('hidden');
-                }, 'image/jpeg', 0.8);
-            });
-
-            // Handle file upload for check-out
-            uploadCheckoutPhoto.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    // Validate file type
-                    if (!file.type.startsWith('image/')) {
-                        alert('Silakan pilih file gambar yang valid.');
-                        return;
-                    }
-
-                    // Validate file size (5MB max)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Ukuran file maksimal 5MB.');
-                        return;
-                    }
-
-                    // Create preview
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        checkoutCanvas.width = 640;
-                        checkoutCanvas.height = 480;
-                        const ctx = checkoutCanvas.getContext('2d');
-                        const img = new Image();
-                        img.onload = function() {
-                            // Calculate aspect ratio to fit canvas
-                            const aspectRatio = img.width / img.height;
-                            let drawWidth = checkoutCanvas.width;
-                            let drawHeight = checkoutCanvas.height;
-
-                            if (aspectRatio > 1) {
-                                drawHeight = drawWidth / aspectRatio;
-                            } else {
-                                drawWidth = drawHeight * aspectRatio;
-                            }
-
-                            // Center the image
-                            const x = (checkoutCanvas.width - drawWidth) / 2;
-                            const y = (checkoutCanvas.height - drawHeight) / 2;
-
-                            ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-                            // Show canvas and submit button
-                            checkoutCanvas.classList.remove('hidden');
-                            document.getElementById('camera-preview-checkout').classList.add('hidden');
-                            submitCheckoutBtn.classList.remove('hidden');
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-
-                    // Set file to form
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    document.getElementById('checkout-selfie').files = dataTransfer.files;
-                }
-            });
-
-            // Get user location
-            function getLocation(callback) {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        function(position) {
-                            callback(position.coords.latitude, position.coords.longitude);
-                        },
-                        function(error) {
-                            console.log('Location error:', error);
-                            callback(null, null);
-                        }
-                    );
-                } else {
-                    callback(null, null);
-                }
+            // Event bindings for check-out
+            if (checkOutElements.startBtn) {
+                checkOutElements.startBtn.addEventListener('click', function() {
+                    startCamera(checkOutElements, 'checkout');
+                });
             }
-
-            // Submit check-in
-            checkinForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                getLocation(function(latitude, longitude) {
-                    document.getElementById('checkin-latitude').value = latitude;
-                    document.getElementById('checkin-longitude').value = longitude;
-
-                    const formData = new FormData(checkinForm);
-
-                    fetch('{{ route("employee.attendance.check-in") }}', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Check in berhasil!');
-                            location.reload(); // Reload to update dashboard calendar
-                        } else {
-                            alert('Error: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan saat check in');
-                    });
+            if (checkOutElements.captureBtn) {
+                checkOutElements.captureBtn.addEventListener('click', function() {
+                    capturePhoto(checkOutElements, 'checkout');
                 });
-            });
-
-            // Submit check-out
-            checkoutForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                getLocation(function(latitude, longitude) {
-                    document.getElementById('checkout-latitude').value = latitude;
-                    document.getElementById('checkout-longitude').value = longitude;
-
-                    const formData = new FormData(checkoutForm);
-
-                    fetch('{{ route("employee.attendance.check-out") }}', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Check out berhasil!');
-                            location.reload(); // Reload to update dashboard calendar
-                        } else {
-                            alert('Error: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Terjadi kesalahan saat check out');
-                    });
+            }
+            if (checkOutElements.uploadInput) {
+                checkOutElements.uploadInput.addEventListener('change', function(event) {
+                    const file = event.target.files ? event.target.files[0] : null;
+                    handleUpload(checkOutElements, file, 'checkout');
                 });
-            });
+            }
+            if (checkOutElements.form) {
+                checkOutElements.form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    submitAttendance(checkOutElements, 'checkout', checkOutUrl);
+                });
+            }
         });
     </script>
     @endpush

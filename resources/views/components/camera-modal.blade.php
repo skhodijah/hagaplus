@@ -14,6 +14,30 @@
 
             <!-- Modal Body -->
             <div class="space-y-4">
+                <!-- Location Status -->
+                <div id="quick-location-status" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
+                    <div class="flex flex-wrap items-center gap-4 text-sm">
+                        <div class="text-gray-700 dark:text-gray-200">
+                            <span class="font-semibold">Koordinat Anda:</span>
+                            <span id="quick-location-coordinates">Menunggu lokasi...</span>
+                        </div>
+                        <div class="text-gray-700 dark:text-gray-200">
+                            <span class="font-semibold">Jarak ke kantor:</span>
+                            <span id="quick-location-distance">-</span>
+                        </div>
+                        <div class="text-gray-700 dark:text-gray-200">
+                            <span class="font-semibold">Status:</span>
+                            <span id="quick-location-status-text" class="font-semibold text-yellow-600 dark:text-yellow-300">Menunggu lokasi...</span>
+                        </div>
+                    </div>
+                    <p id="quick-location-message" class="text-xs text-gray-600 dark:text-gray-300">
+                        Pastikan layanan lokasi aktif sebelum melakukan absensi.
+                    </p>
+                </div>
+                <div id="quick-location-alert" class="hidden bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-200">
+                    Lokasi Anda berada di luar radius absensi yang diizinkan.
+                </div>
+
                 <!-- Camera Preview -->
                 <div class="relative">
                     <div id="quick-camera-preview" class="w-full aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -24,6 +48,11 @@
                             </svg>
                             <p class="text-gray-500 dark:text-gray-400 text-sm">Klik tombol di bawah untuk mengaktifkan kamera</p>
                         </div>
+                    </div>
+                    <div id="quick-live-overlay" class="hidden absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-2 rounded-lg space-y-1">
+                        <div id="quick-overlay-coordinates">Lat: -, Lng: -</div>
+                        <div id="quick-overlay-distance">Jarak: -</div>
+                        <div id="quick-overlay-status">Status: -</div>
                     </div>
                     <video id="quick-camera-video" class="hidden w-full rounded-lg"></video>
                     <canvas id="quick-camera-canvas" class="hidden"></canvas>
@@ -51,7 +80,7 @@
                 <!-- Alternative: Upload Photo -->
                 <div class="text-center">
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Atau</p>
-                    <label for="quick-upload-photo" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
+                    <label for="quick-upload-photo" id="quick-upload-label" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
@@ -62,6 +91,8 @@
 
                 <!-- Hidden inputs -->
                 <input type="file" id="quick-selfie" name="selfie" class="hidden" accept="image/*">
+                <input type="hidden" id="quick-latitude" name="latitude">
+                <input type="hidden" id="quick-longitude" name="longitude">
 
                 <!-- Submit Button -->
                 <button type="submit" id="quick-submit-checkin"
@@ -82,117 +113,244 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeBtn = document.getElementById('close-camera-modal');
     const cameraTrigger = document.querySelector('[data-camera-trigger]');
     const checkoutTrigger = document.querySelector('[data-camera-checkout]');
+
     const startCameraBtn = document.getElementById('quick-start-camera');
     const captureBtn = document.getElementById('quick-capture-photo');
     const submitBtn = document.getElementById('quick-submit-checkin');
     const video = document.getElementById('quick-camera-video');
     const canvas = document.getElementById('quick-camera-canvas');
+    const preview = document.getElementById('quick-camera-preview');
     const uploadInput = document.getElementById('quick-upload-photo');
+    const uploadLabel = document.getElementById('quick-upload-label');
+    const selfieInput = document.getElementById('quick-selfie');
+    const latInput = document.getElementById('quick-latitude');
+    const lngInput = document.getElementById('quick-longitude');
     const modalTitle = document.getElementById('modal-title');
     const submitButtonText = document.getElementById('submit-button-text');
 
+    const statusPanel = {
+        wrapper: document.getElementById('quick-location-status'),
+        coordinates: document.getElementById('quick-location-coordinates'),
+        distance: document.getElementById('quick-location-distance'),
+        status: document.getElementById('quick-location-status-text'),
+        message: document.getElementById('quick-location-message'),
+        alert: document.getElementById('quick-location-alert')
+    };
+
+    const overlay = {
+        wrapper: document.getElementById('quick-live-overlay'),
+        coordinates: document.getElementById('quick-overlay-coordinates'),
+        distance: document.getElementById('quick-overlay-distance'),
+        status: document.getElementById('quick-overlay-status')
+    };
+
+    const locationManager = window.AttendanceLocationManager;
+    const branchLabel = window.branchName || 'Lokasi Kantor';
+    let currentLocation = locationManager ? locationManager.getData() : { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: 'Lokasi belum tersedia.' };
     let quickStream = null;
     let isCheckout = false;
-    let branchName = '';
 
-    console.log('Camera modal initialized');
-    console.log('Check-in trigger:', cameraTrigger);
-    console.log('Check-out trigger:', checkoutTrigger);
+    const videoConstraints = {
+        video: {
+            width: { ideal: 640, min: 320 },
+            height: { ideal: 480, min: 240 },
+            facingMode: 'user'
+        },
+        audio: false
+    };
 
-    // Open modal for check-in
-    if (cameraTrigger) {
-        cameraTrigger.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Check-in button clicked');
-            isCheckout = false;
-            branchName = cameraTrigger.getAttribute('data-branch') || 'Unknown Branch';
-            modalTitle.textContent = 'Check In Cepat';
-            submitButtonText.textContent = 'Check In Sekarang';
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        });
+    function setButtonState(button, enabled) {
+        if (!button) {
+            return;
+        }
+        if (enabled) {
+            button.removeAttribute('disabled');
+            button.classList.remove('opacity-50', 'cursor-not-allowed');
+        } else {
+            button.setAttribute('disabled', 'disabled');
+            button.classList.add('opacity-50', 'cursor-not-allowed');
+        }
     }
 
-    // Open modal for check-out
-    if (checkoutTrigger) {
-        checkoutTrigger.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Check-out button clicked');
-            isCheckout = true;
-            branchName = checkoutTrigger.getAttribute('data-branch') || 'Unknown Branch';
-            modalTitle.textContent = 'Check Out Cepat';
-            submitButtonText.textContent = 'Check Out Sekarang';
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        });
+    function setLabelState(label, input, enabled) {
+        if (!label) {
+            return;
+        }
+        if (enabled) {
+            label.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+            if (input) {
+                input.removeAttribute('disabled');
+            }
+        } else {
+            label.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+            if (input) {
+                input.setAttribute('disabled', 'disabled');
+                input.value = '';
+            }
+        }
     }
 
-    // Close modal
-    closeBtn.addEventListener('click', function() {
-        modal.classList.add('hidden');
-        document.body.style.overflow = 'auto';
-        stopQuickCamera();
-    });
+    function formatCoordinate(value, fallback) {
+        if (typeof value === 'number' && !Number.isNaN(value)) {
+            return value.toFixed(6);
+        }
+        return fallback;
+    }
 
-    // Close on outside click
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto';
+    function formatDistance(value) {
+        if (typeof value === 'number' && !Number.isNaN(value)) {
+            return value.toFixed(1) + ' m';
+        }
+        return '-';
+    }
+
+    function updateLocationStatus(location) {
+        if (!statusPanel.wrapper) {
+            return;
+        }
+
+        if (statusPanel.coordinates) {
+            statusPanel.coordinates.textContent = location.available
+                ? `${formatCoordinate(location.lat, '-')} , ${formatCoordinate(location.lng, '-')}`
+                : 'Menunggu lokasi...';
+        }
+        if (statusPanel.distance) {
+            statusPanel.distance.textContent = location.distance !== null ? formatDistance(location.distance) : '-';
+        }
+        if (statusPanel.status) {
+            statusPanel.status.classList.remove('text-green-600', 'dark:text-green-300', 'text-red-600', 'dark:text-red-300', 'text-yellow-600', 'dark:text-yellow-300');
+            if (!location.available) {
+                statusPanel.status.textContent = 'Menunggu lokasi';
+                statusPanel.status.classList.add('text-yellow-600', 'dark:text-yellow-300');
+            } else if (location.insideRadius) {
+                statusPanel.status.textContent = 'Dalam radius';
+                statusPanel.status.classList.add('text-green-600', 'dark:text-green-300');
+            } else {
+                statusPanel.status.textContent = 'Di luar radius';
+                statusPanel.status.classList.add('text-red-600', 'dark:text-red-300');
+            }
+        }
+        if (statusPanel.message) {
+            if (!location.available) {
+                statusPanel.message.textContent = 'Aktifkan layanan lokasi pada perangkat dan pastikan browser memiliki izin lokasi.';
+            } else if (!location.insideRadius) {
+                statusPanel.message.textContent = 'Anda berada di luar radius absensi. Silakan mendekati lokasi cabang.';
+            } else {
+                statusPanel.message.textContent = 'Anda berada dalam radius absensi. Silakan lanjutkan proses absensi.';
+            }
+        }
+        if (statusPanel.alert) {
+            statusPanel.alert.classList.toggle('hidden', !location.available || location.insideRadius);
+        }
+
+        setButtonState(startCameraBtn, location.available && location.insideRadius);
+        setLabelState(uploadLabel, uploadInput, location.available && location.insideRadius);
+
+        if (latInput) {
+            latInput.value = location.available ? location.lat : '';
+        }
+        if (lngInput) {
+            lngInput.value = location.available ? location.lng : '';
+        }
+
+        if (!location.available || !location.insideRadius) {
             stopQuickCamera();
         }
-    });
+    }
+
+    function updateOverlay(location) {
+        if (!overlay.wrapper) {
+            return;
+        }
+        if (location.available && video && !video.classList.contains('hidden')) {
+            overlay.wrapper.classList.remove('hidden');
+            if (overlay.coordinates) {
+                overlay.coordinates.textContent = `Lat: ${formatCoordinate(location.lat, '-')} | Lng: ${formatCoordinate(location.lng, '-')}`;
+            }
+            if (overlay.distance) {
+                overlay.distance.textContent = location.distance !== null ? `Jarak: ${formatDistance(location.distance)}` : 'Jarak: -';
+            }
+            if (overlay.status) {
+                overlay.status.textContent = location.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius';
+            }
+        } else {
+            overlay.wrapper.classList.add('hidden');
+        }
+    }
+
+    if (locationManager) {
+        locationManager.subscribe(function(location) {
+            currentLocation = location;
+            updateLocationStatus(location);
+            updateOverlay(location);
+        });
+    } else {
+        updateLocationStatus(currentLocation);
+    }
+
+    function ensureSecureContext() {
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isSecure) {
+            alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
+        }
+        return isSecure;
+    }
 
     function stopQuickCamera() {
         if (quickStream) {
-            quickStream.getTracks().forEach(track => track.stop());
+            quickStream.getTracks().forEach(function(track) { track.stop(); });
             quickStream = null;
         }
-        video.classList.add('hidden');
-        document.getElementById('quick-camera-preview').classList.remove('hidden');
-        startCameraBtn.classList.remove('hidden');
-        captureBtn.classList.add('hidden');
-        submitBtn.classList.add('hidden');
+        if (video) {
+            video.pause();
+            video.srcObject = null;
+            video.classList.add('hidden');
+        }
+        if (preview) {
+            preview.classList.remove('hidden');
+        }
+        if (captureBtn) {
+            captureBtn.classList.add('hidden');
+        }
+        if (submitBtn) {
+            submitBtn.classList.add('hidden');
+        }
+        if (overlay.wrapper) {
+            overlay.wrapper.classList.add('hidden');
+        }
     }
 
-    // Start camera
-    startCameraBtn.addEventListener('click', async function() {
+    async function startQuickCamera() {
+        if (!currentLocation.available) {
+            alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
+            return;
+        }
+        if (!currentLocation.insideRadius) {
+            alert('Anda berada di luar radius absensi yang diizinkan.');
+            return;
+        }
+        if (!ensureSecureContext()) {
+            return;
+        }
         try {
-            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            if (!isSecure) {
-                alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                return;
+            quickStream = await navigator.mediaDevices.getUserMedia(videoConstraints);
+            if (video) {
+                video.srcObject = quickStream;
+                video.classList.remove('hidden');
+                video.onloadedmetadata = function() {
+                    video.play();
+                    updateOverlay(currentLocation);
+                };
             }
-
-            const constraints = {
-                video: {
-                    width: { ideal: 640, min: 320 },
-                    height: { ideal: 480, min: 240 },
-                    facingMode: 'user'
-                },
-                audio: false
-            };
-
-            // Check if camera is available
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
-
-            if (videoDevices.length === 0) {
-                alert('Tidak ada kamera yang tersedia di perangkat ini.');
-                return;
+            if (preview) {
+                preview.classList.add('hidden');
             }
-
-            quickStream = await navigator.mediaDevices.getUserMedia(constraints);
-            video.srcObject = quickStream;
-            video.classList.remove('hidden');
-            document.getElementById('quick-camera-preview').classList.add('hidden');
-            startCameraBtn.classList.add('hidden');
-            captureBtn.classList.remove('hidden');
-
-            video.onloadedmetadata = function() {
-                video.play();
-            };
-
+            if (startCameraBtn) {
+                startCameraBtn.classList.add('hidden');
+            }
+            if (captureBtn) {
+                captureBtn.classList.remove('hidden');
+            }
         } catch (error) {
             console.error('Quick camera error:', error);
             if (error.name === 'NotAllowedError') {
@@ -205,156 +363,271 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message);
             }
         }
-    });
+    }
 
-    // Capture photo
-    captureBtn.addEventListener('click', function() {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
-
+    function assignCanvasToInput(callback) {
+        if (!canvas || !selfieInput) {
+            if (typeof callback === 'function') {
+                callback(false);
+            }
+            return;
+        }
         canvas.toBlob(function(blob) {
-            const file = new File([blob], 'quick-selfie.jpg', { type: 'image/jpeg' });
-            // Create a new DataTransfer and set files directly
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            document.getElementById('quick-selfie').files = dt.files;
-
-            stopQuickCamera();
-            canvas.classList.remove('hidden');
-            submitBtn.classList.remove('hidden');
-        }, 'image/jpeg', 0.8);
-    });
-
-    // Handle file upload
-    uploadInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                alert('Silakan pilih file gambar yang valid.');
+            if (!blob) {
+                if (typeof callback === 'function') {
+                    callback(false);
+                }
                 return;
             }
-
-            if (file.size > 5 * 1024 * 1024) {
-                alert('Ukuran file maksimal 5MB.');
-                return;
+            const file = new File([blob], isCheckout ? 'quick-checkout-selfie.jpg' : 'quick-checkin-selfie.jpg', { type: 'image/jpeg' });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            selfieInput.files = dataTransfer.files;
+            if (typeof callback === 'function') {
+                callback(true);
             }
+        }, 'image/jpeg', 0.9);
+    }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
+    function captureQuickPhoto() {
+        if (!video || video.classList.contains('hidden')) {
+            return;
+        }
+        const width = video.videoWidth || 640;
+        const height = video.videoHeight || 480;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, width, height);
+
+        window.drawAttendanceOverlay(ctx, width, height, {
+            timestamp: Date.now(),
+            latitude: currentLocation.lat,
+            longitude: currentLocation.lng,
+            distance: currentLocation.distance,
+            insideRadius: currentLocation.insideRadius,
+            label: branchLabel
+        });
+
+        assignCanvasToInput(function(success) {
+            if (success) {
+                canvas.classList.remove('hidden');
+                submitBtn.classList.remove('hidden');
+            }
+        });
+
+        stopQuickCamera();
+    }
+
+    function handleQuickUpload(file) {
+        if (!file) {
+            return;
+        }
+        if (!currentLocation.available || !currentLocation.insideRadius) {
+            alert('Anda berada di luar radius absensi yang diizinkan.');
+            uploadInput.value = '';
+            return;
+        }
+        if (!file.type.startsWith('image/')) {
+            alert('Silakan pilih file gambar yang valid.');
+            uploadInput.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file maksimal 5MB.');
+            uploadInput.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
                 canvas.width = 640;
                 canvas.height = 480;
                 const ctx = canvas.getContext('2d');
-                const img = new Image();
-                img.onload = function() {
-                    const aspectRatio = img.width / img.height;
-                    let drawWidth = canvas.width;
-                    let drawHeight = canvas.height;
+                const aspectRatio = img.width / img.height;
+                let drawWidth = canvas.width;
+                let drawHeight = canvas.height;
+                if (aspectRatio > 1) {
+                    drawHeight = drawWidth / aspectRatio;
+                } else {
+                    drawWidth = drawHeight * aspectRatio;
+                }
+                const x = (canvas.width - drawWidth) / 2;
+                const y = (canvas.height - drawHeight) / 2;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, x, y, drawWidth, drawHeight);
 
-                    if (aspectRatio > 1) {
-                        drawHeight = drawWidth / aspectRatio;
-                    } else {
-                        drawWidth = drawHeight * aspectRatio;
+                window.drawAttendanceOverlay(ctx, canvas.width, canvas.height, {
+                    timestamp: Date.now(),
+                    latitude: currentLocation.lat,
+                    longitude: currentLocation.lng,
+                    distance: currentLocation.distance,
+                    insideRadius: currentLocation.insideRadius,
+                    label: branchLabel
+                });
+
+                assignCanvasToInput(function(success) {
+                    if (success) {
+                        canvas.classList.remove('hidden');
+                        submitBtn.classList.remove('hidden');
                     }
-
-                    const x = (canvas.width - drawWidth) / 2;
-                    const y = (canvas.height - drawHeight) / 2;
-
-                    ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-                    canvas.classList.remove('hidden');
-                    submitBtn.classList.remove('hidden');
-                };
-                img.src = e.target.result;
+                });
             };
-            reader.readAsDataURL(file);
-
-            // Create a new DataTransfer and set files directly
-            const dt = new DataTransfer();
-            dt.items.add(file);
-            document.getElementById('quick-selfie').files = dt.files;
-        }
-    });
-
-    // Submit check-in
-    submitBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        console.log('Submit button clicked');
-        submitQuickCheckin();
-    });
-
-    function submitQuickCheckin() {
-        console.log('Submitting check-in...');
-        const formData = new FormData();
-        const selfieInput = document.getElementById('quick-selfie');
-
-        console.log('Selfie input:', selfieInput);
-        console.log('Selfie files:', selfieInput.files);
-        console.log('Selfie files length:', selfieInput.files.length);
-
-        if (selfieInput.files[0]) {
-            formData.append('selfie', selfieInput.files[0]);
-            console.log('Added selfie to form data');
-        } else {
-            console.log('No selfie file found - checking canvas...');
-            // Check if we have canvas data
-            const canvas = document.getElementById('quick-camera-canvas');
-            if (canvas && canvas.style.display !== 'none') {
-                canvas.toBlob(function(blob) {
-                    const file = new File([blob], 'quick-selfie.jpg', { type: 'image/jpeg' });
-                    formData.append('selfie', file);
-                    console.log('Added canvas blob to form data');
-                    submitFormData(formData);
-                }, 'image/jpeg', 0.8);
-                return; // Exit early, submitFormData will be called in callback
-            }
-        }
-
-        submitFormData(formData);
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 
-    function submitFormData(formData) {
-        console.log('Submitting form data...');
+    function closeModal() {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        stopQuickCamera();
+    }
 
-        const url = isCheckout ? '{{ route("employee.attendance.check-out") }}' : '{{ route("employee.attendance.check-in") }}';
-        fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    function openModal(checkout) {
+        if (!currentLocation.available) {
+            alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
+            return;
+        }
+        if (!currentLocation.insideRadius) {
+            alert('Anda berada di luar radius absensi yang diizinkan.');
+            return;
+        }
+        isCheckout = checkout;
+        modalTitle.textContent = checkout ? 'Check Out Cepat' : 'Check In Cepat';
+        submitButtonText.textContent = checkout ? 'Check Out Sekarang' : 'Check In Sekarang';
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        updateLocationStatus(currentLocation);
+        updateOverlay(currentLocation);
+        if (selfieInput) {
+            selfieInput.value = '';
+        }
+        if (canvas) {
+            canvas.classList.add('hidden');
+        }
+        setButtonState(startCameraBtn, currentLocation.available && currentLocation.insideRadius);
+        setLabelState(uploadLabel, uploadInput, currentLocation.available && currentLocation.insideRadius);
+    }
+
+    if (cameraTrigger) {
+        cameraTrigger.addEventListener('click', function(event) {
+            event.preventDefault();
+            openModal(false);
+        });
+    }
+
+    if (checkoutTrigger) {
+        checkoutTrigger.addEventListener('click', function(event) {
+            event.preventDefault();
+            openModal(true);
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
+
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
             }
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response headers:', response.headers);
-            if (!response.ok) {
-                throw new Error('HTTP error! status: ' + response.status);
+        });
+    }
+
+    if (startCameraBtn) {
+        startCameraBtn.addEventListener('click', function() {
+            startQuickCamera();
+        });
+    }
+
+    if (captureBtn) {
+        captureBtn.addEventListener('click', function() {
+            captureQuickPhoto();
+        });
+    }
+
+    if (uploadInput) {
+        uploadInput.addEventListener('change', function(event) {
+            const file = event.target.files ? event.target.files[0] : null;
+            handleQuickUpload(file);
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            if (!currentLocation.available) {
+                alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
+                return;
             }
-            return response.text(); // Get text first to debug
-        })
-        .then(text => {
-            console.log('Raw response text:', text);
-            try {
-                const data = JSON.parse(text);
-                console.log('Parsed response data:', data);
+            if (!currentLocation.insideRadius) {
+                alert('Anda berada di luar radius absensi yang diizinkan.');
+                return;
+            }
+            if (!selfieInput.files || !selfieInput.files.length) {
+                alert('Silakan ambil atau unggah foto selfie terlebih dahulu.');
+                return;
+            }
+
+            if (latInput) {
+                latInput.value = currentLocation.lat;
+            }
+            if (lngInput) {
+                lngInput.value = currentLocation.lng;
+            }
+
+            const formData = new FormData();
+            formData.append('selfie', selfieInput.files[0]);
+            if (currentLocation.available) {
+                formData.append('latitude', currentLocation.lat);
+                formData.append('longitude', currentLocation.lng);
+            }
+
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+            if (!csrfToken) {
+                alert('Token CSRF tidak ditemukan. Muat ulang halaman dan coba lagi.');
+                return;
+            }
+
+            submitBtn.setAttribute('disabled', 'disabled');
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const url = isCheckout ? '{{ route("employee.attendance.check-out") }}' : '{{ route("employee.attendance.check-in") }}';
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('HTTP error! status: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
                 if (data.success) {
                     alert(isCheckout ? 'Check out berhasil!' : 'Check in berhasil!');
-                    modal.classList.add('hidden');
-                    document.body.style.overflow = 'auto';
-                    location.reload();
+                    window.location.reload();
                 } else {
-                    alert('Error: ' + data.message);
+                    alert('Error: ' + (data.message || 'Terjadi kesalahan tak dikenal.'));
                 }
-            } catch (e) {
-                console.error('JSON parse error:', e);
-                console.error('Response was not JSON. Full response:', text);
-                alert('Server mengembalikan response yang tidak valid. Periksa console untuk detail.');
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            alert('Terjadi kesalahan saat check in: ' + error.message);
+            })
+            .catch(function(error) {
+                console.error('Quick attendance submit error:', error);
+                alert('Terjadi kesalahan saat mengirim data: ' + error.message);
+            })
+            .finally(function() {
+                submitBtn.removeAttribute('disabled');
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
         });
     }
 });

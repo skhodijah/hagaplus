@@ -41,75 +41,182 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white dark:bg-gray-800">
-                <thead>
-                    <tr class="bg-gray-50 dark:bg-gray-700">
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
-                        @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
-                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ $day }}</th>
-                        @endfor
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                    @foreach ($employees as $employee)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
-                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                    {{ $employee->name }}
-                                </a>
-                            </td>
-                            @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
-                                @php
-                                    $date = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d');
-                                    $dateWithTime = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d 00:00:00');
-                                    $attendance = $attendances->get($employee->id, collect())->get($dateWithTime);
-                                @endphp
-                                <td class="px-2 py-4 text-center">
-                                    @if($attendance)
-                                        @if($attendance->status === 'present')
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 transition-colors" title="Present - Click for details">
-                                                ✓
+        <div class="space-y-8">
+            @php
+                $branchIds = $branches->pluck('id')->toArray();
+            @endphp
+
+            @foreach ($branches as $branch)
+                @php
+                    $branchEmployees = $employeesByBranch->get($branch->id, collect());
+                @endphp
+                @if($branchEmployees->count() > 0)
+                    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                            <i class="fa-solid fa-building mr-2 text-blue-600 dark:text-blue-400"></i>
+                            {{ $branch->name }}
+                            <span class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                                ({{ $branchEmployees->count() }} {{ $branchEmployees->count() === 1 ? 'employee' : 'employees' }})
+                            </span>
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-gray-700">
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+                                        @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
+                                            <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ $day }}</th>
+                                        @endfor
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                    @foreach ($branchEmployees as $employee)
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                                <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
+                                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                                    {{ $employee->name }}
+                                                </a>
+                                            </td>
+                                            @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
+                                                @php
+                                                    $date = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d');
+                                                    $dateWithTime = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d 00:00:00');
+                                                    $attendance = $attendances->get($employee->id, collect())->get($dateWithTime);
+                                                @endphp
+                                                <td class="px-2 py-4 text-center">
+                                                    @if($attendance)
+                                                        @if($attendance->status === 'present')
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 transition-colors" title="Present - Click for details">
+                                                                ✓
+                                                            </a>
+                                                        @elseif($attendance->status === 'late')
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors" title="Late - Click for details">
+                                                                L
+                                                            </a>
+                                                        @elseif($attendance->status === 'absent')
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors" title="Absent - Click for details">
+                                                                ✗
+                                                            </a>
+                                                        @elseif($attendance->status === 'partial')
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" title="Partial - Click for details">
+                                                                ◐
+                                                            </a>
+                                                        @elseif($attendance->status === 'leave')
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                                C
+                                                            </a>
+                                                        @else
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Unknown - Click for details">
+                                                                ?
+                                                            </a>
+                                                        @endif
+                                                    @else
+                                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-600" title="No Record">
+                                                            -
+                                                        </span>
+                                                    @endif
+                                                </td>
+                                            @endfor
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+
+            @php
+                $employeesWithoutBranch = $employeesByBranch->get('no-branch', collect());
+            @endphp
+            @if($employeesWithoutBranch->count() > 0)
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <i class="fa-solid fa-users mr-2 text-orange-600 dark:text-orange-400"></i>
+                        Employees Without Branch
+                        <span class="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                            ({{ $employeesWithoutBranch->count() }} {{ $employeesWithoutBranch->count() === 1 ? 'employee' : 'employees' }})
+                        </span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700">
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+                                    @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ $day }}</th>
+                                    @endfor
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach ($employeesWithoutBranch as $employee)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                                            <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
+                                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                                {{ $employee->name }}
                                             </a>
-                                        @elseif($attendance->status === 'late')
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors" title="Late - Click for details">
-                                                L
-                                            </a>
-                                        @elseif($attendance->status === 'absent')
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors" title="Absent - Click for details">
-                                                ✗
-                                            </a>
-                                        @elseif($attendance->status === 'partial')
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" title="Partial - Click for details">
-                                                ◐
-                                            </a>
-                                        @elseif($attendance->status === 'leave')
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
-                                                C
-                                            </a>
-                                        @else
-                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Unknown - Click for details">
-                                                ?
-                                            </a>
-                                        @endif
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-600" title="No Record">
-                                            -
-                                        </span>
-                                    @endif
-                                </td>
-                            @endfor
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                                        </td>
+                                        @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
+                                            @php
+                                                $date = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d');
+                                                $dateWithTime = \Carbon\Carbon::createFromFormat('Y-m', $month)->setDay($day)->format('Y-m-d 00:00:00');
+                                                $attendance = $attendances->get($employee->id, collect())->get($dateWithTime);
+                                            @endphp
+                                            <td class="px-2 py-4 text-center">
+                                                @if($attendance)
+                                                    @if($attendance->status === 'present')
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 hover:bg-green-200 dark:hover:bg-green-800 transition-colors" title="Present - Click for details">
+                                                            ✓
+                                                        </a>
+                                                    @elseif($attendance->status === 'late')
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors" title="Late - Click for details">
+                                                            L
+                                                        </a>
+                                                    @elseif($attendance->status === 'absent')
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800 transition-colors" title="Absent - Click for details">
+                                                            ✗
+                                                        </a>
+                                                    @elseif($attendance->status === 'partial')
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" title="Partial - Click for details">
+                                                            ◐
+                                                        </a>
+                                                    @elseif($attendance->status === 'leave')
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                            C
+                                                        </a>
+                                                    @else
+                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Unknown - Click for details">
+                                                            ?
+                                                        </a>
+                                                    @endif
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-400 dark:bg-gray-800 dark:text-gray-600" title="No Record">
+                                                        -
+                                                    </span>
+                                                @endif
+                                            </td>
+                                        @endfor
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Selfie Gallery Section -->
@@ -165,10 +272,13 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @if($attendance->check_in_photo)
                                     <div class="aspect-square">
-                                        <img src="{{ asset('storage/' . $attendance->check_in_photo) }}"
-                                             alt="Check-in photo"
-                                             class="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                             onclick="openImageModal('{{ asset('storage/' . $attendance->check_in_photo) }}', '{{ $attendance->user->name }} - Check-in ({{ $attendance->attendance_date->format('M d, Y') }})')">
+                                        <a href="{{ asset('storage/' . $attendance->check_in_photo) }}" 
+                                           data-fancybox="gallery-{{ $attendance->id }}" 
+                                           data-caption="{{ $attendance->user->name }} - Check-in ({{ $attendance->attendance_date->format('M d, Y') }})">
+                                            <img src="{{ asset('storage/' . $attendance->check_in_photo) }}"
+                                                 alt="Check-in photo"
+                                                 class="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity">
+                                        </a>
                                         <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">Check-in</p>
                                     </div>
                                 @else
@@ -179,10 +289,13 @@
 
                                 @if($attendance->check_out_photo)
                                     <div class="aspect-square">
-                                        <img src="{{ asset('storage/' . $attendance->check_out_photo) }}"
-                                             alt="Check-out photo"
-                                             class="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                             onclick="openImageModal('{{ asset('storage/' . $attendance->check_out_photo) }}', '{{ $attendance->user->name }} - Check-out ({{ $attendance->attendance_date->format('M d, Y') }})')">
+                                        <a href="{{ asset('storage/' . $attendance->check_out_photo) }}" 
+                                           data-fancybox="gallery-{{ $attendance->id }}" 
+                                           data-caption="{{ $attendance->user->name }} - Check-out ({{ $attendance->attendance_date->format('M d, Y') }})">
+                                            <img src="{{ asset('storage/' . $attendance->check_out_photo) }}"
+                                                 alt="Check-out photo"
+                                                 class="w-full h-full object-cover rounded cursor-pointer hover:opacity-90 transition-opacity">
+                                        </a>
                                         <p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-1">Check-out</p>
                                     </div>
                                 @else
@@ -213,104 +326,7 @@
         </div>
     </div>
 
-    <!-- Image Modal -->
-    <div id="imageModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-auto max-w-4xl shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 id="modalTitle" class="text-lg font-medium text-gray-900 dark:text-white">Attendance Photo</h3>
-                    <button onclick="closeImageModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <i class="fa-solid fa-times text-xl"></i>
-                    </button>
-                </div>
-                <div class="flex justify-center">
-                    <img id="modalImage" src="" alt="Attendance photo" class="max-w-full max-h-[80vh] object-contain rounded-lg shadow-lg">
-                </div>
-                <div class="mt-4 flex justify-center space-x-4">
-                    <button onclick="zoomIn()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-magnifying-glass-plus mr-2"></i>Zoom In
-                    </button>
-                    <button onclick="zoomOut()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-magnifying-glass-minus mr-2"></i>Zoom Out
-                    </button>
-                    <button onclick="resetZoom()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fa-solid fa-rotate-left mr-2"></i>Reset
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     @push('scripts')
     <script src="{{ asset('js/attendance.js') }}"></script>
-    <script>
-        let currentZoom = 1;
-        const zoomStep = 0.25;
-        const maxZoom = 3;
-        const minZoom = 0.5;
-
-        function openImageModal(imageSrc, title) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('modalTitle').textContent = title;
-            document.getElementById('imageModal').classList.remove('hidden');
-            resetZoom();
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-            document.getElementById('modalImage').src = '';
-            resetZoom();
-        }
-
-        function zoomIn() {
-            if (currentZoom < maxZoom) {
-                currentZoom += zoomStep;
-                updateZoom();
-            }
-        }
-
-        function zoomOut() {
-            if (currentZoom > minZoom) {
-                currentZoom -= zoomStep;
-                updateZoom();
-            }
-        }
-
-        function resetZoom() {
-            currentZoom = 1;
-            updateZoom();
-        }
-
-        function updateZoom() {
-            const modalImage = document.getElementById('modalImage');
-            modalImage.style.transform = `scale(${currentZoom})`;
-            modalImage.style.transition = 'transform 0.3s ease';
-        }
-
-        // Close modal when clicking outside
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeImageModal();
-            }
-        });
-
-        // Keyboard shortcuts for zoom
-        document.addEventListener('keydown', function(e) {
-            if (document.getElementById('imageModal').classList.contains('hidden')) return;
-
-            if (e.key === '+' || e.key === '=') {
-                e.preventDefault();
-                zoomIn();
-            } else if (e.key === '-') {
-                e.preventDefault();
-                zoomOut();
-            } else if (e.key === '0') {
-                e.preventDefault();
-                resetZoom();
-            } else if (e.key === 'Escape') {
-                closeImageModal();
-            }
-        });
-    </script>
     @endpush
 </x-admin-layout>

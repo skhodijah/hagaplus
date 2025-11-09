@@ -22,8 +22,16 @@
     <script src="https://kit.fontawesome.com/8c8ccf764d.js" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
+    <!-- Fancybox CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+    
     <!-- Alpine.js -->
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Alpine.js x-cloak CSS -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
     
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -151,8 +159,18 @@
                         <!-- Notifications -->
                         <div class="relative" x-data="{ open: false, notifications: [], unreadCount: 0 }" 
                              x-init="
+                                open = false;
                                 fetchNotifications();
-                                setInterval(fetchNotifications, 30000); // Refresh every 30 seconds
+                                setInterval(fetchNotifications, 30000);
+                                
+                                window.addEventListener('beforeunload', () => open = false);
+                                document.addEventListener('click', function(e) {
+                                    const clicked = e.target;
+                                    if (clicked.closest('button#prev-month') || clicked.closest('button#next-month') || 
+                                        (clicked.tagName === 'A' && clicked.href && clicked.href.includes('month='))) {
+                                        open = false;
+                                    }
+                                });
                                 
                                 function fetchNotifications() {
                                     fetch('{{ route('admin.notifications.index') }}')
@@ -255,7 +273,9 @@
                             </button>
                             
                             <!-- Notifications Dropdown -->
-                            <div x-show="open" @click.away="open = false" 
+                            <div x-show="open" 
+                                 x-cloak
+                                 @click.away="open = false" 
                                  class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
                                  x-transition:enter="transition ease-out duration-200"
                                  x-transition:enter-start="opacity-0 scale-95"
@@ -328,13 +348,26 @@
                         <a href="#" class="hidden sm:inline-flex p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Recent Activities"><i class="fa-solid fa-clock"></i></a>
                         
                         <!-- Profile Dropdown -->
-                        <div class="relative" x-data="{ open: false }">
+                        <div class="relative" x-data="{ open: false }" 
+                             x-init="
+                                open = false;
+                                window.addEventListener('beforeunload', () => open = false);
+                                document.addEventListener('click', function(e) {
+                                    const clicked = e.target;
+                                    if (clicked.closest('button#prev-month') || clicked.closest('button#next-month') || 
+                                        (clicked.tagName === 'A' && clicked.href && clicked.href.includes('month='))) {
+                                        open = false;
+                                    }
+                                });
+                             ">
                             <button @click="open = !open" class="inline-flex p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Profile Settings">
                                 <i class="fa-solid fa-user"></i>
                             </button>
                             
                             <!-- Profile Dropdown Menu -->
-                            <div x-show="open" @click.away="open = false" 
+                            <div x-show="open" 
+                                 x-cloak
+                                 @click.away="open = false" 
                                  class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
                                  x-transition:enter="transition ease-out duration-200"
                                  x-transition:enter-start="opacity-0 scale-95"
@@ -397,5 +430,25 @@
             </main>
         </div>
     </div>
+
+    <!-- Fancybox JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    
+    @stack('scripts')
+    
+    <script>
+        // Initialize Fancybox globally
+        document.addEventListener('DOMContentLoaded', function() {
+            Fancybox.bind('[data-fancybox]', {
+                Toolbar: {
+                    display: {
+                        left: ["infobar"],
+                        middle: [],
+                        right: ["slideshow", "download", "thumbs", "close"],
+                    },
+                },
+            });
+        });
+    </script>
 </body>
 </html>

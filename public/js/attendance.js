@@ -9,42 +9,46 @@ document.addEventListener("DOMContentLoaded", function () {
     const nextMonthBtn = document.getElementById("next-month");
     const currentMonthSpan = document.getElementById("current-month");
 
-    if (prevMonthBtn && nextMonthBtn && currentMonthSpan) {
-        prevMonthBtn.addEventListener("click", function () {
-            changeMonth(-1);
-        });
-
-        nextMonthBtn.addEventListener("click", function () {
-            changeMonth(1);
-        });
-    }
-
     function changeMonth(direction) {
         // Get current month from data attribute or fallback to parsing text
         let currentMonth =
-            prevMonthBtn.getAttribute("data-month") ||
-            nextMonthBtn.getAttribute("data-month");
+            prevMonthBtn?.getAttribute("data-month") ||
+            nextMonthBtn?.getAttribute("data-month");
+
+        if (!currentMonth && currentMonthSpan) {
+            // Fallback to parsing text content
+            const currentMonthText = currentMonthSpan.textContent.trim();
+            const parts = currentMonthText.split(" ");
+            if (parts.length >= 2) {
+                const monthName = parts[0];
+                const year = parts[1];
+                const monthNames = [
+                    "January",
+                    "February",
+                    "March",
+                    "April",
+                    "May",
+                    "June",
+                    "July",
+                    "August",
+                    "September",
+                    "October",
+                    "November",
+                    "December",
+                ];
+                const monthIndex = monthNames.indexOf(monthName);
+                if (monthIndex !== -1) {
+                    currentMonth = `${year}-${String(monthIndex + 1).padStart(
+                        2,
+                        "0"
+                    )}`;
+                }
+            }
+        }
 
         if (!currentMonth) {
-            // Fallback to parsing text content
-            const currentMonthText = currentMonthSpan.textContent;
-            const [monthName, year] = currentMonthText.split(" ");
-            const monthNames = [
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            ];
-            const monthIndex = monthNames.indexOf(monthName);
-            currentMonth = `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
+            console.error("Could not determine current month");
+            return;
         }
 
         const [year, month] = currentMonth.split("-");
@@ -63,7 +67,33 @@ document.addEventListener("DOMContentLoaded", function () {
             2,
             "0"
         )}`;
-        window.location.href = `${window.location.pathname}?month=${newMonthFormatted}`;
+        const currentPath = window.location.pathname;
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set("month", newMonthFormatted);
+        window.location.href = `${currentPath}?${urlParams.toString()}`;
+    }
+
+    if (prevMonthBtn && nextMonthBtn) {
+        prevMonthBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            // Close any open Alpine.js dropdowns
+            closeAllDropdowns();
+            changeMonth(-1);
+        });
+
+        nextMonthBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            // Close any open Alpine.js dropdowns
+            closeAllDropdowns();
+            changeMonth(1);
+        });
+    }
+
+    function closeAllDropdowns() {
+        // Close all Alpine.js dropdowns by triggering click outside
+        document.body.click();
+        // Small delay to ensure dropdowns are closed
+        setTimeout(() => {}, 50);
     }
 
     // Initialize any other attendance-related functionality here

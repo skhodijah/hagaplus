@@ -17,8 +17,10 @@ class AttendanceController extends Controller
         $startOfMonth = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $endOfMonth = Carbon::createFromFormat('Y-m', $month)->endOfMonth();
 
+        // Get all employees with their branch information
         $employees = User::where('role', 'employee')
             ->where('instansi_id', $instansiId)
+            ->with(['employee.branch'])
             ->get();
 
         $attendances = Attendance::whereHas('user', function ($query) use ($instansiId) {
@@ -35,6 +37,19 @@ class AttendanceController extends Controller
                 });
             });
 
+        // Group employees by branch
+        $employeesByBranch = $employees->groupBy(function ($employee) {
+            return $employee->employee && $employee->employee->branch
+                ? $employee->employee->branch->id
+                : 'no-branch';
+        });
+
+        // Get all branches for this instansi
+        $branches = \App\Models\Admin\Branch::where('company_id', $instansiId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+
         // Get attendances with photos for the selfie gallery
         $attendancesWithPhotos = Attendance::whereHas('user', function ($query) use ($instansiId) {
             $query->where('instansi_id', $instansiId);
@@ -49,7 +64,7 @@ class AttendanceController extends Controller
             ->orderBy('check_in_time', 'desc')
             ->get();
 
-        return view('admin.attendance.index', compact('employees', 'attendances', 'month', 'attendancesWithPhotos'));
+        return view('admin.attendance.index', compact('employees', 'attendances', 'month', 'attendancesWithPhotos', 'employeesByBranch', 'branches'));
     }
 
     public function create()
