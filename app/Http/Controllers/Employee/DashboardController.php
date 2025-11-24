@@ -60,6 +60,14 @@ class DashboardController extends Controller
         // Calendar data for current month
         $calendarData = $this->getCalendarData($user->id, $currentMonth, $currentYear);
 
+        // Branch data for geolocation tracking
+        $branchData = [
+            'name' => $employee->branch->name ?? 'Kantor',
+            'latitude' => $employee->branch->latitude ?? null,
+            'longitude' => $employee->branch->longitude ?? null,
+            'radius' => $employee->branch->radius ?? 100,
+        ];
+
         return view('employee.dashboard.index', [
             'employee' => $employee,
             'user' => $user,
@@ -71,6 +79,7 @@ class DashboardController extends Controller
             'calendarData' => $calendarData,
             'currentMonth' => $currentMonth,
             'currentYear' => $currentYear,
+            'branchData' => $branchData,
         ]);
     }
 

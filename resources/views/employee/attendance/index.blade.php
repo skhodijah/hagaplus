@@ -590,11 +590,58 @@
                         return;
                     }
 
-                    watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
-                        enableHighAccuracy: true,
-                        maximumAge: 5000,
-                        timeout: 10000,
-                    });
+                    // Check permission status
+                    if ('permissions' in navigator) {
+                        navigator.permissions.query({name:'geolocation'}).then(function(result) {
+                            if (result.state === 'denied') {
+                                data.error = 'Izin lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
+                                data.available = false;
+                                data.distance = null;
+                                data.insideRadius = false;
+                                notify();
+                                return;
+                            }
+                            // If granted or prompt, proceed with location acquisition
+                            getInitialLocation();
+                        }).catch(function() {
+                            // Fallback if permissions API not supported
+                            getInitialLocation();
+                        });
+                    } else {
+                        getInitialLocation();
+                    }
+
+                    function getInitialLocation() {
+                        // First, try to get current position quickly
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            handleSuccess(position);
+                            // Then start watching for updates
+                            startWatching();
+                        }, function(error) {
+                            // If getCurrentPosition fails, try watchPosition
+                            startWatching();
+                        }, {
+                            enableHighAccuracy: true,
+                            maximumAge: 10000,
+                            timeout: 5000,
+                        });
+                    }
+
+                    function startWatching() {
+                        watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+                            enableHighAccuracy: true,
+                            maximumAge: 3000,
+                            timeout: 5000,
+                        });
+
+                        // Set shorter timeout for location acquisition
+                        setTimeout(function() {
+                            if (!data.available && !data.error) {
+                                data.error = 'Tidak dapat memperoleh lokasi. Pastikan GPS aktif dan izinkan akses lokasi di browser.';
+                                notify();
+                            }
+                        }, 5000);
+                    }
                 }
 
                 function handleSuccess(position) {
@@ -615,7 +662,24 @@
                 }
 
                 function handleError(error) {
-                    data.error = (error && error.message) ? error.message : 'Tidak dapat memperoleh lokasi.';
+                    let errorMessage = 'Tidak dapat memperoleh lokasi.';
+                    if (error) {
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMessage = 'Akses lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMessage = 'Informasi lokasi tidak tersedia. Pastikan GPS aktif dan sinyal kuat.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMessage = 'Waktu permintaan lokasi habis. Coba lagi.';
+                                break;
+                            default:
+                                errorMessage = error.message || 'Terjadi kesalahan saat memperoleh lokasi.';
+                                break;
+                        }
+                    }
+                    data.error = errorMessage;
                     data.available = false;
                     data.distance = null;
                     data.insideRadius = false;
@@ -899,7 +963,9 @@
                 }
 
                 if (elements.messageText) {
-                    if (!location.available) {
+                    if (location.error) {
+                        elements.messageText.textContent = location.error;
+                    } else if (!location.available) {
                         elements.messageText.textContent = 'Aktifkan layanan lokasi pada perangkat dan pastikan browser memiliki izin lokasi.';
                     } else if (!location.insideRadius) {
                         elements.messageText.textContent = 'Anda berada di luar radius absensi. Silakan mendekati lokasi cabang.';

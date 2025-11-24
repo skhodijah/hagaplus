@@ -4,7 +4,7 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Leave Request Details</h1>
             <div class="flex space-x-3">
                 <a href="{{ route('admin.leaves.edit', $leave) }}"
-                   class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
                     Edit
                 </a>
                 <a href="{{ route('admin.leaves.index') }}"

@@ -53,7 +53,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::patch('employee-policies/{employee_policy}/toggle-status', [EmployeePolicyController::class, 'toggleStatus'])->name('employee-policies.toggle-status');
 
     // Leave management
-    Route::resource('leaves', LeaveController::class);
+    Route::resource('leaves', LeaveController::class)->parameters(['leaves' => 'leave']);
     Route::patch('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve');
     Route::patch('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject');
 

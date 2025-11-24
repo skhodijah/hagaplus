@@ -91,7 +91,7 @@
                                     <a href="{{ route('admin.leaves.show', $leave) }}"
                                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">View</a>
                                     <a href="{{ route('admin.leaves.edit', $leave) }}"
-                                       class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</a>
+                                        class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300">Edit</a>
                                     @if($leave->status === 'pending')
                                         <form method="POST" action="{{ route('admin.leaves.approve', $leave) }}" class="inline">
                                             @csrf

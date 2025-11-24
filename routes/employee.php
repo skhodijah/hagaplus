@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Employee\DashboardController;
 use App\Http\Controllers\Employee\AttendanceController;
+use App\Http\Controllers\Employee\LeaveController;
 use App\Http\Controllers\Employee\PayrollController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +20,11 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     // Employee's own payroll
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::get('/payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
+
+    // Employee's leave applications (Pengajuan Cuti)
+    Route::get('/leaves', [LeaveController::class, 'index'])->name('leaves.index');
+    Route::post('/leaves', [LeaveController::class, 'store'])->name('leaves.store');
+    Route::get('/leaves/{leave}', [LeaveController::class, 'show'])->name('leaves.show');
+    Route::put('/leaves/{leave}', [LeaveController::class, 'update'])->name('leaves.update');
+    Route::delete('/leaves/{leave}', [LeaveController::class, 'destroy'])->name('leaves.destroy');
 });

@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin\Leave;
-use App\Http\Requests\StoreLeaveRequest;
-use App\Http\Requests\UpdateLeaveRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class LeaveController extends Controller
 {
@@ -14,15 +15,98 @@ class LeaveController extends Controller
      */
     public function index()
     {
-        //
+        $user = Auth::user();
+        
+        // Get all leaves for this employee
+        $leaves = Leave::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Calculate statistics
+        $totalLeaves = $leaves->count();
+        $approvedLeaves = $leaves->where('status', 'approved')->count();
+        $pendingLeaves = $leaves->where('status', 'pending')->count();
+        $rejectedLeaves = $leaves->where('status', 'rejected')->count();
+        
+        // Calculate leave quota
+        // Default annual leave quota is 12 days per year
+        $annualQuota = 12;
+        
+        // Calculate used leave days (only approved leaves in current year)
+        $currentYear = Carbon::now()->year;
+        $usedDays = Leave::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereYear('start_date', $currentYear)
+            ->sum('days_count');
+        
+        $remainingQuota = $annualQuota - $usedDays;
+        
+        return view('employee.leaves.index', compact(
+            'leaves',
+            'totalLeaves',
+            'approvedLeaves',
+            'pendingLeaves',
+            'rejectedLeaves',
+            'annualQuota',
+            'usedDays',
+            'remainingQuota'
+        ));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreLeaveRequest $request)
+    public function store(Request $request)
     {
-        //
+        // Conditional validation based on leave type
+        $rules = [
+            'leave_type' => 'required|in:annual,sick,maternity,emergency,other',
+            'start_date' => 'required|date|after_or_equal:today',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'reason' => 'required|string|max:1000',
+        ];
+        
+        // Attachment is required for non-annual leave types
+        if ($request->leave_type !== 'annual') {
+            $rules['attachment'] = 'required|file|mimes:pdf,jpg,jpeg,png|max:2048';
+        } else {
+            $rules['attachment'] = 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048';
+        }
+        
+        $validated = $request->validate($rules);
+        
+        // Calculate days count (excluding weekends)
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+        $daysCount = 0;
+        
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            // Only count weekdays (Monday to Friday)
+            if ($date->isWeekday()) {
+                $daysCount++;
+            }
+        }
+        
+        // Handle file upload
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('leave-attachments', 'public');
+        }
+        
+        // Create leave request
+        Leave::create([
+            'user_id' => Auth::id(),
+            'leave_type' => $validated['leave_type'],
+            'start_date' => $validated['start_date'],
+            'end_date' => $validated['end_date'],
+            'days_count' => $daysCount,
+            'reason' => $validated['reason'],
+            'attachment' => $attachmentPath,
+            'status' => 'pending',
+        ]);
+        
+        return redirect()->route('employee.leaves.index')
+            ->with('success', 'Pengajuan cuti berhasil disubmit. Menunggu persetujuan.');
     }
 
     /**
@@ -30,15 +114,12 @@ class LeaveController extends Controller
      */
     public function show(Leave $leave)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateLeaveRequest $request, Leave $leave)
-    {
-        //
+        // Ensure employee can only view their own leaves
+        if ($leave->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        return view('employee.leaves.show', compact('leave'));
     }
 
     /**
@@ -46,6 +127,20 @@ class LeaveController extends Controller
      */
     public function destroy(Leave $leave)
     {
-        //
+        // Ensure employee can only delete their own leaves
+        if ($leave->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
+        // Only allow deletion of pending leaves
+        if ($leave->status !== 'pending') {
+            return redirect()->route('employee.leaves.index')
+                ->with('error', 'Hanya pengajuan cuti dengan status pending yang dapat dibatalkan.');
+        }
+        
+        $leave->delete();
+        
+        return redirect()->route('employee.leaves.index')
+            ->with('success', 'Pengajuan cuti berhasil dibatalkan.');
     }
 }

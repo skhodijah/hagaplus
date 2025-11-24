@@ -1,6 +1,4 @@
-@extends('layouts.employee')
-
-@section('content')
+<x-employee-layout>
     @include('components.camera-modal')
 
     <div class="py-6 md:py-8">
@@ -271,6 +269,230 @@
                     window.location.href = `${window.location.pathname}?month=${newMonth}`;
                 }
             });
+
+            // Initialize location tracking for quick check-in/check-out
+            if (!window.AttendanceLocationManager) {
+                // If AttendanceLocationManager doesn't exist, create a minimal version
+                window.branchInfo = @json($branchData);
+                window.branchName = @json($branchData['name'] ?? null);
+
+                // Load the attendance location manager script
+                const script = document.createElement('script');
+                script.textContent = `
+                    if (!window.calculateDistanceMeters) {
+                        window.calculateDistanceMeters = function(lat1, lon1, lat2, lon2) {
+                            if ([lat1, lon1, lat2, lon2].some(function(value) { return value === null || value === undefined || isNaN(parseFloat(value)); })) {
+                                return null;
+                            }
+                            const toRad = function(value) { return (value * Math.PI) / 180; };
+                            const earthRadius = 6371000; // meters
+                            const dLat = toRad(lat2 - lat1);
+                            const dLon = toRad(lon2 - lon1);
+                            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+                            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                            return earthRadius * c;
+                        };
+                    }
+
+                    window.AttendanceLocationManager = (function() {
+                        let branchInfo = null;
+                        let watchStarted = false;
+                        let watchId = null;
+                        let data = { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: null };
+                        const listeners = [];
+
+                        function normalizeBranchInfo(info) {
+                            if (!info) {
+                                return null;
+                            }
+                            const latitude = info.latitude !== undefined && info.latitude !== null ? parseFloat(info.latitude) : null;
+                            const longitude = info.longitude !== undefined && info.longitude !== null ? parseFloat(info.longitude) : null;
+                            const radius = info.radius !== undefined && info.radius !== null ? parseFloat(info.radius) : null;
+                            if ([latitude, longitude, radius].some(function(value) { return value === null || Number.isNaN(value); })) {
+                                return null;
+                            }
+                            return { ...info, latitude, longitude, radius };
+                        }
+
+                        function notify() {
+                            listeners.forEach(function(listener) {
+                                listener({ ...data });
+                            });
+                        }
+
+                        function ensureWatcher() {
+                            if (watchStarted) {
+                                return;
+                            }
+                            watchStarted = true;
+
+                            if (!('geolocation' in navigator)) {
+                                data.error = 'Perangkat tidak mendukung geolokasi.';
+                                data.available = false;
+                                data.distance = null;
+                                data.insideRadius = false;
+                                notify();
+                                return;
+                            }
+
+                            if ('permissions' in navigator) {
+                                navigator.permissions.query({name:'geolocation'}).then(function(result) {
+                                    if (result.state === 'denied') {
+                                        data.error = 'Izin lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
+                                        data.available = false;
+                                        data.distance = null;
+                                        data.insideRadius = false;
+                                        notify();
+                                        return;
+                                    }
+                                    getInitialLocation();
+                                }).catch(function() {
+                                    getInitialLocation();
+                                });
+                            } else {
+                                getInitialLocation();
+                            }
+
+                            function getInitialLocation() {
+                                navigator.geolocation.getCurrentPosition(function(position) {
+                                    handleSuccess(position);
+                                    startWatching();
+                                }, function(error) {
+                                    startWatching();
+                                }, {
+                                    enableHighAccuracy: true,
+                                    maximumAge: 10000,
+                                    timeout: 5000,
+                                });
+                            }
+
+                            function startWatching() {
+                                watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+                                    enableHighAccuracy: true,
+                                    maximumAge: 3000,
+                                    timeout: 5000,
+                                });
+
+                                setTimeout(function() {
+                                    if (!data.available && !data.error) {
+                                        data.error = 'Tidak dapat memperoleh lokasi. Pastikan GPS aktif dan izinkan akses lokasi di browser.';
+                                        notify();
+                                    }
+                                }, 5000);
+                            }
+                        }
+
+                        function handleSuccess(position) {
+                            data.lat = position.coords.latitude;
+                            data.lng = position.coords.longitude;
+                            data.available = true;
+                            data.error = null;
+
+                            if (branchInfo && branchInfo.latitude !== null && branchInfo.longitude !== null && branchInfo.radius !== null) {
+                                data.distance = window.calculateDistanceMeters(data.lat, data.lng, branchInfo.latitude, branchInfo.longitude);
+                                data.insideRadius = data.distance !== null ? data.distance <= branchInfo.radius : false;
+                            } else {
+                                data.distance = null;
+                                data.insideRadius = true;
+                            }
+
+                            notify();
+                        }
+
+                        function handleError(error) {
+                            let errorMessage = 'Tidak dapat memperoleh lokasi.';
+                            if (error) {
+                                switch(error.code) {
+                                    case error.PERMISSION_DENIED:
+                                        errorMessage = 'Akses lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
+                                        break;
+                                    case error.POSITION_UNAVAILABLE:
+                                        errorMessage = 'Informasi lokasi tidak tersedia. Pastikan GPS aktif dan sinyal kuat.';
+                                        break;
+                                    case error.TIMEOUT:
+                                        errorMessage = 'Waktu permintaan lokasi habis. Coba lagi.';
+                                        break;
+                                    default:
+                                        errorMessage = error.message || 'Terjadi kesalahan saat memperoleh lokasi.';
+                                        break;
+                                }
+                            }
+                            data.error = errorMessage;
+                            data.available = false;
+                            data.distance = null;
+                            data.insideRadius = false;
+                            notify();
+                        }
+
+                        return {
+                            setBranchInfo(info) {
+                                branchInfo = normalizeBranchInfo(info);
+                                ensureWatcher();
+                                notify();
+                            },
+                            subscribe(listener) {
+                                if (typeof listener === 'function') {
+                                    listeners.push(listener);
+                                    listener({ ...data });
+                                }
+                                ensureWatcher();
+                            },
+                            getData() {
+                                return { ...data };
+                            },
+                            hasBranchInfo() {
+                                return !!branchInfo;
+                            }
+                        };
+                    })();
+
+                    if (window.branchInfo) {
+                        window.AttendanceLocationManager.setBranchInfo(window.branchInfo);
+                    } else {
+                        window.AttendanceLocationManager.subscribe(function() {});
+                    }
+
+                    if (!window.drawAttendanceOverlay) {
+                        window.drawAttendanceOverlay = function(ctx, width, height, options = {}) {
+                            if (!ctx) {
+                                return;
+                            }
+
+                            const now = options.timestamp ? new Date(options.timestamp) : new Date();
+                            const timestampText = now.toLocaleString();
+                            const hasCoords = typeof options.latitude === 'number' && typeof options.longitude === 'number';
+                            const coordsText = hasCoords ? \`Lat: \${options.latitude.toFixed(6)}, Lng: \${options.longitude.toFixed(6)}\` : 'Koordinat tidak tersedia';
+                            const distanceText = typeof options.distance === 'number' ? \`Jarak: \${options.distance.toFixed(1)} m\` : null;
+                            const statusText = typeof options.insideRadius === 'boolean'
+                                ? (options.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius')
+                                : null;
+                            const labelText = options.label ? String(options.label) : null;
+
+                            const lines = [labelText, timestampText, coordsText, distanceText, statusText].filter(Boolean);
+                            if (!lines.length) {
+                                return;
+                            }
+
+                            const padding = 16;
+                            const lineHeight = 18;
+                            const boxHeight = padding + lineHeight * lines.length;
+
+                            ctx.save();
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+                            ctx.fillRect(0, height - boxHeight, width, boxHeight);
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.font = '16px sans-serif';
+                            lines.forEach(function(line, index) {
+                                ctx.fillText(line, padding, height - boxHeight + padding + lineHeight * (index + 0.5));
+                            });
+                            ctx.restore();
+                        };
+                    }
+                `;
+                document.head.appendChild(script);
+            }
         </script>
     @endpush
-@endsection
+</x-employee-layout>

@@ -15,6 +15,7 @@ class Leave extends BaseModel
         'end_date',
         'days_count',
         'reason',
+        'attachment',
         'status',
         'approved_by',
         'approved_at',
