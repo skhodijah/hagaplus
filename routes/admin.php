@@ -18,6 +18,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     // Employee management
     Route::resource('employees', EmployeeController::class);
 
+    // Attendance Revisions
+    Route::get('attendance/revisions', [App\Http\Controllers\Admin\AttendanceRevisionController::class, 'index'])->name('attendance.revisions.index');
+    Route::patch('attendance/revisions/{id}/approve', [App\Http\Controllers\Admin\AttendanceRevisionController::class, 'approve'])->name('attendance.revisions.approve');
+    Route::patch('attendance/revisions/{id}/reject', [App\Http\Controllers\Admin\AttendanceRevisionController::class, 'reject'])->name('attendance.revisions.reject');
+
     // Attendance management
     Route::resource('attendance', AttendanceController::class);
     Route::get('attendance/employee/{userId}', [AttendanceController::class, 'employeeAttendance'])->name('attendance.employee');

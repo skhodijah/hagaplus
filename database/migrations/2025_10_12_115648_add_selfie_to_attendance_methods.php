@@ -10,11 +10,11 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // Update check_in_method enum to include 'selfie'
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('qr', 'gps', 'face_id', 'manual', 'selfie')");
+        // Update check_in_method enum to only selfie and manual
+        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('selfie', 'manual')");
 
-        // Update check_out_method enum to include 'selfie'
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('qr', 'gps', 'face_id', 'manual', 'selfie')");
+        // Update check_out_method enum to only selfie and manual
+        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('selfie', 'manual')");
     }
 
     /**
@@ -23,9 +23,9 @@ return new class extends Migration {
     public function down(): void
     {
         // Revert check_in_method enum
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('qr', 'gps', 'face_id', 'manual')");
+        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('qr', 'gps', 'face_id', 'manual', 'selfie')");
 
         // Revert check_out_method enum
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('qr', 'gps', 'face_id', 'manual')");
+        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('qr', 'gps', 'face_id', 'manual', 'selfie')");
     }
 };

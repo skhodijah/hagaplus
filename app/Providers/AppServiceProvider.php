@@ -22,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register Blade components
         $this->registerBladeComponents();
+        
+        // Register View Composers
+        \Illuminate\Support\Facades\View::composer(
+            'components.employee-layout',
+            \App\Http\View\Composers\EmployeeLayoutComposer::class
+        );
     }
 
     /**

@@ -12,7 +12,7 @@ use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $employee = Employee::where('user_id', $user->id)->with(['instansi', 'branch'])->first();
@@ -31,9 +31,23 @@ class DashboardController extends Controller
 
         $todayStatus = $this->getAttendanceStatusText($todayAttendance);
 
+        // Get selected month from query parameter or use current month
+        $selectedMonth = $request->input('month');
+        if ($selectedMonth) {
+            try {
+                $selectedDate = Carbon::createFromFormat('Y-m', $selectedMonth);
+                $currentMonth = $selectedDate->month;
+                $currentYear = $selectedDate->year;
+            } catch (\Exception $e) {
+                $currentMonth = Carbon::now()->month;
+                $currentYear = Carbon::now()->year;
+            }
+        } else {
+            $currentMonth = Carbon::now()->month;
+            $currentYear = Carbon::now()->year;
+        }
+
         // Monthly working hours (work_duration is in minutes, convert to hours)
-        $currentMonth = Carbon::now()->month;
-        $currentYear = Carbon::now()->year;
         $monthlyMinutes = Attendance::where('user_id', $user->id)
             ->whereMonth('attendance_date', $currentMonth)
             ->whereYear('attendance_date', $currentYear)
@@ -51,13 +65,15 @@ class DashboardController extends Controller
         // Attendance statistics for current month
         $attendanceStats = $this->getAttendanceStats($user->id, $currentMonth, $currentYear);
 
-        // Recent attendance records (last 7 days)
+        // Recent attendance records for selected month
+        $startOfMonth = Carbon::create($currentYear, $currentMonth, 1);
+        $endOfMonth = $startOfMonth->copy()->endOfMonth();
         $recentAttendance = Attendance::where('user_id', $user->id)
-            ->where('attendance_date', '>=', Carbon::now()->subDays(7))
+            ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->orderBy('attendance_date', 'desc')
             ->get();
 
-        // Calendar data for current month
+        // Calendar data for selected month
         $calendarData = $this->getCalendarData($user->id, $currentMonth, $currentYear);
 
         // Branch data for geolocation tracking
@@ -67,6 +83,21 @@ class DashboardController extends Controller
             'longitude' => $employee->branch->longitude ?? null,
             'radius' => $employee->branch->radius ?? 100,
         ];
+
+        // Calculate work duration from hire date
+        $workDuration = null;
+        if ($employee->hire_date) {
+            $hireDate = Carbon::parse($employee->hire_date);
+            $now = Carbon::now();
+            $diff = $hireDate->diff($now);
+            
+            $workDuration = [
+                'years' => $diff->y,
+                'months' => $diff->m,
+                'days' => $diff->d,
+                'total_days' => $hireDate->diffInDays($now),
+            ];
+        }
 
         return view('employee.dashboard.index', [
             'employee' => $employee,
@@ -80,6 +111,7 @@ class DashboardController extends Controller
             'currentMonth' => $currentMonth,
             'currentYear' => $currentYear,
             'branchData' => $branchData,
+            'workDuration' => $workDuration,
         ]);
     }
 

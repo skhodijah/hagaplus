@@ -31,6 +31,9 @@ class AttendanceController extends Controller
             ->whereDate('attendance_date', today())
             ->first();
 
+        // Calculate today's status
+        $todayStatus = $this->getAttendanceStatusText($todayAttendance);
+
         // Get recent attendance records
         $recentAttendance = Attendance::where('user_id', $user->id)
             ->orderBy('attendance_date', 'desc')
@@ -39,10 +42,28 @@ class AttendanceController extends Controller
 
         return view('employee.attendance.index', compact(
             'todayAttendance',
+            'todayStatus',
             'recentAttendance',
             'employee',
             'attendancePolicy'
         ));
+    }
+
+    private function getAttendanceStatusText($attendance)
+    {
+        if (!$attendance) {
+            return 'Belum Check In';
+        }
+
+        if ($attendance->check_in_time && !$attendance->check_out_time) {
+            return 'Sedang Bekerja';
+        }
+
+        if ($attendance->check_in_time && $attendance->check_out_time) {
+            return 'Sudah Check Out';
+        }
+
+        return 'Belum Check In';
     }
 
     /**
@@ -210,7 +231,6 @@ class AttendanceController extends Controller
                 // Update existing record
                 $existingAttendance->update([
                     'check_in_time' => $checkInTime,
-                    'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
                     'check_in_location' => $locationString,
                     'late_minutes' => $lateMinutes,
@@ -225,7 +245,6 @@ class AttendanceController extends Controller
                     'branch_id' => $user->employee->branch_id ?? 1,
                     'attendance_date' => today(),
                     'check_in_time' => $checkInTime,
-                    'check_in_method' => 'selfie',
                     'check_in_photo' => $selfiePath,
                     'check_in_location' => $locationString,
                     'late_minutes' => $lateMinutes,
@@ -364,7 +383,6 @@ class AttendanceController extends Controller
 
             $attendance->update([
                 'check_out_time' => $checkOutTime,
-                'check_out_method' => 'selfie',
                 'check_out_photo' => $selfiePath,
                 'check_out_location' => $locationString,
                 'work_duration' => $workDuration,
@@ -391,10 +409,63 @@ class AttendanceController extends Controller
         }
     }
 
-    public function processScan(Request $request)
+    public function storeRevision(Request $request)
     {
-        // Keep existing QR scan functionality if needed
-        return response()->json(['message' => 'QR scan not implemented yet']);
+        $request->validate([
+            'attendance_id' => 'required|exists:attendances,id',
+            'revision_type' => 'required|in:check_in,check_out',
+            'revised_time' => 'required|date',
+            'reason' => 'required|string|min:10',
+            'proof_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+        ]);
+
+        $user = Auth::user();
+        $attendance = Attendance::findOrFail($request->attendance_id);
+
+        // Verify ownership
+        if ($attendance->user_id !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        try {
+            // Get original time
+            $originalTime = $request->revision_type === 'check_in' 
+                ? $attendance->check_in_time 
+                : $attendance->check_out_time;
+
+            // Handle proof photo upload
+            $proofPhotoPath = null;
+            if ($request->hasFile('proof_photo')) {
+                $proofPhotoPath = $request->file('proof_photo')->store('attendance-revisions', 'public');
+            }
+
+            // Create revision request
+            $revision = \App\Models\Admin\AttendanceRevision::create([
+                'attendance_id' => $attendance->id,
+                'user_id' => $user->id,
+                'revision_type' => $request->revision_type,
+                'original_time' => $originalTime,
+                'revised_time' => $request->revised_time,
+                'reason' => $request->reason,
+                'proof_photo' => $proofPhotoPath,
+                'status' => 'pending',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Permohonan edit absensi berhasil dikirim',
+                'data' => $revision
+            ]);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Attendance Revision Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

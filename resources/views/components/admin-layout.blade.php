@@ -6,6 +6,8 @@
 
     $logoPath = $adminSettings['logo_path'] ?? '';
     $companyName = $adminSettings['company_name_display'] ?? 'Haga+';
+
+    $pendingRevisionsCount = \App\Models\Admin\AttendanceRevision::where('status', 'pending')->count();
 @endphp
 
 <!DOCTYPE html>
@@ -60,7 +62,14 @@
 
                 <x-layout.sidebar-link :href="route('admin.employees.index')" icon="fa-solid fa-users" label="Employees" :active="request()->routeIs('admin.employees.*')" />
 
-                <x-layout.sidebar-link :href="route('admin.attendance.index')" icon="fa-solid fa-calendar-check" label="Attendance" :active="request()->routeIs('admin.attendance.*')" />
+                <x-layout.sidebar-link :href="route('admin.attendance.index')" icon="fa-solid fa-calendar-check" label="Attendance" :active="request()->routeIs('admin.attendance.index') || request()->routeIs('admin.attendance.show') || request()->routeIs('admin.attendance.employee')" />
+
+                <div class="relative">
+                    <x-layout.sidebar-link :href="route('admin.attendance.revisions.index')" icon="fa-solid fa-pen-to-square" label="Edit Requests" :active="request()->routeIs('admin.attendance.revisions.*')" />
+                    @if($pendingRevisionsCount > 0)
+                        <span class="absolute top-2 right-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">{{ $pendingRevisionsCount }}</span>
+                    @endif
+                </div>
 
                 <x-layout.sidebar-link :href="route('admin.leaves.index')" icon="fa-solid fa-calendar-times" label="Leave Management" :active="request()->routeIs('admin.leaves.*')" />
 

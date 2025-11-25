@@ -12,20 +12,20 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             <!-- Header -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                         <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">Absensi Karyawan</h1>
                         <p class="text-gray-600 dark:text-gray-300">Lakukan check in dan check out dengan foto selfie</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
-                        <button type="button" id="show-policy" class="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-haga-500">
+                        <button type="button" id="show-policy" class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Lihat Kebijakan Absensi
                         </button>
-                        <div class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white" style="background-color: var(--color-haga-1, #008159)">
+                        <div class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#049460] dark:bg-[#10C874]">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -36,33 +36,39 @@
             </div>
 
             <!-- Today's Status -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
                 @include('employee.partials.status')
             </div>
 
             <!-- Location Information -->
             @if($employee && $employee->branch)
-            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-6">
-                <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">📍 Lokasi Cabang</h3>
+            <div class="bg-[#049460]/5 dark:bg-[#049460]/10 border border-[#049460]/20 dark:border-[#049460]/30 rounded-xl p-5">
+                <h3 class="text-lg font-semibold text-[#049460] dark:text-[#10C874] mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Lokasi Cabang
+                </h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nama Cabang</p>
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $employee->branch->name }}</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Nama Cabang</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $employee->branch->name }}</p>
                     </div>
                     @if($employee->branch->latitude && $employee->branch->longitude)
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Koordinat</p>
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Koordinat</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">
                             {{ number_format($employee->branch->latitude, 6) }}, {{ number_format($employee->branch->longitude, 6) }}
                         </p>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Radius Absensi</p>
-                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $employee->branch->radius }} meter</p>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Radius Absensi</p>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $employee->branch->radius }} meter</p>
                     </div>
                     @endif
                 </div>
-                <div class="mt-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                     <p class="text-sm text-yellow-800 dark:text-yellow-200">
                         <strong>Penting:</strong> Anda harus berada dalam radius {{ $employee->branch->radius }} meter dari lokasi cabang untuk dapat melakukan absensi.
                     </p>
@@ -75,7 +81,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                 <!-- Check In Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check In</h3>
@@ -98,21 +104,30 @@
 
                         @if($todayAttendance && $todayAttendance->check_in_time)
                             <!-- Already checked in -->
-                            <div class="text-center py-8">
-                                <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
+                            <div class="space-y-4">
+                                <div class="text-center py-4">
+                                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check In Berhasil!</h4>
+                                    <p class="text-gray-600 dark:text-gray-300 mb-2">
+                                        Waktu: {{ $todayAttendance->check_in_time->format('H:i:s') }}
+                                    </p>
+                                    <button type="button" onclick="openEditModal('check_in', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_in_time->format('Y-m-d\\TH:i') }}')"
+                                        class="text-sm text-[#049460] hover:text-[#10C874] font-medium">
+                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit Waktu Check In
+                                    </button>
                                 </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check In Berhasil!</h4>
-                                <p class="text-gray-600 dark:text-gray-300 mb-4">
-                                    Waktu: {{ $todayAttendance->check_in_time->format('H:i:s') }}
-                                </p>
                                 @if($todayAttendance->check_in_photo)
-                                    <div class="inline-block">
-                                        <img src="{{ Storage::url($todayAttendance->check_in_photo) }}"
+                                    <div class="-mx-6 -mb-6">
+                                        <img src="{{ asset('storage/' . $todayAttendance->check_in_photo) }}"
                                              alt="Check In Photo"
-                                             class="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                             class="w-full h-auto object-cover rounded-b-xl">
                                     </div>
                                 @endif
                             </div>
@@ -217,7 +232,7 @@
                 </div>
 
                 <!-- Check Out Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check Out</h3>
@@ -247,26 +262,35 @@
 
                         @if($todayAttendance && $todayAttendance->check_out_time)
                             <!-- Already checked out -->
-                            <div class="text-center py-8">
-                                <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check Out Berhasil!</h4>
-                                <p class="text-gray-600 dark:text-gray-300 mb-2">
-                                    Waktu: {{ $todayAttendance->check_out_time->format('H:i:s') }}
-                                </p>
-                                @if($todayAttendance->work_duration)
-                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                                        Durasi kerja: {{ floor($todayAttendance->work_duration / 60) }}j {{ $todayAttendance->work_duration % 60 }}m
+                            <div class="space-y-4">
+                                <div class="text-center py-4">
+                                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check Out Berhasil!</h4>
+                                    <p class="text-gray-600 dark:text-gray-300 mb-2">
+                                        Waktu: {{ $todayAttendance->check_out_time->format('H:i:s') }}
                                     </p>
-                                @endif
+                                    @if($todayAttendance->work_duration)
+                                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                                            Durasi kerja: {{ floor($todayAttendance->work_duration / 60) }}j {{ $todayAttendance->work_duration % 60 }}m
+                                        </p>
+                                    @endif
+                                    <button type="button" onclick="openEditModal('check_out', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_out_time->format('Y-m-d\\TH:i') }}')"
+                                        class="text-sm text-[#049460] hover:text-[#10C874] font-medium">
+                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Edit Waktu Check Out
+                                    </button>
+                                </div>
                                 @if($todayAttendance->check_out_photo)
-                                    <div class="inline-block">
-                                        <img src="{{ Storage::url($todayAttendance->check_out_photo) }}"
+                                    <div class="-mx-6 -mb-6">
+                                        <img src="{{ asset('storage/' . $todayAttendance->check_out_photo) }}"
                                              alt="Check Out Photo"
-                                             class="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                             class="w-full h-auto object-cover rounded-b-xl">
                                     </div>
                                 @endif
                             </div>
@@ -383,7 +407,7 @@
             </div>
 
             <!-- Recent Attendance History -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
                 <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Riwayat Absensi Terbaru</h3>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -518,6 +542,76 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Attendance Modal -->
+    <div id="edit-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Waktu Absensi</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-500">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="edit-attendance-form" class="mt-4 space-y-4" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" id="edit-attendance-id" name="attendance_id">
+                <input type="hidden" id="edit-revision-type" name="revision_type">
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Waktu Asli
+                    </label>
+                    <input type="text" id="edit-original-time" readonly
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Waktu Baru <span class="text-red-500">*</span>
+                    </label>
+                    <input type="datetime-local" id="edit-revised-time" name="revised_time" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#049460] focus:border-transparent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Alasan Perubahan <span class="text-red-500">*</span>
+                    </label>
+                    <textarea id="edit-reason" name="reason" rows="3" required
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#049460] focus:border-transparent"
+                        placeholder="Jelaskan alasan perubahan waktu absensi..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Foto Bukti (Opsional)
+                    </label>
+                    <input type="file" id="edit-proof-photo" name="proof_photo" accept="image/*"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#049460] file:text-white hover:file:bg-[#10C874]">
+                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Upload foto bukti jika diperlukan (max 5MB)</p>
+                </div>
+
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
+                        <strong>Catatan:</strong> Perubahan akan menunggu persetujuan admin sebelum diterapkan.
+                    </p>
+                </div>
+
+                <div class="flex gap-3 pt-3">
+                    <button type="button" onclick="closeEditModal()"
+                        class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                        Batal
+                    </button>
+                    <button type="submit"
+                        class="flex-1 px-4 py-2 bg-[#049460] hover:bg-[#10C874] text-white rounded-lg transition-colors">
+                        Kirim Permohonan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1338,6 +1432,59 @@
                     event.preventDefault();
                     submitAttendance(checkOutElements, 'checkout', checkOutUrl);
                 });
+            }
+        });
+
+        // Edit Attendance Modal Functions
+        function openEditModal(type, attendanceId, originalTime) {
+            document.getElementById('edit-modal').classList.remove('hidden');
+            document.getElementById('edit-attendance-id').value = attendanceId;
+            document.getElementById('edit-revision-type').value = type;
+            document.getElementById('edit-original-time').value = new Date(originalTime).toLocaleString('id-ID');
+            document.getElementById('edit-revised-time').value = originalTime;
+            document.getElementById('edit-reason').value = '';
+            document.getElementById('edit-proof-photo').value = '';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        // Handle edit form submission
+        document.getElementById('edit-attendance-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+            
+            try {
+                const response = await fetch('{{ route("employee.attendance.revision.store") }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('Permohonan edit absensi berhasil dikirim dan menunggu persetujuan admin.');
+                    closeEditModal();
+                    location.reload();
+                } else {
+                    alert(data.message || 'Terjadi kesalahan saat mengirim permohonan.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan saat mengirim permohonan.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         });
     </script>
