@@ -65,8 +65,12 @@
             <!-- Logo Header -->
             <div class="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
                 <a href="{{ route('employee.dashboard') }}" class="flex items-center space-x-3 group">
-                    <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-10 h-10 object-contain group-hover:scale-105 transition-all duration-200">
-                    <span class="text-xl font-bold bg-gradient-to-r from-[#049460] to-[#10C874] bg-clip-text text-transparent">Haga+</span>
+                    @if(Auth::user()->instansi && Auth::user()->instansi->logo)
+                        <img src="{{ asset('storage/' . Auth::user()->instansi->logo) }}" alt="{{ Auth::user()->instansi->nama_instansi }}" class="w-10 h-10 object-contain group-hover:scale-105 transition-all duration-200">
+                    @else
+                        <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-10 h-10 object-contain group-hover:scale-105 transition-all duration-200">
+                    @endif
+                    <span class="text-xl font-bold bg-gradient-to-r from-[#049460] to-[#10C874] bg-clip-text text-transparent">{{ Auth::user()->instansi->abbreviated_name ?? 'Haga+' }}</span>
                 </a>
                 <button id="sidebar-close" class="lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200" aria-label="Close sidebar">
                     <i class="fa-solid fa-xmark text-lg"></i>
@@ -100,6 +104,13 @@
                     />
 
                     <x-layout.sidebar-link 
+                        :href="route('employee.reimbursements.index')" 
+                        icon="fa-solid fa-receipt" 
+                        label="Reimbursement" 
+                        :active="request()->routeIs('employee.reimbursements.*')" 
+                    />
+
+                    <x-layout.sidebar-link 
                         :href="route('employee.payroll.index')" 
                         icon="fa-solid fa-wallet" 
                         label="Gaji" 
@@ -109,6 +120,15 @@
 
                 <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <p class="px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Akun</p>
+                    
+                    @if(Auth::user()->isAdmin() || Auth::user()->isSuperAdmin())
+                        <x-layout.sidebar-link 
+                            :href="route('admin.dashboard')" 
+                            icon="fa-solid fa-user-shield" 
+                            label="Admin Dashboard" 
+                            :active="false" 
+                        />
+                    @endif
                     
                     <x-layout.sidebar-link 
                         :href="route('employee.profile')" 
@@ -258,6 +278,27 @@
 
             <!-- Page Content -->
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+                @php
+                    $currentEmployee = \App\Models\Admin\Employee::where('user_id', Auth::id())->first();
+                    $isProfileComplete = $currentEmployee ? $currentEmployee->isProfileComplete() : false;
+                @endphp
+
+                @if(!$isProfileComplete)
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800 px-4 py-3">
+                        <div class="max-w-7xl mx-auto flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-triangle-exclamation text-yellow-600 dark:text-yellow-400"></i>
+                                <p class="text-sm font-medium text-yellow-700 dark:text-yellow-400">
+                                    Profil Anda belum lengkap. Silakan lengkapi data diri Anda untuk dapat melakukan absensi.
+                                </p>
+                            </div>
+                            <a href="{{ route('employee.profile') }}" class="text-sm font-semibold text-yellow-700 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300 underline whitespace-nowrap ml-4">
+                                Lengkapi Sekarang
+                            </a>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
                     {{ $slot }}
                 </div>

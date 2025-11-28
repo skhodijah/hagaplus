@@ -24,7 +24,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
+        'system_role_id',
         'instansi_id',
         'avatar',
     ];
@@ -77,6 +77,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the system role of the user
+     */
+    public function systemRole()
+    {
+        return $this->belongsTo(\App\Models\Admin\SystemRole::class, 'system_role_id');
+    }
+
+    /**
      * Get the employee record for the user
      */
     public function employee()
@@ -114,7 +122,6 @@ class User extends Authenticatable
     public function activeEmployeePolicy()
     {
         return $this->hasOne(\App\Models\EmployeePolicy::class, 'employee_id')
-            ->where('is_active', true)
-            ->currentlyEffective();
+            ->where('is_active', true);
     }
 }

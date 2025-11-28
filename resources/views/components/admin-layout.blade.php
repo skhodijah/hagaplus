@@ -1,12 +1,4 @@
 @php
-    $adminSettings = \App\Models\Admin\Setting::where('instansi_id', Auth::user()->instansi_id ?? 1)
-        ->whereIn('key', ['logo_path', 'company_name_display'])
-        ->pluck('value', 'key')
-        ->toArray();
-
-    $logoPath = $adminSettings['logo_path'] ?? '';
-    $companyName = $adminSettings['company_name_display'] ?? 'Haga+';
-
     $pendingRevisionsCount = \App\Models\Admin\AttendanceRevision::where('status', 'pending')->count();
 @endphp
 
@@ -45,41 +37,221 @@
         <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-40 flex-shrink-0 w-72 lg:w-80 bg-white dark:bg-gray-800 shadow-xl transition-colors duration-300 sidebar-transition sidebar-closed lg:transform-none">
             <div class="flex items-center h-16 px-6 border-b border-gray-200 dark:border-gray-700">
                 <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-3">
-                    @if($logoPath)
-                        <img src="{{ asset('storage/' . $logoPath) }}" alt="{{ $companyName }}" class="w-8 h-8">
+                    @if(Auth::user()->instansi && Auth::user()->instansi->logo)
+                        <img src="{{ asset('storage/' . Auth::user()->instansi->logo) }}" alt="{{ Auth::user()->instansi->nama_instansi }}" class="w-8 h-8 object-contain">
                     @else
                         <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-8 h-8">
                     @endif
-                    <span class="text-xl font-semibold italic text-gray-900 dark:text-white">{{ $companyName }}</span>
+                    <span class="text-xl font-semibold italic text-gray-900 dark:text-white">{{ Auth::user()->instansi->abbreviated_name ?? 'Haga+' }}</span>
                 </a>
                 <button id="sidebar-close" class="ml-auto lg:hidden p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" aria-label="Close sidebar">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" x-data="{ 
+                openMenu: '{{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.division-policies.*') ? 'people' : (request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') ? 'attendance' : (request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') ? 'finance' : (request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') ? 'organization' : ''))) }}'
+            }">
+                <!-- Dashboard -->
                 <x-layout.sidebar-link :href="route('admin.dashboard')" icon="fa-solid fa-gauge" label="Dashboard" :active="request()->routeIs('admin.dashboard')" />
 
-                <x-layout.sidebar-link :href="route('admin.employees.index')" icon="fa-solid fa-users" label="Employees" :active="request()->routeIs('admin.employees.*')" />
-
-                <x-layout.sidebar-link :href="route('admin.attendance.index')" icon="fa-solid fa-calendar-check" label="Attendance" :active="request()->routeIs('admin.attendance.index') || request()->routeIs('admin.attendance.show') || request()->routeIs('admin.attendance.employee')" />
-
-                <div class="relative">
-                    <x-layout.sidebar-link :href="route('admin.attendance.revisions.index')" icon="fa-solid fa-pen-to-square" label="Edit Requests" :active="request()->routeIs('admin.attendance.revisions.*')" />
-                    @if($pendingRevisionsCount > 0)
-                        <span class="absolute top-2 right-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">{{ $pendingRevisionsCount }}</span>
-                    @endif
+                <!-- People -->
+                @hasAnyPermission('view-employees', 'manage-employee-policies', 'manage-division-policies')
+                <div class="space-y-1 pt-2">
+                    <button @click="openMenu = openMenu === 'people' ? '' : 'people'" 
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
+                                   {{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') 
+                                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
+                                       {{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') 
+                                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
+                                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
+                                <i class="fa-solid fa-users text-xs"></i>
+                            </span>
+                            <span>People</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'people' ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="openMenu === 'people'" x-collapse class="pl-11 pr-3 space-y-1">
+                        @hasPermission('view-employees')
+                        <a href="{{ route('admin.employees.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.employees.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Employee List
+                        </a>
+                        @endhasPermission
+                        @hasPermission('manage-division-policies')
+                        <a href="{{ route('admin.division-policies.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.division-policies.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Division Policies
+                        </a>
+                        @endhasPermission
+                        @hasPermission('manage-employee-policies')
+                        <a href="{{ route('admin.employee-policies.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.employee-policies.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Employee Policies
+                        </a>
+                        @endhasPermission
+                    </div>
                 </div>
+                @endhasAnyPermission
 
-                <x-layout.sidebar-link :href="route('admin.leaves.index')" icon="fa-solid fa-calendar-times" label="Leave Management" :active="request()->routeIs('admin.leaves.*')" />
+                <!-- Time & Attendance -->
+                @hasAnyPermission('view-attendance', 'view-leaves', 'approve-attendance-revisions')
+                <div class="space-y-1 pt-2">
+                    <button @click="openMenu = openMenu === 'attendance' ? '' : 'attendance'" 
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
+                                   {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') 
+                                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
+                                       {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') 
+                                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
+                                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
+                                <i class="fa-solid fa-calendar-check text-xs"></i>
+                            </span>
+                            <span>Time & Attendance</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'attendance' ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="openMenu === 'attendance'" x-collapse class="pl-11 pr-3 space-y-1">
+                        @hasPermission('view-attendance')
+                        <a href="{{ route('admin.attendance.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.attendance.index') || request()->routeIs('admin.attendance.show') || request()->routeIs('admin.attendance.employee') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Daily Logs
+                        </a>
+                        @endhasPermission
+                        @hasPermission('approve-attendance-revisions')
+                        <div class="relative">
+                            <a href="{{ route('admin.attendance.revisions.index') }}" 
+                               class="block px-3 py-2 text-sm rounded-md transition-colors duration-200 flex justify-between items-center
+                                      {{ request()->routeIs('admin.attendance.revisions.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                                <span>Revision Requests</span>
+                                @if($pendingRevisionsCount > 0)
+                                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-100 bg-red-500 rounded-full">{{ $pendingRevisionsCount }}</span>
+                                @endif
+                            </a>
+                        </div>
+                        @endhasPermission
+                        @hasPermission('view-leaves')
+                        <a href="{{ route('admin.leaves.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.leaves.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Leave Requests
+                        </a>
+                        @endhasPermission
+                    </div>
+                </div>
+                @endhasAnyPermission
 
-                <x-layout.sidebar-link :href="route('admin.payroll.index')" icon="fa-solid fa-money-bill-wave" label="Payroll" :active="request()->routeIs('admin.payroll.*')" />
+                <!-- Finance -->
+                @hasAnyPermission('view-payroll', 'view-reimbursements')
+                <div class="space-y-1 pt-2">
+                    <button @click="openMenu = openMenu === 'finance' ? '' : 'finance'" 
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
+                                   {{ request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') 
+                                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
+                                       {{ request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') 
+                                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
+                                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
+                                <i class="fa-solid fa-money-bill-wave text-xs"></i>
+                            </span>
+                            <span>Finance</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'finance' ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="openMenu === 'finance'" x-collapse class="pl-11 pr-3 space-y-1">
+                        @hasPermission('view-payroll')
+                        <a href="{{ route('admin.payroll.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.payroll.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Payroll
+                        </a>
+                        @endhasPermission
+                        @hasPermission('view-reimbursements')
+                        <a href="{{ route('admin.reimbursements.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.reimbursements.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Reimbursements
+                        </a>
+                        @endhasPermission
+                    </div>
+                </div>
+                @endhasAnyPermission
 
-                <x-layout.sidebar-link :href="route('admin.branches.index')" icon="fa-solid fa-building" label="Branches" :active="request()->routeIs('admin.branches.*')" />
+                <!-- Organization -->
+                @hasAnyPermission('manage-branches', 'manage-roles', 'manage-divisions', 'manage-departments', 'manage-positions')
+                <div class="space-y-1 pt-2">
+                    <button @click="openMenu = openMenu === 'organization' ? '' : 'organization'" 
+                            class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
+                                   {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') 
+                                      ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
+                                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+                        <div class="flex items-center">
+                            <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
+                                       {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') 
+                                          ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
+                                          : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
+                                <i class="fa-solid fa-sitemap text-xs"></i>
+                            </span>
+                            <span>Organization</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'organization' ? 'rotate-180' : ''"></i>
+                    </button>
+                    <div x-show="openMenu === 'organization'" x-collapse class="pl-11 pr-3 space-y-1">
+                        @hasPermission('manage-branches')
+                        <a href="{{ route('admin.branches.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.branches.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Branches
+                        </a>
+                        @endhasPermission
+                        @hasPermission('manage-roles')
+                        <a href="{{ route('admin.roles.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.roles.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Roles & Permissions
+                        </a>
+                        @endhasPermission
+                        @hasPermission('manage-divisions')
+                        <a href="{{ route('admin.divisions.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.divisions.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Divisions
+                        </a>
+                        @endhasPermission
+                        @hasAnyPermission('manage-departments', 'manage-positions')
+                        <a href="{{ route('admin.hierarchy.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.hierarchy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Hierarchy
+                        </a>
+                        @endhasAnyPermission
+                    </div>
+                </div>
+                @endhasAnyPermission
 
-                <x-layout.sidebar-link :href="route('admin.employee-policies.index')" icon="fa-solid fa-file-contract" label="Employee Policies" :active="request()->routeIs('admin.employee-policies.*')" />
+                <!-- Settings -->
+                <div class="pt-2">
+                    @if(!Auth::user()->employee)
+                <x-layout.sidebar-link 
+                    :href="route('admin.company-profile.index')" 
+                    icon="fa-solid fa-building" 
+                    label="Company Profile" 
+                    :active="request()->routeIs('admin.company-profile.*')" 
+                />
+                @endif
 
-                <x-layout.sidebar-link :href="route('admin.settings.index')" icon="fa-solid fa-gear" label="Settings" :active="request()->routeIs('admin.settings.*')" />
+</div>
             </nav>
 
             <!-- Subscription Status Footer -->
@@ -142,8 +314,8 @@
                         <button id="sidebar-toggle" class="lg:hidden p-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Open sidebar">
                             <i class="fa-solid fa-bars"></i>
                         </button>
-                        @if($logoPath)
-                            <img src="{{ asset('storage/' . $logoPath) }}" alt="{{ $companyName }}" class="w-8 h-8 lg:hidden">
+                        @if(Auth::user()->instansi && Auth::user()->instansi->logo)
+                            <img src="{{ asset('storage/' . Auth::user()->instansi->logo) }}" alt="{{ Auth::user()->instansi->nama_instansi }}" class="w-8 h-8 lg:hidden">
                         @else
                             <img src="{{ asset('images/Haga.png') }}" alt="Haga+" class="w-8 h-8 lg:hidden">
                         @endif
@@ -401,10 +573,18 @@
                                 
                                 <!-- Menu Items -->
                                 <div class="py-1">
-                                    <a href="{{ route('admin.settings.profile') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fa-solid fa-user-cog mr-3 text-gray-400"></i>
-                                        Profile & Account Settings
-                                    </a>
+                                    @if(!Auth::user()->employee)
+                                        <a href="{{ route('admin.company-profile.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                            <i class="fa-solid fa-building mr-3 text-gray-400"></i>
+                                            Company Profile
+                                        </a>
+                                    @endif
+                                    @if(Auth::user()->employee)
+                                        <a href="{{ route('employee.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                            <i class="fa-solid fa-id-card mr-3 text-gray-400"></i>
+                                            Switch to Employee View
+                                        </a>
+                                    @endif
                                     <a href="#" onclick="alert('Help & Support feature coming soon!')" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer">
                                         <i class="fa-solid fa-question-circle mr-3 text-gray-400"></i>
                                         Help & Support
@@ -440,6 +620,87 @@
         </div>
     </div>
 
+    <!-- Global Delete Confirmation Modal -->
+    <div x-data="{ 
+        showDeleteModal: false, 
+        deleteForm: null,
+        itemName: '',
+        modalTitle: 'Confirm Delete',
+        modalMessage: 'Are you sure you want to delete this item?',
+        openDeleteModal(form, name = '', title = 'Confirm Delete', message = '') {
+            this.deleteForm = form;
+            this.itemName = name;
+            this.modalTitle = title;
+            this.modalMessage = message || `Are you sure you want to delete ${name ? '<strong>' + name + '</strong>' : 'this item'}? This action cannot be undone.`;
+            this.showDeleteModal = true;
+        },
+        confirmDelete() {
+            if (this.deleteForm) {
+                this.deleteForm.submit();
+            }
+        }
+    }" @open-delete-modal.window="openDeleteModal($event.detail.form, $event.detail.name, $event.detail.title, $event.detail.message)">
+        <div x-show="showDeleteModal" 
+             x-cloak
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             aria-labelledby="modal-title" 
+             role="dialog" 
+             aria-modal="true"
+             @keydown.escape.window="showDeleteModal = false">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+                 x-show="showDeleteModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="showDeleteModal = false"></div>
+
+            <!-- Modal panel -->
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div x-show="showDeleteModal"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     class="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-white dark:bg-gray-800 px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+                                <h3 class="text-lg font-semibold leading-6 text-gray-900 dark:text-white" id="modal-title" x-text="modalTitle">
+                                </h3>
+                                <div class="mt-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400" x-html="modalMessage">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-900/50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                        <button type="button" 
+                                @click="confirmDelete(); showDeleteModal = false"
+                                class="inline-flex w-full justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:w-auto transition-colors duration-200">
+                            <i class="fa-solid fa-trash mr-2"></i>
+                            Delete
+                        </button>
+                        <button type="button" 
+                                @click="showDeleteModal = false"
+                                class="mt-3 inline-flex w-full justify-center rounded-md bg-white dark:bg-gray-700 px-4 py-2 text-sm font-semibold text-gray-900 dark:text-gray-200 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 sm:mt-0 sm:w-auto transition-colors duration-200">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Fancybox JS -->
     <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
     
@@ -456,6 +717,70 @@
                         right: ["slideshow", "download", "thumbs", "close"],
                     },
                 },
+            });
+
+            // Convert all confirm() dialogs to modal
+            // Handle forms with onsubmit confirm
+            document.querySelectorAll('form[onsubmit*="confirm"]').forEach(form => {
+                const onsubmitAttr = form.getAttribute('onsubmit');
+                if (onsubmitAttr && onsubmitAttr.includes('confirm(')) {
+                    // Extract message from confirm()
+                    const match = onsubmitAttr.match(/confirm\(['"](.+?)['"]\)/);
+                    const message = match ? match[1] : 'Are you sure you want to delete this item?';
+                    
+                    // Remove onsubmit attribute
+                    form.removeAttribute('onsubmit');
+                    
+                    // Add click handler to submit button
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.type = 'button';
+                        submitBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.dispatchEvent(new CustomEvent('open-delete-modal', {
+                                detail: {
+                                    form: form,
+                                    name: '',
+                                    title: 'Confirm Delete',
+                                    message: message
+                                }
+                            }));
+                        });
+                    }
+                }
+            });
+
+            // Handle buttons with onclick confirm
+            document.querySelectorAll('button[onclick*="confirm"], a[onclick*="confirm"]').forEach(btn => {
+                const onclickAttr = btn.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes('confirm(')) {
+                    // Extract message from confirm()
+                    const match = onclickAttr.match(/confirm\(['"](.+?)['"]\)/);
+                    const message = match ? match[1] : 'Are you sure you want to delete this item?';
+                    
+                    // Remove onclick attribute
+                    btn.removeAttribute('onclick');
+                    
+                    // Get the form if button is inside a form
+                    const form = btn.closest('form');
+                    
+                    if (form) {
+                        btn.type = 'button';
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.dispatchEvent(new CustomEvent('open-delete-modal', {
+                                detail: {
+                                    form: form,
+                                    name: '',
+                                    title: 'Confirm Delete',
+                                    message: message
+                                }
+                            }));
+                        });
+                    }
+                }
             });
         });
     </script>

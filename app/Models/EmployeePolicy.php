@@ -4,15 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\Core\User;
 
 class EmployeePolicy extends Model
 {
     protected $fillable = [
-        'employee_id',
         'instansi_id',
+        'employee_id',
         'name',
-        'description',
         'work_days',
         'work_start_time',
         'work_end_time',
@@ -39,8 +37,6 @@ class EmployeePolicy extends Model
         'shift_schedule',
         'custom_rules',
         'is_active',
-        'effective_from',
-        'effective_until',
     ];
 
     protected $casts = [
@@ -59,26 +55,22 @@ class EmployeePolicy extends Model
         'allowed_locations' => 'array',
         'shift_schedule' => 'array',
         'custom_rules' => 'array',
-        'effective_from' => 'datetime',
-        'effective_until' => 'datetime',
-        'work_start_time' => 'datetime',
-        'work_end_time' => 'datetime',
     ];
-
-    /**
-     * Get the employee that owns the policy.
-     */
-    public function employee(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'employee_id');
-    }
 
     /**
      * Get the instansi that owns the policy.
      */
     public function instansi(): BelongsTo
     {
-        return $this->belongsTo(Instansi::class);
+        return $this->belongsTo(\App\Models\SuperAdmin\Instansi::class);
+    }
+
+    /**
+     * Get the employee that owns the policy.
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Admin\Employee::class);
     }
 
     /**
@@ -90,51 +82,11 @@ class EmployeePolicy extends Model
     }
 
     /**
-     * Scope a query to only include policies for a specific employee.
-     */
-    public function scopeForEmployee($query, $employeeId)
-    {
-        return $query->where('employee_id', $employeeId);
-    }
-
-    /**
      * Scope a query to only include policies for a specific instansi.
      */
     public function scopeForInstansi($query, $instansiId)
     {
         return $query->where('instansi_id', $instansiId);
-    }
-
-    /**
-     * Scope a query to only include currently effective policies.
-     */
-    public function scopeCurrentlyEffective($query)
-    {
-        return $query->where(function ($q) {
-            $q->whereNull('effective_from')
-                ->orWhere('effective_from', '<=', now());
-        })->where(function ($q) {
-            $q->whereNull('effective_until')
-                ->orWhere('effective_until', '>=', now());
-        });
-    }
-
-    /**
-     * Check if the policy is currently effective.
-     */
-    public function isCurrentlyEffective(): bool
-    {
-        $now = now();
-
-        if ($this->effective_from && $this->effective_from->isAfter($now)) {
-            return false;
-        }
-
-        if ($this->effective_until && $this->effective_until->isBefore($now)) {
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -170,6 +122,6 @@ class EmployeePolicy extends Model
             return 'Not set';
         }
 
-        return $this->work_start_time->format('H:i') . ' - ' . $this->work_end_time->format('H:i');
+        return date('H:i', strtotime($this->work_start_time)) . ' - ' . date('H:i', strtotime($this->work_end_time));
     }
 }

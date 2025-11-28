@@ -1,6 +1,9 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
+
+Alpine.plugin(collapse);
 
 // Theme persistence and initial apply
 (function applyStoredTheme() {

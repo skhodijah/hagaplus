@@ -17,7 +17,7 @@
         </div>
 
         <!-- Key Metrics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             <!-- Total Employees -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
                 <div class="flex items-center justify-between">
@@ -70,6 +70,20 @@
                     </div>
                     <div class="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
                         <i class="fa-solid fa-building text-purple-600 dark:text-purple-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reimbursements -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border-l-4 border-red-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Reimbursements</p>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ number_format($pendingReimbursements) }}</p>
+                        <p class="text-xs text-gray-500 mt-1">requests awaiting action</p>
+                    </div>
+                    <div class="p-3 bg-red-100 dark:bg-red-900 rounded-full">
+                        <i class="fa-solid fa-receipt text-red-600 dark:text-red-400 text-xl"></i>
                     </div>
                 </div>
             </div>

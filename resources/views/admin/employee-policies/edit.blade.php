@@ -3,7 +3,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-page-header
                 title="Edit Employee Policy"
-                subtitle="Modify attendance policies for {{ $employeePolicy->employee->name }}"
+                subtitle="Modify attendance policies for {{ $employeePolicy->employee->user->name }}"
                 :show-period-filter="false"
             />
 
@@ -19,37 +19,30 @@
 
                 <!-- Basic Information -->
                 <x-section-card title="Basic Information">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee</label>
                             <div class="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-md">
-                                @if($employeePolicy->employee->avatar)
-                                    <img class="h-10 w-10 rounded-full object-cover mr-3" src="{{ asset('storage/' . $employeePolicy->employee->avatar) }}" alt="">
+                                @if($employeePolicy->employee->user->avatar)
+                                    <img class="h-10 w-10 rounded-full object-cover mr-3" src="{{ asset('storage/' . $employeePolicy->employee->user->avatar) }}" alt="">
                                 @else
                                     <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-sm font-bold mr-3">
-                                        {{ $employeePolicy->employee->initials() }}
+                                        {{ $employeePolicy->employee->user->initials() }}
                                     </div>
                                 @endif
                                 <div>
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $employeePolicy->employee->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $employeePolicy->employee->email }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $employeePolicy->employee->user->name }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $employeePolicy->employee->user->email }}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Policy Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="name" id="name" value="{{ old('name', $employeePolicy->name) }}" required
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('name') border-red-300 dark:border-red-600 @enderror">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                            <textarea name="description" id="description" rows="3"
-                                      class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">{{ old('description', $employeePolicy->description) }}</textarea>
+                            <label class="flex items-center">
+                                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $employeePolicy->is_active) ? 'checked' : '' }}
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Policy is active</span>
+                            </label>
                         </div>
                     </div>
                 </x-section-card>
@@ -59,13 +52,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="work_start_time" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Start Time</label>
-                            <input type="time" name="work_start_time" id="work_start_time" value="{{ old('work_start_time', $employeePolicy->work_start_time) }}"
+                            <input type="time" name="work_start_time" id="work_start_time" value="{{ old('work_start_time', $employeePolicy->work_start_time ? substr($employeePolicy->work_start_time, 0, 5) : '') }}"
                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
                         </div>
 
                         <div>
                             <label for="work_end_time" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">End Time</label>
-                            <input type="time" name="work_end_time" id="work_end_time" value="{{ old('work_end_time', $employeePolicy->work_end_time) }}"
+                            <input type="time" name="work_end_time" id="work_end_time" value="{{ old('work_end_time', $employeePolicy->work_end_time ? substr($employeePolicy->work_end_time, 0, 5) : '') }}"
                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
                         </div>
 
@@ -211,31 +204,6 @@
                     </div>
                 </x-section-card>
 
-                <!-- Effective Period -->
-                <x-section-card title="Effective Period">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="effective_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Effective From</label>
-                            <input type="date" name="effective_from" id="effective_from" value="{{ old('effective_from', $employeePolicy->effective_from ? $employeePolicy->effective_from->format('Y-m-d') : '') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
-                        </div>
-
-                        <div>
-                            <label for="effective_until" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Effective Until</label>
-                            <input type="date" name="effective_until" id="effective_until" value="{{ old('effective_until', $employeePolicy->effective_until ? $employeePolicy->effective_until->format('Y-m-d') : '') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
-                        </div>
-                    </div>
-
-                    <div class="mt-6">
-                        <label class="flex items-center">
-                            <input type="checkbox" name="is_active" value="1" {{ old('is_active', $employeePolicy->is_active) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Policy is active</span>
-                        </label>
-                    </div>
-                </x-section-card>
-
                 <!-- Submit -->
                 <div class="mt-6 flex items-center justify-end space-x-3">
                     <a href="{{ route('admin.employee-policies.index') }}" class="bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
@@ -255,5 +223,40 @@
             const overtimeSettings = document.getElementById('overtimeSettings');
             overtimeSettings.style.display = this.checked ? 'grid' : 'none';
         });
+
+        // Initialize overtime settings visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            const allowOvertimeCheckbox = document.querySelector('input[name="allow_overtime"]');
+            const overtimeSettings = document.getElementById('overtimeSettings');
+            overtimeSettings.style.display = allowOvertimeCheckbox.checked ? 'grid' : 'none';
+        });
+
+        // Auto-calculate hours per day
+        const startTimeInput = document.getElementById('work_start_time');
+        const endTimeInput = document.getElementById('work_end_time');
+        const hoursInput = document.getElementById('work_hours_per_day');
+
+        function calculateHours() {
+            const start = startTimeInput.value;
+            const end = endTimeInput.value;
+
+            if (start && end) {
+                const startDate = new Date(`2000-01-01T${start}`);
+                const endDate = new Date(`2000-01-01T${end}`);
+                
+                let diff = (endDate - startDate) / (1000 * 60 * 60); // hours
+                
+                if (diff < 0) {
+                    diff += 24; // Handle overnight shifts
+                }
+                
+                if (diff > 0) {
+                    hoursInput.value = Math.round(diff);
+                }
+            }
+        }
+
+        startTimeInput.addEventListener('change', calculateHours);
+        endTimeInput.addEventListener('change', calculateHours);
     </script>
 </x-admin-layout>

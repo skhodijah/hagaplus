@@ -7,6 +7,7 @@ use App\Models\Admin\Employee;
 use App\Models\Admin\Attendance;
 use App\Models\Admin\Branch;
 use App\Models\Admin\Payroll;
+use App\Models\Reimbursement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,13 @@ class DashboardController extends Controller
 
         // === BASIC METRICS ===
         $totalEmployees = Employee::where('instansi_id', $instansiId)->count();
+        
+        // === REIMBURSEMENT METRICS ===
+        $pendingReimbursements = Reimbursement::whereHas('employee', function($query) use ($instansiId) {
+            $query->where('instansi_id', $instansiId);
+        })
+        ->where('status', 'pending')
+        ->count();
         $activeEmployees = Employee::where('instansi_id', $instansiId)->where('status', 'active')->count();
         $totalBranches = Branch::where('company_id', $instansiId)->count();
         $activeBranches = Branch::where('company_id', $instansiId)->where('is_active', true)->count();
@@ -96,22 +104,24 @@ class DashboardController extends Controller
             $query->where('instansi_id', $instansiId);
         })
         ->where('payment_status', 'paid')
-        ->sum('net_salary');
+        ->sum('gaji_bersih');
 
         // === DEPARTMENT DISTRIBUTION ===
         $departmentStats = Employee::where('instansi_id', $instansiId)
-            ->select('department', DB::raw('count(*) as count'))
-            ->whereNotNull('department')
-            ->groupBy('department')
-            ->orderBy('count', 'desc')
+            ->with('department')
+            ->whereNotNull('department_id')
             ->get()
-            ->map(function($item) {
+            ->groupBy('department_id')
+            ->map(function($employees, $departmentId) {
+                $department = $employees->first()->department;
                 return [
-                    'department' => $item->department ?: 'Unassigned',
-                    'count' => $item->count,
+                    'department' => $department ? $department->name : 'Unassigned',
+                    'count' => $employees->count(),
                     'percentage' => 0 // Will be calculated in view
                 ];
-            });
+            })
+            ->sortByDesc('count')
+            ->values();
 
         // === BRANCH PERFORMANCE ===
         $branchPerformance = Branch::where('company_id', $instansiId)
@@ -192,7 +202,10 @@ class DashboardController extends Controller
             'recentActivities',
 
             // Trends
-            'attendanceChange'
+            'attendanceChange',
+
+            // Reimbursements
+            'pendingReimbursements'
         ));
     }
 

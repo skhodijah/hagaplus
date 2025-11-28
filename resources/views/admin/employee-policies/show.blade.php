@@ -3,7 +3,7 @@
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-page-header
                 title="Employee Policy Details"
-                subtitle="View detailed policy information for {{ $employeePolicy->employee->name }}"
+                subtitle="View detailed policy information for {{ $employeePolicy->employee->user->name }}"
                 :show-period-filter="false"
             />
 
@@ -21,16 +21,16 @@
             <!-- Employee Information -->
             <x-section-card title="Employee Information">
                 <div class="flex items-center space-x-4">
-                    @if($employeePolicy->employee->avatar)
-                        <img class="h-16 w-16 rounded-full object-cover" src="{{ asset('storage/' . $employeePolicy->employee->avatar) }}" alt="">
+                    @if($employeePolicy->employee->user->avatar)
+                        <img class="h-16 w-16 rounded-full object-cover" src="{{ asset('storage/' . $employeePolicy->employee->user->avatar) }}" alt="">
                     @else
                         <div class="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center text-white text-xl font-bold">
-                            {{ $employeePolicy->employee->initials() }}
+                            {{ $employeePolicy->employee->user->initials() }}
                         </div>
                     @endif
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $employeePolicy->employee->name }}</h3>
-                        <p class="text-gray-600 dark:text-gray-400">{{ $employeePolicy->employee->email }}</p>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $employeePolicy->employee->user->name }}</h3>
+                        <p class="text-gray-600 dark:text-gray-400">{{ $employeePolicy->employee->user->email }}</p>
                         <p class="text-sm text-gray-500 dark:text-gray-500">Employee ID: {{ $employeePolicy->employee->id }}</p>
                     </div>
                 </div>

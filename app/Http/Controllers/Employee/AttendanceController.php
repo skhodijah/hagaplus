@@ -31,8 +31,15 @@ class AttendanceController extends Controller
             ->whereDate('attendance_date', today())
             ->first();
 
+        // Check for approved leave today
+        $todayLeave = \App\Models\Admin\Leave::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereDate('start_date', '<=', today())
+            ->whereDate('end_date', '>=', today())
+            ->first();
+
         // Calculate today's status
-        $todayStatus = $this->getAttendanceStatusText($todayAttendance);
+        $todayStatus = $this->getAttendanceStatusText($todayAttendance, $todayLeave);
 
         // Get recent attendance records
         $recentAttendance = Attendance::where('user_id', $user->id)
@@ -40,17 +47,68 @@ class AttendanceController extends Controller
             ->take(10)
             ->get();
 
+        // Get recent leaves
+        $recentLeaves = \App\Models\Admin\Leave::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->orderBy('start_date', 'desc')
+            ->take(5) // Limit to recent 5 leaves to avoid fetching too many
+            ->get();
+
+        // Merge leaves into recent attendance for display
+        foreach ($recentLeaves as $leave) {
+            $startDate = $leave->start_date;
+            $endDate = $leave->end_date;
+
+            // We only care about past or current dates for history, or maybe future too? 
+            // Usually history shows past. Let's include all days of the leave.
+            
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                // Skip if date is in future (optional, but "history" usually implies past)
+                // But user might want to see upcoming leave in the list? 
+                // The table says "Riwayat Absensi Terbaru", so probably past/current.
+                if ($date->isFuture()) continue;
+
+                $dateString = $date->format('Y-m-d');
+                
+                // Check if attendance already exists
+                $exists = $recentAttendance->contains(function ($att) use ($dateString) {
+                    return $att->attendance_date->format('Y-m-d') === $dateString;
+                });
+
+                if (!$exists) {
+                    $virtualAttendance = new Attendance([
+                        'user_id' => $user->id,
+                        'attendance_date' => $date->copy(),
+                        'status' => 'leave',
+                    ]);
+                    $virtualAttendance->leave_details = $leave;
+                    $recentAttendance->push($virtualAttendance);
+                }
+            }
+        }
+
+        // Sort by date desc and take 10
+        $recentAttendance = $recentAttendance->sortByDesc('attendance_date')->take(10);
+
+        $isProfileComplete = $employee ? $employee->isProfileComplete() : false;
+
         return view('employee.attendance.index', compact(
             'todayAttendance',
             'todayStatus',
             'recentAttendance',
             'employee',
-            'attendancePolicy'
+            'attendancePolicy',
+            'todayLeave',
+            'isProfileComplete'
         ));
     }
 
-    private function getAttendanceStatusText($attendance)
+    private function getAttendanceStatusText($attendance, $leave = null)
     {
+        if ($leave) {
+            return 'Sedang Cuti';
+        }
+
         if (!$attendance) {
             return 'Belum Check In';
         }
@@ -145,6 +203,14 @@ class AttendanceController extends Controller
         ]);
 
         $user = Auth::user();
+        $employee = $user->employee;
+
+        if (!$employee || !$employee->isProfileComplete()) {
+             return response()->json([
+                'success' => false,
+                'message' => 'Profil Anda belum lengkap. Silakan lengkapi data diri Anda terlebih dahulu.'
+            ], 403);
+        }
 
         // Check if already checked in today
         $existingAttendance = Attendance::where('user_id', $user->id)

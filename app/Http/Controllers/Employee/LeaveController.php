@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Admin\Leave;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\ApprovalService;
 use Carbon\Carbon;
 
 class LeaveController extends Controller
@@ -94,7 +95,7 @@ class LeaveController extends Controller
         }
         
         // Create leave request
-        Leave::create([
+        $leave = Leave::create([
             'user_id' => Auth::id(),
             'leave_type' => $validated['leave_type'],
             'start_date' => $validated['start_date'],
@@ -104,6 +105,12 @@ class LeaveController extends Controller
             'attachment' => $attachmentPath,
             'status' => 'pending',
         ]);
+
+        // Create approval request using the ApprovalService
+        $approvalService = new \App\Services\ApprovalService();
+        $approvalRequest = $approvalService->createApprovalRequest($leave, 'leave', Auth::id());
+        // Link the approval request to the leave
+        $leave->update(['approval_request_id' => $approvalRequest->id]);
         
         return redirect()->route('employee.leaves.index')
             ->with('success', 'Pengajuan cuti berhasil disubmit. Menunggu persetujuan.');

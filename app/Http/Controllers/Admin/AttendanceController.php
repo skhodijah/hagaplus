@@ -18,7 +18,10 @@ class AttendanceController extends Controller
         $endOfMonth = Carbon::createFromFormat('Y-m', $month)->endOfMonth();
 
         // Get all employees with their branch information
-        $employees = User::where('role', 'employee')
+        // Get all employees with their branch information
+        $employees = User::whereHas('systemRole', function($q) {
+                $q->where('slug', 'employee');
+            })
             ->where('instansi_id', $instansiId)
             ->with(['employee.branch'])
             ->get();
@@ -64,13 +67,62 @@ class AttendanceController extends Controller
             ->orderBy('check_in_time', 'desc')
             ->get();
 
+        // Get approved leaves for the month
+        $leaves = \App\Models\Admin\Leave::whereHas('user', function ($query) use ($instansiId) {
+            $query->where('instansi_id', $instansiId);
+        })
+            ->where('status', 'approved')
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                    ->orWhere(function ($q) use ($startOfMonth, $endOfMonth) {
+                        $q->where('start_date', '<', $startOfMonth)
+                            ->where('end_date', '>', $endOfMonth);
+                    });
+            })
+            ->get();
+
+        // Merge leaves into attendances
+        foreach ($leaves as $leave) {
+            $startDate = $leave->start_date < $startOfMonth ? $startOfMonth : $leave->start_date;
+            $endDate = $leave->end_date > $endOfMonth ? $endOfMonth : $leave->end_date;
+
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                $dateString = $date->format('Y-m-d 00:00:00');
+                
+                // Check if attendance already exists for this user and date
+                $existingAttendance = $attendances->get($leave->user_id, collect())->get($dateString);
+
+                if (!$existingAttendance) {
+                    // Create a virtual attendance object for the leave
+                    $virtualAttendance = new Attendance([
+                        'user_id' => $leave->user_id,
+                        'attendance_date' => $date->copy(),
+                        'status' => 'leave',
+                    ]);
+                    // Manually set the ID to allow linking to leave details if needed (or just use null/dummy)
+                    // For now, we just need it to display 'leave' status. 
+                    // We can attach the leave object to it if we want to show details.
+                    $virtualAttendance->leave_details = $leave;
+
+                    // Add to the collection
+                    if (!$attendances->has($leave->user_id)) {
+                        $attendances->put($leave->user_id, collect());
+                    }
+                    $attendances->get($leave->user_id)->put($dateString, $virtualAttendance);
+                }
+            }
+        }
+
         return view('admin.attendance.index', compact('employees', 'attendances', 'month', 'attendancesWithPhotos', 'employeesByBranch', 'branches'));
     }
 
     public function create()
     {
         $instansiId = auth()->user()->instansi_id;
-        $employees = User::where('role', 'employee')
+        $employees = User::whereHas('systemRole', function($q) {
+                $q->where('slug', 'employee');
+            })
             ->where('instansi_id', $instansiId)
             ->get();
         return view('admin.attendance.create', compact('employees'));
@@ -119,7 +171,9 @@ class AttendanceController extends Controller
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
-        $employees = User::where('role', 'employee')
+        $employees = User::whereHas('systemRole', function($q) {
+                $q->where('slug', 'employee');
+            })
             ->where('instansi_id', $instansiId)
             ->get();
 
@@ -179,6 +233,44 @@ class AttendanceController extends Controller
             ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->orderBy('attendance_date')
             ->get();
+
+        // Get approved leaves for the employee in this month
+        $leaves = \App\Models\Admin\Leave::where('user_id', $userId)
+            ->where('status', 'approved')
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                    ->orWhere(function ($q) use ($startOfMonth, $endOfMonth) {
+                        $q->where('start_date', '<', $startOfMonth)
+                            ->where('end_date', '>', $endOfMonth);
+                    });
+            })
+            ->get();
+
+        // Merge leaves into attendances
+        foreach ($leaves as $leave) {
+            $startDate = $leave->start_date < $startOfMonth ? $startOfMonth : $leave->start_date;
+            $endDate = $leave->end_date > $endOfMonth ? $endOfMonth : $leave->end_date;
+
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                // Check if attendance already exists
+                $exists = $attendances->contains(function ($att) use ($date) {
+                    return $att->attendance_date->isSameDay($date);
+                });
+
+                if (!$exists) {
+                    $virtualAttendance = new Attendance([
+                        'user_id' => $userId,
+                        'attendance_date' => $date->copy(),
+                        'status' => 'leave',
+                    ]);
+                    $virtualAttendance->leave_details = $leave;
+                    $attendances->push($virtualAttendance);
+                }
+            }
+        }
+
+        $attendances = $attendances->sortBy('attendance_date');
 
         return view('admin.attendance.employee', compact('user', 'attendances', 'month'));
     }

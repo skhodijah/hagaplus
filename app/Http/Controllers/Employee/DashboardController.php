@@ -73,6 +73,53 @@ class DashboardController extends Controller
             ->orderBy('attendance_date', 'desc')
             ->get();
 
+        // Get approved leaves for the selected month
+        $leaves = \App\Models\Admin\Leave::where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+                $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                    ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                    ->orWhere(function ($q) use ($startOfMonth, $endOfMonth) {
+                        $q->where('start_date', '<', $startOfMonth)
+                            ->where('end_date', '>', $endOfMonth);
+                    });
+            })
+            ->get();
+
+        // Check if today is a leave day
+        $isLeaveToday = false;
+        $todayLeave = $leaves->filter(function ($leave) use ($today) {
+            return $today->between($leave->start_date, $leave->end_date);
+        })->first();
+
+        if ($todayLeave) {
+            $todayStatus = 'Sedang Cuti';
+        }
+
+        // Merge leaves into recentAttendance for calendar display
+        foreach ($leaves as $leave) {
+            $startDate = $leave->start_date < $startOfMonth ? $startOfMonth : $leave->start_date;
+            $endDate = $leave->end_date > $endOfMonth ? $endOfMonth : $leave->end_date;
+
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                // Check if attendance already exists
+                $exists = $recentAttendance->contains(function ($att) use ($date) {
+                    return $att->attendance_date->isSameDay($date);
+                });
+
+                if (!$exists) {
+                    $virtualAttendance = new Attendance([
+                        'user_id' => $user->id,
+                        'attendance_date' => $date->copy(),
+                        'status' => 'leave',
+                    ]);
+                    $recentAttendance->push($virtualAttendance);
+                }
+            }
+        }
+        
+        $recentAttendance = $recentAttendance->sortByDesc('attendance_date');
+
         // Calendar data for selected month
         $calendarData = $this->getCalendarData($user->id, $currentMonth, $currentYear);
 
@@ -99,12 +146,23 @@ class DashboardController extends Controller
             ];
         }
 
+        // Get effective policy for the employee
+        $policy = $employee->effective_policy;
+        $workDays = [];
+        
+        if ($policy && $policy->work_days) {
+            // work_days is a JSON array, decode if needed
+            $workDays = is_array($policy->work_days) ? $policy->work_days : json_decode($policy->work_days, true);
+            // Ensure it's an array
+            $workDays = $workDays ?? [];
+        }
+
         return view('employee.dashboard.index', [
             'employee' => $employee,
             'user' => $user,
             'todayStatus' => $todayStatus,
             'monthlyHours' => $monthlyHours,
-            'lastPayroll' => $lastPayroll ? $lastPayroll->net_salary : 0,
+            'lastPayroll' => $lastPayroll ? $lastPayroll->gaji_bersih : 0,
             'attendanceStats' => $attendanceStats,
             'recentAttendance' => $recentAttendance,
             'calendarData' => $calendarData,
@@ -112,6 +170,8 @@ class DashboardController extends Controller
             'currentYear' => $currentYear,
             'branchData' => $branchData,
             'workDuration' => $workDuration,
+            'policy' => $policy,
+            'workDays' => $workDays,
         ]);
     }
 

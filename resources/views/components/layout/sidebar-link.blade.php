@@ -1,8 +1,15 @@
 @props(['href' => '#', 'icon' => 'fa-solid fa-circle', 'label' => '', 'active' => false])
 
-<a href="{{ $href }}" class="flex items-center gap-3 px-4 py-3 rounded-xl group transition-all duration-200 {{ $active ? 'bg-gradient-to-r from-[#049460]/10 to-[#10C874]/10 dark:from-[#049460]/20 dark:to-[#10C874]/20 text-[#049460] dark:text-[#10C874] font-semibold shadow-sm border border-[#10C874]/20 dark:border-[#049460]/30' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50' }}">
-    <div class="w-9 h-9 flex items-center justify-center rounded-lg {{ $active ? 'bg-gradient-to-br from-[#049460] to-[#10C874] text-white shadow-md' : 'text-gray-500 dark:text-gray-400 group-hover:text-[#049460] dark:group-hover:text-[#10C874] group-hover:bg-[#049460]/10 dark:group-hover:bg-[#10C874]/10' }} transition-all duration-200">
-        <i class="{{ $icon }} text-sm"></i>
+<a href="{{ $href }}" 
+   class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
+          {{ $active 
+             ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
+             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
+    <div class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
+              {{ $active 
+                 ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
+                 : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
+        <i class="{{ $icon }} text-xs"></i>
     </div>
-    <span class="text-sm font-medium">{{ $label }}</span>
+    <span>{{ $label }}</span>
 </a> 

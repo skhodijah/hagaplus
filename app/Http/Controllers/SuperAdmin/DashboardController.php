@@ -142,7 +142,9 @@ class DashboardController extends Controller
 
         // Activities & notifications
         $recentSubscriptionLogs = DB::table('subscription_requests')->latest()->take(10)->get();
-        $superAdminId = DB::table('users')->where('role', 'superadmin')->value('id');
+        $superAdminId = User::whereHas('systemRole', function($q) {
+            $q->where('slug', 'superadmin');
+        })->value('id');
         $recentNotifications = Schema::hasTable('notifications')
             ? DB::table('notifications')
                 ->when($superAdminId, fn($q) => $q->where('user_id', $superAdminId))

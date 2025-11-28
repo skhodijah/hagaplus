@@ -9,120 +9,382 @@
             <form method="POST" action="{{ route('admin.employees.store') }}" enctype="multipart/form-data">
                 @csrf
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Personal Information -->
-                    <div class="md:col-span-2">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Personal Information</h3>
-                    </div>
-
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
-                        <input type="text" id="name" name="name" value="{{ old('name') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('name') border-red-500 @enderror"
-                               required>
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address *</label>
-                        <input type="email" id="email" name="email" value="{{ old('email') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('email') border-red-500 @enderror"
-                               required>
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee ID *</label>
-                        <input type="text" id="employee_id" name="employee_id" value="{{ old('employee_id') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('employee_id') border-red-500 @enderror"
-                               required>
-                        @error('employee_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="hire_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hire Date *</label>
-                        <input type="date" id="hire_date" name="hire_date" value="{{ old('hire_date') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('hire_date') border-red-500 @enderror"
-                               required>
-                        @error('hire_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Employment Information -->
-                    <div class="md:col-span-2 mt-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Employment Information</h3>
-                    </div>
-
-                    <div>
-                        <label for="position" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
-                        <input type="text" id="position" name="position" value="{{ old('position') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('position') border-red-500 @enderror"
-                               required>
-                        @error('position')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department *</label>
-                        <input type="text" id="department" name="department" value="{{ old('department') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('department') border-red-500 @enderror"
-                               required>
-                        @error('department')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="branch_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
-                        <select id="branch_id" name="branch_id"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('branch_id') border-red-500 @enderror">
-                            <option value="">Select Branch</option>
-                            @foreach(\App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)->get() as $branch)
-                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
-                                    {{ $branch->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('branch_id')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Salary *</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                            </div>
-                            <input type="number" id="salary" name="salary" value="{{ old('salary') }}"
-                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('salary') border-red-500 @enderror"
-                                   min="0" step="0.01" required placeholder="0">
+                <!-- Account & Personal Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">Account & Personal Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name *</label>
+                            <input type="text" id="name" name="name" value="{{ old('name') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('name') border-red-500 @enderror"
+                                   required>
+                            @error('name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        @error('salary')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
 
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status *</label>
-                        <select id="status" name="status"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('status') border-red-500 @enderror"
-                                required>
-                            <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
-                            <option value="terminated" {{ old('status') === 'terminated' ? 'selected' : '' }}>Terminated</option>
-                        </select>
-                        @error('status')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address *</label>
+                            <input type="email" id="email" name="email" value="{{ old('email') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('email') border-red-500 @enderror"
+                                   required>
+                            @error('email')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="nik" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">NIK (KTP)</label>
+                            <input type="text" id="nik" name="nik" value="{{ old('nik') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('nik') border-red-500 @enderror">
+                            @error('nik')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="npwp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">NPWP</label>
+                            <input type="text" id="npwp" name="npwp" value="{{ old('npwp') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('npwp') border-red-500 @enderror">
+                            @error('npwp')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="tempat_lahir" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Place of Birth</label>
+                            <input type="text" id="tempat_lahir" name="tempat_lahir" value="{{ old('tempat_lahir') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('tempat_lahir') border-red-500 @enderror">
+                            @error('tempat_lahir')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="date_of_birth" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date of Birth</label>
+                            <input type="date" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('date_of_birth') border-red-500 @enderror">
+                            @error('date_of_birth')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="gender" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
+                            <select id="gender" name="gender" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Gender</option>
+                                <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
+                                <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="status_perkawinan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Marital Status</label>
+                            <select id="status_perkawinan" name="status_perkawinan" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Status</option>
+                                <option value="lajang" {{ old('status_perkawinan') == 'lajang' ? 'selected' : '' }}>Lajang</option>
+                                <option value="menikah" {{ old('status_perkawinan') == 'menikah' ? 'selected' : '' }}>Menikah</option>
+                                <option value="cerai" {{ old('status_perkawinan') == 'cerai' ? 'selected' : '' }}>Cerai</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="jumlah_tanggungan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Number of Dependents</label>
+                            <input type="number" id="jumlah_tanggungan" name="jumlah_tanggungan" value="{{ old('jumlah_tanggungan', 0) }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   min="0">
+                        </div>
+
+                         <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
+                            <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('phone') border-red-500 @enderror">
+                            @error('phone')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="alamat_ktp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">KTP Address</label>
+                            <textarea id="alamat_ktp" name="alamat_ktp" rows="2"
+                                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">{{ old('alamat_ktp') }}</textarea>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Domicile Address (if different)</label>
+                            <textarea id="address" name="address" rows="2"
+                                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">{{ old('address') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">Emergency Contact</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="emergency_contact_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Name</label>
+                            <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="emergency_contact_relation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Relation</label>
+                            <input type="text" id="emergency_contact_relation" name="emergency_contact_relation" value="{{ old('emergency_contact_relation') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="emergency_contact_phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone Number</label>
+                            <input type="text" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employment Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">Employment Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="division_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Division</label>
+                            <select id="division_id" name="division_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Division</option>
+                                @foreach($divisions as $division)
+                                    <option value="{{ $division->id }}" {{ old('division_id') == $division->id ? 'selected' : '' }} data-code="{{ $division->code }}">
+                                        {{ $division->name }} ({{ $division->code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="department_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department *</label>
+                            <select id="department_id" name="department_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="">Select Department</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}" data-division-id="{{ $department->division_id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="position_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Position *</label>
+                            <select id="position_id" name="position_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="">Select Position</option>
+                                @foreach($positions as $position)
+                                    <option value="{{ $position->id }}" data-department-id="{{ $position->department_id }}" {{ old('position_id') == $position->id ? 'selected' : '' }}>
+                                        {{ $position->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="branch_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
+                            <select id="branch_id" name="branch_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Branch</option>
+                                @foreach(\App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)->get() as $branch)
+                                    <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
+                                        {{ $branch->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee ID (Auto Generated)</label>
+                            <input type="text" id="employee_id" name="employee_id" value="{{ old('employee_id') }}" readonly
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed" />
+                        </div>
+
+                        <div>
+                            <label for="status_karyawan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employment Status *</label>
+                            <select id="status_karyawan" name="status_karyawan" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="probation" {{ old('status_karyawan') == 'probation' ? 'selected' : '' }}>Probation</option>
+                                <option value="tetap" {{ old('status_karyawan') == 'tetap' ? 'selected' : '' }}>Tetap (Permanent)</option>
+                                <option value="kontrak" {{ old('status_karyawan') == 'kontrak' ? 'selected' : '' }}>Kontrak (Contract)</option>
+                                <option value="magang" {{ old('status_karyawan') == 'magang' ? 'selected' : '' }}>Magang (Internship)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="hire_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hire Date *</label>
+                            <input type="date" id="hire_date" name="hire_date" value="{{ old('hire_date') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                   required>
+                        </div>
+
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Status *</label>
+                            <select id="status" name="status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="active" {{ old('status', 'active') === 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payroll & Bank Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">Payroll & Bank Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary (Gaji Pokok) *</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
+                                </div>
+                                <input type="number" id="salary" name="salary" value="{{ old('salary') }}"
+                                       class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       min="0" required placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tunjangan_jabatan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Jabatan</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
+                                </div>
+                                <input type="number" id="tunjangan_jabatan" name="tunjangan_jabatan" value="{{ old('tunjangan_jabatan') }}"
+                                       class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       min="0" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tunjangan_transport" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Transport</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
+                                </div>
+                                <input type="number" id="tunjangan_transport" name="tunjangan_transport" value="{{ old('tunjangan_transport') }}"
+                                       class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       min="0" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="tunjangan_makan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Makan</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
+                                </div>
+                                <input type="number" id="tunjangan_makan" name="tunjangan_makan" value="{{ old('tunjangan_makan') }}"
+                                       class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                       min="0" placeholder="0">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="bank_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bank Name</label>
+                            <input type="text" id="bank_name" name="bank_name" value="{{ old('bank_name') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <div>
+                            <label for="bank_account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Number</label>
+                            <input type="text" id="bank_account_number" name="bank_account_number" value="{{ old('bank_account_number') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <div>
+                            <label for="bank_account_holder" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Account Holder Name</label>
+                            <input type="text" id="bank_account_holder" name="bank_account_holder" value="{{ old('bank_account_holder') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <div>
+                            <label for="metode_pajak" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Method *</label>
+                            <select id="metode_pajak" name="metode_pajak" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="gross" {{ old('metode_pajak') == 'gross' ? 'selected' : '' }}>Gross (Potong Gaji)</option>
+                                <option value="nett" {{ old('metode_pajak') == 'nett' ? 'selected' : '' }}>Nett (Ditanggung Perusahaan)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="ptkp_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PTKP Status *</label>
+                            <select id="ptkp_status" name="ptkp_status" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" required>
+                                <option value="TK/0" {{ old('ptkp_status') == 'TK/0' ? 'selected' : '' }}>TK/0 (Tidak Kawin, 0 Tanggungan)</option>
+                                <option value="TK/1" {{ old('ptkp_status') == 'TK/1' ? 'selected' : '' }}>TK/1 (Tidak Kawin, 1 Tanggungan)</option>
+                                <option value="TK/2" {{ old('ptkp_status') == 'TK/2' ? 'selected' : '' }}>TK/2 (Tidak Kawin, 2 Tanggungan)</option>
+                                <option value="TK/3" {{ old('ptkp_status') == 'TK/3' ? 'selected' : '' }}>TK/3 (Tidak Kawin, 3 Tanggungan)</option>
+                                <option value="K/0" {{ old('ptkp_status') == 'K/0' ? 'selected' : '' }}>K/0 (Kawin, 0 Tanggungan)</option>
+                                <option value="K/1" {{ old('ptkp_status') == 'K/1' ? 'selected' : '' }}>K/1 (Kawin, 1 Tanggungan)</option>
+                                <option value="K/2" {{ old('ptkp_status') == 'K/2' ? 'selected' : '' }}>K/2 (Kawin, 2 Tanggungan)</option>
+                                <option value="K/3" {{ old('ptkp_status') == 'K/3' ? 'selected' : '' }}>K/3 (Kawin, 3 Tanggungan)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BPJS Information -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">BPJS Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="bpjs_kesehatan_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Kesehatan Number</label>
+                            <input type="text" id="bpjs_kesehatan_number" name="bpjs_kesehatan_number" value="{{ old('bpjs_kesehatan_number') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <div>
+                            <label for="bpjs_kesehatan_faskes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Faskes 1</label>
+                            <input type="text" id="bpjs_kesehatan_faskes" name="bpjs_kesehatan_faskes" value="{{ old('bpjs_kesehatan_faskes') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        
+                        <div>
+                            <label for="bpjs_tk_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Ketenagakerjaan Number</label>
+                            <input type="text" id="bpjs_tk_number" name="bpjs_tk_number" value="{{ old('bpjs_tk_number') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+
+                        <div class="flex items-center mt-6">
+                            <input type="checkbox" id="bpjs_jp_aktif" name="bpjs_jp_aktif" value="1" {{ old('bpjs_jp_aktif') ? 'checked' : '' }}
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="bpjs_jp_aktif" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">
+                                Include Jaminan Pensiun (JP)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4 border-b pb-2">Documents</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="foto_karyawan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee Photo</label>
+                            <input type="file" id="foto_karyawan" name="foto_karyawan" accept="image/*"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="scan_ktp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Scan KTP</label>
+                            <input type="file" id="scan_ktp" name="scan_ktp" accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="scan_npwp" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Scan NPWP</label>
+                            <input type="file" id="scan_npwp" name="scan_npwp" accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="scan_kk" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Scan KK</label>
+                            <input type="file" id="scan_kk" name="scan_kk" accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="bpjs_kesehatan_card" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Kesehatan Card</label>
+                            <input type="file" id="bpjs_kesehatan_card" name="bpjs_kesehatan_card" accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="bpjs_tk_card" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Ketenagakerjaan Card</label>
+                            <input type="file" id="bpjs_tk_card" name="bpjs_tk_card" accept=".pdf,.jpg,.jpeg,.png"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        </div>
                     </div>
                 </div>
 
@@ -139,4 +401,112 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const divisionSelect = document.getElementById('division_id');
+            const departmentSelect = document.getElementById('department_id');
+            const positionSelect = document.getElementById('position_id');
+            const employeeIdInput = document.getElementById('employee_id');
+
+            // Store original options data
+            const departmentsData = Array.from(departmentSelect.options).slice(1).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                divisionId: opt.getAttribute('data-division-id'),
+                selected: opt.selected
+            }));
+
+            const positionsData = Array.from(positionSelect.options).slice(1).map(opt => ({
+                value: opt.value,
+                text: opt.text,
+                departmentId: opt.getAttribute('data-department-id'),
+                selected: opt.selected
+            }));
+
+            function updateDepartments(divisionId) {
+                // Clear current options
+                departmentSelect.length = 1; // Keep placeholder
+                
+                // If no division selected, show all departments
+                const filtered = divisionId 
+                    ? departmentsData.filter(dept => dept.divisionId == divisionId)
+                    : departmentsData;
+                
+                filtered.forEach(dept => {
+                    const option = new Option(dept.text, dept.value);
+                    if (dept.selected) option.selected = true;
+                    departmentSelect.add(option);
+                });
+
+                // Trigger change to update positions
+                updatePositions(departmentSelect.value);
+            }
+
+            function updatePositions(departmentId) {
+                positionSelect.length = 1; // Keep placeholder
+                
+                if (!departmentId) return;
+
+                const filtered = positionsData.filter(pos => pos.departmentId == departmentId);
+                
+                filtered.forEach(pos => {
+                    const option = new Option(pos.text, pos.value);
+                    if (pos.selected) option.selected = true;
+                    positionSelect.add(option);
+                });
+            }
+
+            divisionSelect.addEventListener('change', function () {
+                const divisionId = this.value;
+                updateDepartments(divisionId);
+
+                if (!divisionId) {
+                    employeeIdInput.value = '';
+                    return;
+                }
+                
+                fetch(`/admin/divisions/${divisionId}/next-employee-id`)
+                    .then(res => res.json())
+                    .then(data => {
+                        employeeIdInput.value = data.employee_id || '';
+                    })
+                    .catch(() => {
+                        employeeIdInput.value = '';
+                    });
+            });
+
+            departmentSelect.addEventListener('change', function() {
+                // Auto-select division if department is selected
+                const deptData = departmentsData.find(d => d.value == this.value);
+                if (deptData && deptData.divisionId) {
+                    // Only update if different to avoid unnecessary events or if empty
+                    if (divisionSelect.value != deptData.divisionId) {
+                        divisionSelect.value = deptData.divisionId;
+                        
+                        // Trigger employee ID generation if needed and if ID is empty
+                        if (divisionSelect.value && !employeeIdInput.value) {
+                             fetch(`/admin/divisions/${divisionSelect.value}/next-employee-id`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (!employeeIdInput.value) {
+                                        employeeIdInput.value = data.employee_id || '';
+                                    }
+                                })
+                                .catch(() => {});
+                        }
+                    }
+                }
+                updatePositions(this.value);
+            });
+
+            // Initialize on load
+            departmentSelect.length = 1;
+            positionSelect.length = 1;
+
+            if (divisionSelect.value) {
+                updateDepartments(divisionSelect.value);
+            }
+        });
+    </script>
 </x-admin-layout>

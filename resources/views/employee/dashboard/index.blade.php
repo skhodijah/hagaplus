@@ -18,11 +18,19 @@
                                 Halo, {{ explode(' ', auth()->user()->name)[0] }}! 👋
                             </h1>
                             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {{ $employee->position ?? 'Karyawan' }}
+                                {{ $employee->position->name ?? 'Karyawan' }}
                                 @if($employee->department)
-                                    • {{ $employee->department }}
+                                    • {{ $employee->department->name ?? '' }}
                                 @endif
                             </p>
+                            @if(isset($policy) && $policy->formatted_schedule)
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Jam Kerja: {{ $policy->formatted_schedule }}
+                                </p>
+                            @endif
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
@@ -50,19 +58,42 @@
                 <div class="flex items-center justify-between">
                     <p class="text-2xl font-bold {{ 
                         $todayStatus === 'Belum Check In' ? 'text-gray-500 dark:text-gray-400' : 
-                        ($todayStatus === 'Sedang Bekerja' ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400') 
+                        ($todayStatus === 'Sedang Bekerja' ? 'text-blue-600 dark:text-blue-400' : 
+                        ($todayStatus === 'Sedang Cuti' ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400')) 
                     }}">
                         {{ $todayStatus }}
                     </p>
                     @if($todayStatus !== 'Belum Check In')
-                        <div class="w-3 h-3 rounded-full {{ $todayStatus === 'Sedang Bekerja' ? 'bg-blue-500' : 'bg-emerald-500' }} animate-pulse"></div>
+                        <div class="w-3 h-3 rounded-full {{ $todayStatus === 'Sedang Bekerja' ? 'bg-blue-500' : ($todayStatus === 'Sedang Cuti' ? 'bg-orange-500' : 'bg-emerald-500') }} animate-pulse"></div>
                     @endif
                 </div>
             </div>
 
             <!-- Quick Actions -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                @if($todayStatus === 'Belum Check In')
+                @php
+                    $isWorkDay = true;
+                    if (isset($workDays) && !empty($workDays)) {
+                        $todayName = strtolower(\Carbon\Carbon::now()->format('l'));
+                        $isWorkDay = in_array($todayName, $workDays);
+                    }
+                @endphp
+
+                @if(!$isWorkDay)
+                    <div class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-300 dark:border-gray-600">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">Hari Libur</h3>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Hari ini bukan jadwal kerja Anda</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-white/50 dark:bg-gray-900/50">
+                                <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                @elseif($todayStatus === 'Belum Check In')
                     <a href="#" data-camera-trigger
                         class="group bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 dark:from-emerald-600 dark:to-emerald-700 dark:hover:from-emerald-500 dark:hover:to-emerald-600 rounded-xl p-6 text-white transition-all duration-200 shadow-lg hover:shadow-xl border border-emerald-400/20">
                         <div class="flex items-center justify-between">
@@ -92,6 +123,20 @@
                             </div>
                         </div>
                     </button>
+                @elseif($todayStatus === 'Sedang Cuti')
+                    <div class="bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 rounded-xl p-6 border border-orange-300 dark:border-orange-600">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-orange-800 dark:text-orange-200 mb-1">Anda Sedang Cuti</h3>
+                                <p class="text-orange-700 dark:text-orange-300 text-sm">Nikmati waktu istirahat Anda</p>
+                            </div>
+                            <div class="w-12 h-12 flex items-center justify-center rounded-lg bg-white/50 dark:bg-orange-900/50">
+                                <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
                 @else
                     <div class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-xl p-6 border border-gray-300 dark:border-gray-600">
                         <div class="flex items-center justify-between">
@@ -283,13 +328,20 @@
                             }
                         @endphp
 
-                        @for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay())
+                            @for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay())
                             @php
                                 $isCurrentMonth = $date->month === $calendarMonth->month;
                                 $isToday = $date->isToday();
                                 $isWeekend = $date->isWeekend();
                                 $dateKey = $date->format('Y-m-d');
                                 $attendance = isset($attendanceLookup[$dateKey]) ? $attendanceLookup[$dateKey] : null;
+                                
+                                // Check if this is a working day based on policy
+                                $dayName = strtolower($date->format('l'));
+                                $isPolicyWorkDay = true;
+                                if (isset($workDays) && !empty($workDays)) {
+                                    $isPolicyWorkDay = in_array($dayName, $workDays);
+                                }
                                 
                                 // Determine status
                                 $status = 'no-data';
@@ -319,7 +371,19 @@
                                         $statusBorder = 'border-blue-200 dark:border-blue-800';
                                         $statusIcon = '●';
                                         $statusText = 'Sedang Bekerja';
+                                    } else if ($attendance->status === 'leave') {
+                                        $status = 'leave';
+                                        $statusClass = 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400';
+                                        $statusBorder = 'border-orange-200 dark:border-orange-800';
+                                        $statusIcon = '●';
+                                        $statusText = 'Sedang Cuti';
                                     }
+                                } else if (!$isPolicyWorkDay) {
+                                    // Non-working day (muted)
+                                    $status = 'off-day';
+                                    $statusClass = 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500';
+                                    $statusBorder = 'border-transparent';
+                                    $statusText = 'Libur';
                                 } else if ($isCurrentMonth && $date->lt(\Carbon\Carbon::today()) && !$isWeekend) {
                                     $status = 'absent';
                                     $statusClass = 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400';
@@ -329,7 +393,7 @@
                                 }
                             @endphp
                             <div class="calendar-day group relative min-h-[85px] p-2.5 rounded-lg transition-all duration-200 cursor-pointer
-                                {{ $status !== 'no-data' ? $statusClass . ' border ' . $statusBorder : 'bg-gray-50/50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600' }}
+                                {{ $status !== 'no-data' && $status !== 'off-day' ? $statusClass . ' border ' . $statusBorder : ($status === 'off-day' ? $statusClass : 'bg-gray-50/50 dark:bg-gray-700/30 border border-gray-200 dark:border-gray-600') }}
                                 {{ !$isCurrentMonth ? 'opacity-40' : '' }} 
                                 {{ $isToday ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-gray-800' : '' }}
                                 hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600"
@@ -351,7 +415,7 @@
                                 @if($status !== 'no-data')
                                     <div class="space-y-1">
                                         <div class="text-[11px] font-medium">
-                                            {{ $status === 'present' ? 'Hadir' : ($status === 'late' ? 'Terlambat' : ($status === 'absent' ? 'Tidak Hadir' : 'Bekerja')) }}
+                                            {{ $status === 'present' ? 'Hadir' : ($status === 'late' ? 'Terlambat' : ($status === 'absent' ? 'Tidak Hadir' : ($status === 'leave' ? 'Cuti' : 'Bekerja'))) }}
                                         </div>
                                         @if($attendance && $attendance->check_in_time)
                                             <div class="text-[10px] opacity-75">
@@ -400,6 +464,10 @@
                         <div class="flex items-center gap-2">
                             <div class="w-3 h-3 rounded-full bg-blue-500"></div>
                             <span class="text-gray-700 dark:text-gray-300">Sedang Bekerja</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-orange-500"></div>
+                            <span class="text-gray-700 dark:text-gray-300">Cuti</span>
                         </div>
                     </div>
                 </div>

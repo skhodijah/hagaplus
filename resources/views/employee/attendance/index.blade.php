@@ -85,7 +85,14 @@
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check In</h3>
-                            @if($todayAttendance && $todayAttendance->check_in_time)
+                            @if(isset($todayLeave) && $todayLeave)
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                    </svg>
+                                    Sedang Cuti
+                                </span>
+                            @elseif($todayAttendance && $todayAttendance->check_in_time)
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                                     <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -102,7 +109,38 @@
                             @endif
                         </div>
 
-                        @if($todayAttendance && $todayAttendance->check_in_time)
+                        @if(isset($isProfileComplete) && !$isProfileComplete)
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Profil Belum Lengkap</h4>
+                                <p class="text-gray-600 dark:text-gray-300 mb-4">
+                                    Anda harus melengkapi data profil Anda sebelum dapat melakukan absensi.
+                                </p>
+                                <a href="{{ route('employee.profile') }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors">
+                                    Lengkapi Profil Sekarang
+                                </a>
+                            </div>
+                        @elseif(isset($todayLeave) && $todayLeave)
+                            <!-- On Leave -->
+                            <div class="text-center py-4">
+                                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Anda Sedang Cuti</h4>
+                                <p class="text-gray-600 dark:text-gray-300 mb-2">
+                                    {{ $todayLeave->leave_type }}
+                                </p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    {{ $todayLeave->start_date->format('d M Y') }} - {{ $todayLeave->end_date->format('d M Y') }}
+                                </p>
+                            </div>
+                        @elseif($todayAttendance && $todayAttendance->check_in_time)
                             <!-- Already checked in -->
                             <div class="space-y-4">
                                 <div class="text-center py-4">
@@ -236,7 +274,14 @@
                     <div class="p-6">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check Out</h3>
-                            @if($todayAttendance && $todayAttendance->check_out_time)
+                            @if(isset($todayLeave) && $todayLeave)
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+                                    </svg>
+                                    Sedang Cuti
+                                </span>
+                            @elseif($todayAttendance && $todayAttendance->check_out_time)
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                                     <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
@@ -260,7 +305,18 @@
                             @endif
                         </div>
 
-                        @if($todayAttendance && $todayAttendance->check_out_time)
+                        @if(isset($todayLeave) && $todayLeave)
+                            <!-- Cannot check out because on leave -->
+                            <div class="text-center py-8">
+                                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Anda Sedang Cuti</h4>
+                                <p class="text-gray-600 dark:text-gray-300">Tidak perlu melakukan check out.</p>
+                            </div>
+                        @elseif($todayAttendance && $todayAttendance->check_out_time)
                             <!-- Already checked out -->
                             <div class="space-y-4">
                                 <div class="text-center py-4">
@@ -443,8 +499,9 @@
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                         {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
                                            ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                           'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400') }}">
-                                        {{ ucfirst($attendance->status ?? 'absent') }}
+                                           ($attendance->status === 'leave' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+                                           'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400')) }}">
+                                        {{ $attendance->status === 'leave' ? 'Cuti' : ucfirst($attendance->status ?? 'absent') }}
                                     </span>
                                 </td>
                             </tr>

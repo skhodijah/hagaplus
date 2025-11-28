@@ -35,12 +35,6 @@ class SettingsController extends Controller
     }
 
     protected $defaultSettings = [
-        // Company Information
-        'company_name' => ['type' => 'text', 'label' => 'Company Name', 'default' => '', 'category' => 'company'],
-        'company_address' => ['type' => 'textarea', 'label' => 'Company Address', 'default' => '', 'category' => 'company'],
-        'company_phone' => ['type' => 'text', 'label' => 'Company Phone', 'default' => '', 'category' => 'company'],
-        'company_email' => ['type' => 'email', 'label' => 'Company Email', 'default' => '', 'category' => 'company'],
-
         // Attendance Settings
         'attendance_start_time' => ['type' => 'time', 'label' => 'Default Start Time', 'default' => '09:00', 'category' => 'attendance'],
         'attendance_end_time' => ['type' => 'time', 'label' => 'Default End Time', 'default' => '18:00', 'category' => 'attendance'],
@@ -68,9 +62,8 @@ class SettingsController extends Controller
         'payroll_calculation_method' => ['type' => 'select', 'label' => 'Payroll Calculation Method', 'default' => 'monthly', 'options' => ['monthly' => 'Monthly', 'weekly' => 'Weekly', 'biweekly' => 'Bi-weekly'], 'category' => 'payroll'],
         'overtime_rate_multiplier' => ['type' => 'number', 'label' => 'Overtime Rate Multiplier', 'default' => '1.5', 'step' => '0.1', 'category' => 'payroll'],
         'tax_calculation_enabled' => ['type' => 'boolean', 'label' => 'Tax Calculation Enabled', 'default' => '1', 'category' => 'payroll'],
-
+        
         // Appearance Settings
-        'logo_path' => ['type' => 'file', 'label' => 'Company Logo', 'default' => '', 'category' => 'appearance', 'accept' => 'image/*'],
         'company_name_display' => ['type' => 'text', 'label' => 'Display Name', 'default' => 'Haga+', 'category' => 'appearance'],
     ];
 
@@ -94,7 +87,6 @@ class SettingsController extends Controller
 
         // Group by category
         $categories = [
-            'company' => 'Company Information',
             'attendance' => 'Attendance Settings',
             'system' => 'System Settings',
             'notifications' => 'Notifications',

@@ -31,7 +31,9 @@ class UserController extends Controller
 
         // Filter by role
         if ($request->filled('role')) {
-            $query->where('role', $request->role);
+            $query->whereHas('systemRole', function($q) use ($request) {
+                $q->where('slug', $request->role);
+            });
         }
 
         // Filter by instansi
@@ -131,7 +133,7 @@ class UserController extends Controller
         $data = $request->only(['name', 'email', 'phone', 'role', 'instansi_id']);
 
         // Prevent changing role of superadmin users
-        if ($user->role === 'superadmin' && $data['role'] !== 'superadmin') {
+        if ($user->systemRole && $user->systemRole->slug === 'superadmin' && $data['role'] !== 'superadmin') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['role' => 'Superadmin role cannot be changed.']);
@@ -174,7 +176,7 @@ class UserController extends Controller
         }
 
         // Prevent deactivating other superadmins
-        if ($user->role === 'superadmin' && auth()->user()->role !== 'superadmin') {
+        if ($user->systemRole && $user->systemRole->slug === 'superadmin' && auth()->user()->systemRole && auth()->user()->systemRole->slug !== 'superadmin') {
             return redirect()->back()
                 ->with('error', 'You do not have permission to modify superadmin accounts.');
         }
@@ -195,7 +197,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         // Prevent deletion of superadmin users
-        if ($user->role === 'superadmin') {
+        if ($user->systemRole && $user->systemRole->slug === 'superadmin') {
             return redirect()->back()
                 ->with('error', 'Cannot delete superadmin users.');
         }
@@ -233,7 +235,7 @@ class UserController extends Controller
 
         foreach ($users as $user) {
             // Skip superadmin users for delete action
-            if ($user->role === 'superadmin') {
+            if ($user->systemRole && $user->systemRole->slug === 'superadmin') {
                 continue;
             }
 

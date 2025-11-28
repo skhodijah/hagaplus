@@ -32,10 +32,15 @@ class Instansi extends Model
      */
     protected $fillable = [
         'nama_instansi',
+        'display_name',
         'subdomain',
         'email',
         'phone',
         'address',
+        'city',
+        'npwp',
+        'nib',
+        'website',
         'logo',
         'status_langganan',
         'package_id',
@@ -49,6 +54,32 @@ class Instansi extends Model
         'archived_at',
         'archived_by',
     ];
+
+    /**
+     * Get the abbreviated name of the instansi.
+     */
+    public function getAbbreviatedNameAttribute()
+    {
+        if ($this->display_name) {
+            return $this->display_name;
+        }
+
+        $name = $this->nama_instansi;
+        $words = explode(' ', $name);
+        $abbreviation = '';
+
+        foreach ($words as $word) {
+            // Keep PT, CV, etc. as is
+            if (in_array(strtoupper($word), ['PT', 'CV', 'UD', 'FA', 'FIRMA', 'PERUM', 'PERSERO'])) {
+                $abbreviation .= $word . ' ';
+            } else {
+                // Take the first letter of other words
+                $abbreviation .= strtoupper(substr($word, 0, 1));
+            }
+        }
+
+        return trim($abbreviation);
+    }
 
     /**
      * Get the users for the instansi.

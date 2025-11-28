@@ -33,4 +33,7 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+
+    // Reimbursements
+    Route::resource('reimbursements', \App\Http\Controllers\Employee\ReimbursementController::class);
 });

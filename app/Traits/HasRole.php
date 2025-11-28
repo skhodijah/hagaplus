@@ -5,11 +5,25 @@ namespace App\Traits;
 trait HasRole
 {
     /**
-     * Check if user has specific role
+     * Check if user has specific role (by slug)
      */
-    public function hasRole($role)
+    public function hasRole($roleSlug)
     {
-        return $this->role === $role;
+        if (!$this->systemRole) {
+            return false;
+        }
+
+        // Direct match
+        if ($this->systemRole->slug === $roleSlug) {
+            return true;
+        }
+
+        // Hierarchy: Admin can also access employee features
+        if ($roleSlug === 'employee' && $this->systemRole->slug === 'admin') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -21,7 +35,11 @@ trait HasRole
             $roles = [$roles];
         }
 
-        return in_array($this->role, $roles);
+        if (!$this->systemRole) {
+            return false;
+        }
+
+        return in_array($this->systemRole->slug, $roles);
     }
 
     /**
@@ -46,5 +64,13 @@ trait HasRole
     public function isEmployee()
     {
         return $this->hasRole('employee');
+    }
+
+    /**
+     * Get the role name for display
+     */
+    public function getRoleName()
+    {
+        return $this->systemRole ? $this->systemRole->name : 'Unknown';
     }
 }

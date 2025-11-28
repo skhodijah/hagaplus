@@ -13,6 +13,7 @@ class AttendanceRevision extends Model
     protected $fillable = [
         'attendance_id',
         'user_id',
+        'approval_request_id',
         'revision_type',
         'original_time',
         'revised_time',
@@ -43,5 +44,13 @@ class AttendanceRevision extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the approval request for this revision
+     */
+    public function approvalRequest()
+    {
+        return $this->morphOne(ApprovalRequest::class, 'approvable');
     }
 }

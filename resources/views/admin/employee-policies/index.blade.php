@@ -34,7 +34,7 @@
                             <option value="">All Employees</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                    {{ $employee->name }}
+                                    {{ $employee->user->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -66,10 +66,8 @@
                         <thead class="bg-gray-50 dark:bg-gray-800">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Policy Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Work Schedule</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Effective Period</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -77,26 +75,24 @@
                             @forelse($policies as $policy)
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-10 w-10">
-                                                @if($policy->employee->avatar)
-                                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ asset('storage/' . $policy->employee->avatar) }}" alt="">
-                                                @else
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-                                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $policy->employee->initials() }}</span>
-                                                    </div>
-                                                @endif
+                                        @if($policy->employee && $policy->employee->user)
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    @if($policy->employee->user->avatar)
+                                                        <img class="h-10 w-10 rounded-full object-cover" src="{{ asset('storage/' . $policy->employee->user->avatar) }}" alt="">
+                                                    @else
+                                                        <div class="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
+                                                            <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ $policy->employee->user->initials() }}</span>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $policy->employee->user->name }}</div>
+                                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $policy->employee->user->email }}</div>
+                                                </div>
                                             </div>
-                                            <div class="ml-4">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $policy->employee->name }}</div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">{{ $policy->employee->email }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $policy->name }}</div>
-                                        @if($policy->description)
-                                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">{{ $policy->description }}</div>
+                                        @else
+                                            <div class="text-sm text-red-500 italic">Employee Not Found</div>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -105,45 +101,17 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                            @if($policy->is_active && $policy->isCurrentlyEffective()) bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
-                                            @elseif($policy->is_active) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
-                                            @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 @endif">
-                                            @if($policy->is_active && $policy->isCurrentlyEffective())
-                                                Active
-                                            @elseif($policy->is_active)
-                                                Scheduled
-                                            @else
-                                                Inactive
-                                            @endif
+                                            {{ $policy->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
+                                            {{ $policy->is_active ? 'Active' : 'Inactive' }}
                                         </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                                        @if($policy->effective_from)
-                                            <div>From: {{ $policy->effective_from->format('M d, Y') }}</div>
-                                        @endif
-                                        @if($policy->effective_until)
-                                            <div>Until: {{ $policy->effective_until->format('M d, Y') }}</div>
-                                        @else
-                                            <div class="text-green-600 dark:text-green-400">Ongoing</div>
-                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex items-center space-x-2">
-                                            <a href="{{ route('admin.employee-policies.show', $policy) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                                                <i class="fa-solid fa-eye"></i>
-                                            </a>
                                             <a href="{{ route('admin.employee-policies.edit', $policy) }}" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                                                 <i class="fa-solid fa-edit"></i>
                                             </a>
-                                            <form method="POST" action="{{ route('admin.employee-policies.toggle-status', $policy) }}" class="inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300" title="{{ $policy->is_active ? 'Deactivate' : 'Activate' }}">
-                                                    <i class="fa-solid fa-{{ $policy->is_active ? 'pause' : 'play' }}"></i>
-                                                </button>
-                                            </form>
                                             <form method="POST" action="{{ route('admin.employee-policies.destroy', $policy) }}" class="inline"
-                                                  onsubmit="return confirm('Are you sure you want to delete this policy?')">
+                                                  onsubmit="return confirm('Are you sure you want to delete this policy override?')">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
@@ -172,11 +140,7 @@
                 </div>
 
                 <!-- Pagination -->
-                @if($policies->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                        {{ $policies->appends(request()->query())->links() }}
-                    </div>
-                @endif
+
             </div>
         </div>
     </div>

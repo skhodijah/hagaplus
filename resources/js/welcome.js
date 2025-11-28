@@ -37,12 +37,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Check for saved user preference for dark mode
-    if (
-        localStorage.getItem("darkMode") === "true" ||
-        (!localStorage.getItem("darkMode") &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
+    const darkModePref = localStorage.getItem("darkMode");
+    if (darkModePref === "true") {
         document.documentElement.classList.add("dark");
+    } else {
+        document.documentElement.classList.remove("dark");
     }
 
     // Initialize tooltips

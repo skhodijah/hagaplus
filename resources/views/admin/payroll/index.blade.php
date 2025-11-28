@@ -94,16 +94,16 @@
                                     {{ date('F Y', mktime(0, 0, 0, $payroll->period_month, 1, $payroll->period_year)) }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    Rp {{ number_format($payroll->basic_salary, 0, ',', '.') }}
+                                    Rp {{ number_format($payroll->gaji_pokok, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    Rp {{ number_format(array_sum($payroll->allowances ?? []), 0, ',', '.') }}
+                                    Rp {{ number_format($payroll->total_pendapatan - $payroll->gaji_pokok, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    Rp {{ number_format(array_sum($payroll->deductions ?? []), 0, ',', '.') }}
+                                    Rp {{ number_format($payroll->total_potongan, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                    Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}
+                                    Rp {{ number_format($payroll->gaji_bersih, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($payroll->payment_status === 'paid')

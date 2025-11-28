@@ -107,10 +107,21 @@
                                                                 ◐
                                                             </a>
                                                         @elseif($attendance->status === 'leave')
-                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
-                                                                C
-                                                            </a>
+                                                            @if($attendance->id)
+                                                                <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                                   class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                                    C
+                                                                </a>
+                                                            @elseif(isset($attendance->leave_details))
+                                                                <a href="{{ route('admin.leaves.show', $attendance->leave_details) }}"
+                                                                   class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                                    C
+                                                                </a>
+                                                            @else
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200" title="Leave">
+                                                                    C
+                                                                </span>
+                                                            @endif
                                                         @else
                                                             <a href="{{ route('admin.attendance.show', $attendance) }}"
                                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Unknown - Click for details">
@@ -193,10 +204,21 @@
                                                             ◐
                                                         </a>
                                                     @elseif($attendance->status === 'leave')
-                                                        <a href="{{ route('admin.attendance.show', $attendance) }}"
-                                                           class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
-                                                            C
-                                                        </a>
+                                                        @if($attendance->id)
+                                                            <a href="{{ route('admin.attendance.show', $attendance) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                                C
+                                                            </a>
+                                                        @elseif(isset($attendance->leave_details))
+                                                            <a href="{{ route('admin.leaves.show', $attendance->leave_details) }}"
+                                                               class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Leave - Click for details">
+                                                                C
+                                                            </a>
+                                                        @else
+                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200" title="Leave">
+                                                                C
+                                                            </span>
+                                                        @endif
                                                     @else
                                                         <a href="{{ route('admin.attendance.show', $attendance) }}"
                                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors" title="Unknown - Click for details">

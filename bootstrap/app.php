@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
             'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
+            'permission' => \App\Http\Middleware\CheckPermission::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

@@ -17,39 +17,22 @@
                 @csrf
 
                 <!-- Basic Information -->
-                <x-section-card title="Basic Information">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-section-card title="Employee Selection">
+                    <div class="grid grid-cols-1 gap-6">
                         <div>
                             <label for="employee_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employee <span class="text-red-500">*</span></label>
                             <select name="employee_id" id="employee_id" required
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('employee_id') border-red-300 dark:border-red-600 @enderror">
                                 <option value="">Select Employee</option>
                                 @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}" data-email="{{ $employee->email }}">
-                                        {{ $employee->name }} ({{ $employee->email }})
+                                    <option value="{{ $employee->id }}" data-email="{{ $employee->user->email ?? '' }}">
+                                        {{ $employee->user->name ?? 'N/A' }} ({{ $employee->employee_id }})
                                     </option>
                                 @endforeach
                             </select>
                             @error('employee_id')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
-                        </div>
-
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Policy Name <span class="text-red-500">*</span></label>
-                            <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('name') border-red-300 dark:border-red-600 @enderror"
-                                   placeholder="e.g., Remote Work Policy, Flexible Hours">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
-                            <textarea name="description" id="description" rows="3"
-                                      class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                      placeholder="Describe the purpose and scope of this policy...">{{ old('description') }}</textarea>
                         </div>
                     </div>
                 </x-section-card>
@@ -215,25 +198,6 @@
                     </div>
                 </x-section-card>
 
-                <!-- Effective Period -->
-                <x-section-card title="Effective Period">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="effective_from" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Effective From</label>
-                            <input type="date" name="effective_from" id="effective_from" value="{{ old('effective_from') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for immediate effect</p>
-                        </div>
-
-                        <div>
-                            <label for="effective_until" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Effective Until</label>
-                            <input type="date" name="effective_until" id="effective_until" value="{{ old('effective_until') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm">
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for ongoing policy</p>
-                        </div>
-                    </div>
-                </x-section-card>
-
                 <!-- Submit -->
                 <div class="mt-6 flex items-center justify-end space-x-3">
                     <a href="{{ route('admin.employee-policies.index') }}" class="bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
@@ -259,17 +223,6 @@
             const allowOvertimeCheckbox = document.querySelector('input[name="allow_overtime"]');
             const overtimeSettings = document.getElementById('overtimeSettings');
             overtimeSettings.style.display = allowOvertimeCheckbox.checked ? 'grid' : 'none';
-        });
-
-        // Auto-populate policy name based on selected employee
-        document.getElementById('employee_id').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const employeeName = selectedOption.text.split(' (')[0]; // Get name before email
-            const policyNameInput = document.getElementById('name');
-
-            if (employeeName && !policyNameInput.value) {
-                policyNameInput.value = `${employeeName} Policy`;
-            }
         });
     </script>
 </x-admin-layout>

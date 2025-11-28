@@ -52,7 +52,9 @@ class LeaveController extends Controller
     public function create()
     {
         $instansiId = Auth::user()->instansi_id;
-        $employees = \App\Models\Core\User::where('role', 'employee')
+        $employees = \App\Models\Core\User::whereHas('systemRole', function($q) {
+                $q->where('slug', 'employee');
+            })
             ->where('instansi_id', $instansiId)
             ->orderBy('name')
             ->get();
@@ -121,7 +123,9 @@ class LeaveController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $employees = \App\Models\Core\User::where('role', 'employee')
+        $employees = \App\Models\Core\User::whereHas('systemRole', function($q) {
+                $q->where('slug', 'employee');
+            })
             ->where('instansi_id', $instansiId)
             ->orderBy('name')
             ->get();

@@ -10,11 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        // Update check_in_method enum to only selfie and manual
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('selfie', 'manual')");
+        // Check if columns exist before modifying
+        if (Schema::hasColumn('attendances', 'check_in_method')) {
+            // Update check_in_method enum to only selfie and manual
+            DB::statement("ALTER TABLE attendances MODIFY COLUMN check_in_method ENUM('selfie', 'manual')");
+        }
 
-        // Update check_out_method enum to only selfie and manual
-        DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('selfie', 'manual')");
+        if (Schema::hasColumn('attendances', 'check_out_method')) {
+            // Update check_out_method enum to only selfie and manual
+            DB::statement("ALTER TABLE attendances MODIFY COLUMN check_out_method ENUM('selfie', 'manual')");
+        }
     }
 
     /**
