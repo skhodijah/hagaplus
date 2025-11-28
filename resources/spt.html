@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Formulir 1721-A1</title>
+        <style>
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: Arial, sans-serif;
+                font-size: 9pt;
+                line-height: 1.2;
+                background: #f0f0f0;
+                padding: 5px;
+            }
+
+            .page {
+                width: 210mm;
+                background: white;
+                margin: 0 auto;
+                padding: 5mm;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .header {
+                display: grid;
+                grid-template-columns: 220px 1fr 200px;
+                gap: 10px;
+                padding-bottom: 10px;
+            }
+
+            .logo {
+                text-align: center;
+            }
+
+            .title-center {
+                text-align: center;
+                padding: 5px;
+            }
+
+            .title-center h2 {
+                font-size: 10pt;
+
+                font-weight: bold;
+                margin: 2px 0;
+            }
+
+            .form-number {
+                border: 1px solid #000;
+                padding: 5px;
+                text-align: center;
+            }
+
+            .form-number h1 {
+                font-size: 14pt;
+                font-weight: bold;
+                margin: 5px 0;
+            }
+
+            .form-number p {
+                font-size: 7pt;
+                margin: 2px 0;
+            }
+
+            .kementerian {
+                text-align: center;
+                font-weight: bold;
+                font-size: 9pt;
+            }
+
+            .nomor-section {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 20px 0 0;
+                padding: 5px;
+                border: 1px solid #000;
+            }
+
+            .npwp-pemotong {
+                display: grid;
+                grid-template-columns: 150px 1fr;
+                gap: 10px;
+                padding: 5px;
+                border: 2px solid #000;
+                margin-bottom: 10px;
+            }
+
+            .box {
+                border: 2px solid #000;
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+
+            .box-title {
+                font-weight: bold;
+                background: #f0f0f0;
+                padding: 5px;
+                margin: -10px -10px 10px;
+                border-bottom: 1px solid #000;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 30px 120px 1fr;
+                gap: 5px;
+                padding: 3px 0;
+                border-bottom: 1px solid #ddd;
+                align-items: center;
+            }
+
+            .form-row:last-child {
+                border-bottom: none;
+            }
+
+            .label {
+                font-size: 8pt;
+            }
+
+            .input-field {
+                border: none;
+                font-size: 9pt;
+                width: 100%;
+            }
+
+            .checkbox {
+                display: inline-block;
+                width: 15px;
+                height: 15px;
+                border: 1px solid #000;
+                vertical-align: middle;
+                margin: 0 5px;
+                position: relative;
+            }
+
+            .checkbox.checked::after {
+                content: "X";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-weight: bold;
+                font-size: 12pt;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 10px 0;
+            }
+
+            table td,
+            table th {
+                border: 1px solid #000;
+                padding: 5px;
+                font-size: 8pt;
+            }
+
+            table th {
+                background: #f0f0f0;
+                font-weight: bold;
+                text-align: center;
+            }
+
+            .text-right {
+                text-align: right;
+            }
+
+            .npwp-boxes {
+                display: flex;
+                gap: 3px;
+            }
+
+            .npwp-box {
+                width: 20px;
+                height: 25px;
+                border: 1px solid #000;
+                text-align: center;
+                line-height: 25px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+
+            .separator {
+                width: 8px;
+                text-align: center;
+                line-height: 25px;
+                font-weight: bold;
+            }
+
+            @media print {
+                body {
+                    background: white;
+                    padding: 0;
+                }
+
+                .page {
+                    box-shadow: none;
+                    margin: 0;
+                }
+
+                .no-print {
+                    display: none;
+                }
+            }
+
+            .button-container {
+                text-align: center;
+                margin: 20px 0;
+            }
+
+            .btn {
+                padding: 10px 30px;
+                font-size: 14px;
+                background: #2196f3;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 0 5px;
+            }
+
+            .btn:hover {
+                background: #1976d2;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="button-container no-print">
+            <button class="btn" onclick="window.print()">Cetak PDF</button>
+        </div>
+
+        <div class="page">
+            <div class="header">
+                <div class="logo">
+                    <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Logo_kementerian_keuangan_republik_indonesia.png/969px-Logo_kementerian_keuangan_republik_indonesia.png"
+                        alt="logo"
+                        width="100"
+                        height="100"
+                    />
+                    <div class="kementerian">
+                        <strong
+                            >KEMENTERIAN KEUANGAN RI<br />DIREKTORAT JENDERAL
+                            PAJAK</strong
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <div class="title-center">
+                        <h2>BUKTI PEMOTONGAN PAJAK PENGHASILAN</h2>
+                        <h2>PASAL 21 BAGI PEGAWAI TETAP ATAU</h2>
+                        <h2>PENERIMA PENSIUN ATAU TUNJANGAN HARI</h2>
+                        <h2>TUA/JAMINAN HARI TUA BERKALA</h2>
+                    </div>
+                    <div class="nomor-section">
+                        <div
+                            style="
+                                display: flex;
+                                gap: 10px;
+                                align-items: center;
+                            "
+                        >
+                            <strong>NOMOR:</strong>
+                            <span style="font-size: 8pt; color: #666"
+                                >H.01</span
+                            >
+                            <p>1 . 1 - 12 . 12 - 000000</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-number">
+                    <div
+                        style="
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: 3px;
+                            margin-bottom: 5px;
+                        "
+                    >
+                        <div class="checkbox"></div>
+                        <div class="checkbox" style="background: #000"></div>
+                        <div class="checkbox"></div>
+                        <div class="checkbox" style="background: #000"></div>
+                    </div>
+                    <h2>FORMULIR 1721 - A1</h2>
+                    <p>Lembar ke-1 : untuk Penerima Penghasilan</p>
+                    <p>Lembar ke-2 : untuk Pemotong</p>
+                    <p style="margin-top: 5px">
+                        <strong>MASA PEROLEHAN</strong>
+                    </p>
+                    <p>
+                        <strong>PENGHASILAN (mm - mm)</strong>
+                    </p>
+                    <div
+                        style="
+                            display: flex;
+                            justify-content: center;
+                            gap: 5px;
+                            margin-top: 5px;
+                        "
+                    >
+                        <span
+                            style="
+                                width: 30px;
+                                text-align: center;
+                                border: 1px solid #000;
+                                display: inline-block;
+                                line-height: 20px;
+                            "
+                            >01</span
+                        >
+                        <span>-</span>
+                        <span
+                            style="
+                                width: 30px;
+                                text-align: center;
+                                border: 1px solid #000;
+                                display: inline-block;
+                                line-height: 20px;
+                            "
+                            >12</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="npwp-pemotong">
+                <div>
+                    <div style="margin-bottom: 5px">
+                        <strong>NPWP PEMOTONG</strong>
+                        <span style="font-size: 7pt">: 14.03</span>
+                    </div>
+                    <div>
+                        <strong>NAMA PEMOTONG</strong>
+                        <span style="font-size: 7pt">: 14.04</span>
+                    </div>
+                </div>
+                <div>
+                    <div style="margin-bottom: 5px">
+                        <span>72.000.000.0-722.000.000.0</span>
+                    </div>
+                    <div>
+                        <span>PT. INTRIAS MANDIRI SEJATI</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box">
+                <div class="box-title">
+                    A. IDENTITAS PENERIMA PENGHASILAN YANG DIPOTONG
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <div class="form-row">
+                    <div>1.</div>
+                    <div class="label">
+                        NPWP
+                        <span style="font-size: 7pt">: A.01</span>
+                    </div>
+                    <div class="npwp-boxes">
+                        <span>72.000.000.0-722.000.000.0</span>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>2.</div>
+                    <div class="label">
+                        NIK/NO. PASPOR
+                        <span style="font-size: 7pt">: A.02</span>
+                    </div>
+                    <span class="input-field">DB0000003295</span>
+                </div>
+
+                <div class="form-row">
+                    <div>3.</div>
+                    <div class="label">
+                        NAMA
+                        <span style="font-size: 7pt">: A.03</span>
+                    </div>
+                    <span class="input-field">CYNDIE NATHANIA</span>
+                </div>
+
+                <div class="form-row">
+                    <div>4.</div>
+                    <div class="label">
+                        ALAMAT
+                        <span style="font-size: 7pt">: A.04</span>
+                    </div>
+                    <span class="input-field"></span>
+                </div>
+
+                <div class="form-row">
+                    <div>5.</div>
+                    <div class="label">
+                        JENIS KELAMIN
+                        <span style="font-size: 7pt">: A.05</span>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center">
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <div class="checkbox"></div>
+                            <span style="font-size: 8pt">LAKI-LAKI</span>
+                            <span style="font-size: 7pt; color: #666"
+                                >A.06</span
+                            >
+                        </div>
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <div class="checkbox checked"></div>
+                            <span style="font-size: 8pt">PEREMPUAN</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div>6.</div>
+                    <div class="label">
+                        STATUS /JUMLAH TANGGUNGAN KELUARGA UNTUK PTKP
+                        <span style="font-size: 7pt">: A.07</span>
+                    </div>
+                    <div></div>
+                    <div style="display: flex; gap: 20px; align-items: center">
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <span style="font-size: 8pt">K /</span>
+                            <span style="font-size: 7pt; color: #666"
+                                >A.07</span
+                            >
+                        </div>
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <span style="font-size: 8pt">TK /</span>
+                            <span class="npwp-box">0</span>
+                            <span style="font-size: 7pt; color: #666"
+                                >A.08</span
+                            >
+                        </div>
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <span style="font-size: 8pt">HB /</span>
+                            <span style="font-size: 7pt; color: #666"
+                                >A.09</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>7.</div>
+                    <div class="label">
+                        NAMA JABATAN <span style="font-size: 7pt">: A.10</span>
+                    </div>
+                    <span class="input-field">Arm</span>
+                    <div></div>
+                </div>
+
+                <div class="form-row">
+                    <div>8.</div>
+                    <div class="label">
+                        KARYAWAN ASING
+                        <span style="font-size: 7pt">: A.11</span>
+                    </div>
+                    <div style="display: flex; gap: 20px; align-items: center">
+                        <div
+                            style="display: flex; align-items: center; gap: 5px"
+                        >
+                            <div class="checkbox"></div>
+                            <span style="font-size: 8pt">YA</span>
+                        </div>
+                    </div>
+                    <div></div>
+                </div>
+
+                <div class="form-row">
+                    <div>9.</div>
+                    <div class="label">
+                        KODE NEGARA DOMISILI
+                        <span style="font-size: 7pt">: A.12</span>
+                    </div>
+                    <span class="input-field" style="width: 80px"></span>
+                    <div></div>
+                </div>
+            </div>
+
+            <div class="box">
+                <div class="box-title">
+                    B. RINCIAN PENGHASILAN DAN PENGHITUNGAN PPh PASAL 21
+                </div>
+
+                <table>
+                    <tr>
+                        <th colspan="2">URAIAN</th>
+                        <th>JUMLAH (Rp)</th>
+                    </tr>
+                    <tr>
+                        <td style="width: 40px; text-align: center">
+                            <strong>KODE OBJEK PAJAK</strong>
+                        </td>
+                        <td style="width: 60px">
+                            <div
+                                style="
+                                    display: flex;
+                                    gap: 5px;
+                                    align-items: center;
+                                    justify-content: center;
+                                "
+                            >
+                                <span style="font-size: 7pt">:</span>
+                                <div class="checkbox checked"></div>
+                                <strong>21-100-01</strong>
+                                <div class="checkbox"></div>
+                                <strong>21-100-02</strong>
+                            </div>
+                        </td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td
+                            colspan="3"
+                            style="background: #f0f0f0; font-weight: bold"
+                        >
+                            PENGHASILAN BRUTO:
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">1</td>
+                        <td>GAJI/PENSIUN ATAU THT/JHT</td>
+                        <td class="text-right">
+                            <span id="gaji" class="input-field text-right"
+                                >50701000</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">2</td>
+                        <td>TUNJANGAN PPh</td>
+                        <td class="text-right"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">3</td>
+                        <td>TUNJANGAN LAINNYA, UANG LEMBUR DAN SEBAGAINYA</td>
+                        <td class="text-right">
+                            <span id="tunjangan" class="input-field text-right"
+                                >260000</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">4</td>
+                        <td>HONORARIUM DAN IMBALAN LAIN SEJENISNYA</td>
+                        <td class="text-right"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">5</td>
+                        <td>PREMI ASURANSI YANG DIBAYAR PEMBERI KERJA</td>
+                        <td class="text-right">
+                            <span id="premi" class="input-field text-right"
+                                >2306585</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">6</td>
+                        <td style="font-size: 7pt">
+                            PENERIMAAN DALAM BENTUK NATURA DAN KENIKMATAN
+                            LAINNYA YANG DIKENAKAN PEMOTONGAN PPh PASAL 21
+                        </td>
+                        <td class="text-right"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">7</td>
+                        <td>
+                            TANTIEM, BONUS, GRATIFIKASI, JASA PRODUKSI DAN THR
+                        </td>
+                        <td class="text-right">
+                            <span id="bonus" class="input-field text-right"
+                                >4200000</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">8</td>
+                        <td>JUMLAH PENGHASILAN BRUTO (1 S.D 7)</td>
+                        <td class="text-right" id="totalBruto">57,467,585</td>
+                    </tr>
+                    <tr>
+                        <td
+                            colspan="3"
+                            style="background: #f0f0f0; font-weight: bold"
+                        >
+                            PENGURANGAN:
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">9</td>
+                        <td>BIAYA JABATAN/ BIAYA PENSIUN</td>
+                        <td class="text-right" id="biayaJabatan">2,873,379</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">10</td>
+                        <td>IURAN PENSIUN ATAU IURAN THT/JHT</td>
+                        <td class="text-right">
+                            <span id="iuran" class="input-field text-right"
+                                >1521030</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">11</td>
+                        <td>JUMLAH PENGURANGAN (9 S.D 10)</td>
+                        <td class="text-right" id="totalPengurangan">
+                            4,394,409
+                        </td>
+                    </tr>
+                    <tr>
+                        <td
+                            colspan="3"
+                            style="background: #f0f0f0; font-weight: bold"
+                        >
+                            PENGHITUNGAN PPh PASAL 21:
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">12</td>
+                        <td>JUMLAH PENGHASILAN NETO (8-11)</td>
+                        <td class="text-right" id="neto">53,073,176</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">13</td>
+                        <td>PENGHASILAN NETO MASA SEBELUMNYA</td>
+                        <td class="text-right"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">14</td>
+                        <td style="font-size: 7pt">
+                            JUMLAH PENGHASILAN NETO UNTUK PENGHITUNGAN PPh PASAL
+                            21 (SETAHUN/DISETAHUNKAN)
+                        </td>
+                        <td class="text-right" id="netoSetahun">53,073,176</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">15</td>
+                        <td>PENGHASILAN TIDAK KENA PAJAK (PTKP)</td>
+                        <td class="text-right">
+                            <span id="ptkp" class="input-field text-right"
+                                >54000000</span
+                            >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">16</td>
+                        <td>
+                            PENGHASILAN KENA PAJAK SETAHUN/DISETAHUNKAN (14 -
+                            15)
+                        </td>
+                        <td class="text-right" id="pkp">0</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">17</td>
+                        <td>
+                            PPh PASAL 21 ATAS PENGHASILAN KENA PAJAK
+                            SETAHUN/DISETAHUNKAN
+                        </td>
+                        <td class="text-right" id="pph21">0</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">18</td>
+                        <td>
+                            PPh PASAL 21 YANG TELAH DIPOTONG MASA SEBELUMNYA
+                        </td>
+                        <td class="text-right"></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">19</td>
+                        <td>PPh PASAL 21 TERUTANG</td>
+                        <td class="text-right" id="terutang">0</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: center">20</td>
+                        <td>
+                            PPh PASAL 21 DAN PPh PASAL 26 YANG TELAH DIPOTONG
+                            DAN DILUNASI
+                        </td>
+                        <td class="text-right"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div style="border: 2px solid #000; padding: 10px">
+                <div
+                    style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                    "
+                >
+                    <div>
+                        <div
+                            style="
+                                display: flex;
+                                gap: 10px;
+                                align-items: center;
+                                margin-bottom: 10px;
+                            "
+                        >
+                            <div>
+                                <strong>1. NPWP</strong>
+                            </div>
+                            <div style="font-size: 7pt; color: #666">
+                                : C.01
+                            </div>
+                            <div class="npwp-boxes">
+                                <span class="npwp-box">0</span>
+                                <span class="npwp-box">7</span>
+                                <span class="separator">.</span>
+                                <span class="npwp-box">5</span>
+                                <span class="npwp-box">7</span>
+                                <span class="npwp-box">7</span>
+                                <span class="separator">.</span>
+                                <span class="npwp-box">6</span>
+                                <span class="npwp-box">4</span>
+                                <span class="npwp-box">7</span>
+                                <span class="separator">.</span>
+                                <span class="npwp-box">6</span>
+                                <span class="separator">-</span>
+                                <span class="npwp-box">0</span>
+                                <span class="npwp-box">1</span>
+                                <span class="npwp-box">4</span>
+                                <span class="separator">.</span>
+                                <span class="npwp-box">0</span>
+                                <span class="npwp-box">0</span>
+                                <span class="npwp-box">0</span>
+                            </div>
+                        </div>
+                        <div
+                            style="
+                                display: flex;
+                                gap: 10px;
+                                align-items: center;
+                            "
+                        >
+                            <div>
+                                <strong>2. NAMA</strong>
+                            </div>
+                            <div style="font-size: 7pt; color: #666">
+                                : C.02
+                            </div>
+                            <span class="input-field" style="width: 300px"
+                                >Susi Herawati</span
+                            >
+                        </div>
+                    </div>
+
+                    <div style="text-align: center">
+                        <div>
+                            <strong>3. TANGGAL & TANDA TANGAN</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

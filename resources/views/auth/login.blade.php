@@ -8,7 +8,7 @@
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,7 +17,6 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
-        /* Custom Colors */
         :root {
             --sea-green: #008159;
             --emerald: #0EC774;
@@ -25,189 +24,102 @@
             --lime-cream: #D2FE8C;
             --black: #000000;
         }
-        
-        /* Light Theme (Default) */
-        body {
-            background-color: #f3f4f6;
-        }
-        .theme-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-        .theme-input {
-            background-color: white;
-            border-color: #e5e7eb;
-            color: #111827;
-        }
-        .theme-input:focus {
-            background-color: #f9fafb;
-        }
-        .theme-text-main { color: #111827; }
-        .theme-text-sub { color: #4b5563; }
-        .theme-icon { color: #9ca3af; }
-
-        /* Dark Theme (Activated via JS) */
-        html.dark body {
-            background-color: var(--black);
-        }
-        html.dark .theme-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        html.dark .theme-input {
-            background-color: rgba(255, 255, 255, 0.05);
-            border-color: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-        html.dark .theme-input:focus {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        html.dark .theme-text-main { color: white; }
-        html.dark .theme-text-sub { color: #9ca3af; }
-        html.dark .theme-icon { color: #6b7280; }
-        
-        /* Common Styles */
-        body {
-            font-family: 'Figtree', sans-serif;
-        }
-
-        .theme-card {
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .input-group:focus-within i {
-            color: var(--emerald);
-        }
-
-        .input-group:focus-within input {
-            border-color: var(--emerald);
-            box-shadow: 0 0 0 1px var(--emerald);
-        }
-
-        /* Liquid Animation */
-        @keyframes drift {
-            0% { transform: translate(0, 0); }
-            50% { transform: translate(10px, 20px); }
-            100% { transform: translate(0, 0); }
-        }
+        body { font-family: 'Figtree', sans-serif; }
     </style>
-    <script>
-        // Check localStorage for dark mode preference
-        if (localStorage.getItem('darkMode') === 'true') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    </script>
 </head>
-<body class="min-h-screen flex items-center justify-center relative overflow-hidden selection:bg-[#0EC774] selection:text-black transition-colors duration-300">
-
-    <!-- Background Elements -->
-    <div class="absolute inset-0 z-0">
-        <!-- Logo Background -->
-        <div class="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-            <img src="{{ asset('images/Haga.png') }}" alt="Background" class="w-[120%] max-w-none h-auto object-cover opacity-20 grayscale brightness-100 dark:brightness-50">
+<body class="h-screen w-full flex overflow-hidden bg-gray-50">
+    <!-- Left Side - Image (Desktop Only) -->
+    <div class="hidden lg:flex w-1/2 relative bg-gray-900">
+        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('{{ asset('images/login-bg.png') }}');"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-black/70 to-black/30"></div>
+        <div class="relative z-10 flex flex-col justify-between p-16 text-white w-full h-full">
+            <h2 class="text-5xl font-bold mb-6 leading-tight">Kelola Absensi<br>Lebih Efisien</h2>
+            <p class="text-xl text-gray-200 max-w-lg leading-relaxed">Platform manajemen kehadiran karyawan yang modern, akurat, dan mudah digunakan untuk produktivitas bisnis Anda.</p>
+            <div class="text-sm text-gray-400">Photo by AI Generated</div>
         </div>
     </div>
-
-    <!-- Back to Home Button -->
-    <a href="{{ route('home') }}" class="absolute top-6 left-6 z-20 flex items-center gap-2 px-4 py-2 rounded-full theme-card theme-text-sub hover:text-[#0EC774] transition-all duration-300 group">
-        <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
-        <span class="font-medium">Back to Home</span>
-    </a>
-
-    <!-- Login Container -->
-    <div class="relative z-10 w-full max-w-xl p-6 mx-4">
-        <div class="theme-card rounded-3xl p-8 sm:p-12 shadow-2xl">
-            
-            <!-- Header -->
-            <div class="text-center mb-10">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[#008159] to-[#0EC774] mb-6 shadow-lg shadow-[#0EC774]/20 transform hover:scale-105 transition-transform duration-300">
-                    <img src="{{ asset('images/Haga.png') }}" alt="Logo" class="w-12 h-12 object-contain brightness-0 invert">
-                </div>
-                <h1 class="text-3xl font-bold theme-text-main mb-2 tracking-tight">Welcome Back</h1>
-                <p class="theme-text-sub text-sm">Please sign in to continue to your dashboard</p>
+    <!-- Right Side - Login Form -->
+    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white relative overflow-y-auto">
+        <a href="{{ route('home') }}" class="absolute top-8 left-8 text-gray-500 hover:text-[#008159] transition-colors flex items-center gap-2 group">
+            <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
+            <span class="font-medium">Kembali</span>
+        </a>
+        <div class="w-full max-w-md space-y-8 py-12">
+            <div class="text-center">
+                <img src="{{ asset('images/Haga.png') }}" alt="Haga Logo" class="h-24 w-auto object-contain drop-shadow-md mx-auto mb-4">
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Selamat Datang di Haga+</h1>
+                <p class="mt-3 text-gray-600 text-lg">Aplikasi Absensi Terpercaya</p>
             </div>
-
-            <!-- Form -->
-            <form method="POST" action="{{ route('login') }}" class="space-y-6">
+            <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-6">
                 @csrf
-
-                <!-- Email -->
-                <div class="space-y-2">
-                    <label for="email" class="text-sm font-medium theme-text-sub ml-1">Email Address</label>
-                    <div class="relative input-group transition-all duration-300">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-regular fa-envelope theme-icon transition-colors duration-300"></i>
+                <div class="space-y-5">
+                    <div>
+                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-regular fa-envelope text-gray-400 text-lg"></i>
+                            </div>
+                            <input id="email" name="email" type="email" autocomplete="email" required 
+                                class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0EC774]/50 focus:border-[#0EC774] bg-gray-50 focus:bg-white" 
+                                placeholder="nama@perusahaan.com" value="{{ old('email') }}">
                         </div>
-                        <input id="email" type="email" name="email" :value="old('email')" required autofocus 
-                            class="w-full pl-11 pr-4 py-3 theme-input border rounded-xl placeholder-gray-400 focus:outline-none transition-all duration-300"
-                            placeholder="name@company.com">
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
-                    <x-input-error :messages="$errors->get('email')" class="mt-2" />
-                </div>
-
-                <!-- Password -->
-                <div class="space-y-2">
-                    <label for="password" class="text-sm font-medium theme-text-sub ml-1">Password</label>
-                    <div class="relative input-group transition-all duration-300">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <i class="fa-solid fa-lock theme-icon transition-colors duration-300"></i>
+                    <div>
+                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                        <div class="relative rounded-xl shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fa-solid fa-lock text-gray-400 text-lg"></i>
+                            </div>
+                            <input id="password" name="password" type="password" autocomplete="current-password" required 
+                                class="block w-full pl-11 pr-11 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0EC774]/50 focus:border-[#0EC774] bg-gray-50 focus:bg-white" 
+                                placeholder="••••••••">
+                            <div class="absolute inset-y-0 right-0 pr-4 flex items-center cursor-pointer" onclick="togglePassword()">
+                                <i class="fa-regular fa-eye text-gray-400 text-lg" id="togglePasswordIcon"></i>
+                            </div>
                         </div>
-                        <input id="password" type="password" name="password" required autocomplete="current-password"
-                            class="w-full pl-11 pr-4 py-3 theme-input border rounded-xl placeholder-gray-400 focus:outline-none transition-all duration-300"
-                            placeholder="••••••••">
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
                     </div>
-                    <x-input-error :messages="$errors->get('password')" class="mt-2" />
                 </div>
-
-                <!-- Remember & Forgot -->
-                <div class="flex items-center justify-between text-sm">
-                    <label class="flex items-center theme-text-sub hover:text-[#0EC774] cursor-pointer transition-colors">
-                        <input type="checkbox" name="remember" class="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-white/5 text-[#0EC774] focus:ring-[#0EC774] focus:ring-offset-0">
-                        <span class="ml-2">Remember me</span>
-                    </label>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember_me" name="remember" type="checkbox" class="h-4 w-4 text-[#008159] focus:ring-[#0EC774] border-gray-300 rounded cursor-pointer">
+                        <label for="remember_me" class="ml-2 block text-sm text-gray-600 cursor-pointer select-none">Ingat Saya</label>
+                    </div>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}" class="text-[#008159] dark:text-[#76E47E] hover:text-[#0EC774] dark:hover:text-[#D2FE8C] font-medium transition-colors">
-                            Forgot password?
-                        </a>
+                        <a href="{{ route('password.request') }}" class="text-sm font-medium text-[#008159] hover:text-[#0EC774] transition-colors">Lupa Password?</a>
                     @endif
                 </div>
-
-                <!-- Submit Button -->
-                <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-[#008159] to-[#0EC774] hover:from-[#0EC774] hover:to-[#76E47E] text-white font-bold rounded-xl shadow-lg shadow-[#008159]/30 transform hover:-translate-y-0.5 hover:shadow-[#0EC774]/40 transition-all duration-300 relative overflow-hidden group">
-                    <span class="relative z-10">Sign In</span>
-                    <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                </button>
+                <div>
+                    <button type="submit" class="group relative w-full flex justify-center py-3.5 px-4 border border-transparent text-sm font-bold rounded-xl text-white bg-gradient-to-r from-[#008159] to-[#0EC774] hover:from-[#0EC774] hover:to-[#76E47E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0EC774] shadow-lg shadow-[#008159]/20 transition-all duration-300 transform hover:-translate-y-0.5">
+                        Masuk
+                    </button>
+                    <div class="mt-4">
+                        <button type="button" class="w-full flex items-center justify-center py-3.5 px-4 border border-gray-300 rounded-xl text-gray-800 bg-white hover:bg-gray-100 shadow-sm transition-colors">
+                            <i class="fa-brands fa-google mr-2"></i> Login dengan Google
+                        </button>
+                    </div>
+                </div>
             </form>
-        </div>
-        
-        <!-- Footer -->
-        <div class="text-center mt-8 text-xs theme-text-sub opacity-70">
-            &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+            <div class="mt-8 text-center text-xs text-gray-400">
+                &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+            </div>
         </div>
     </div>
-
-    <style>
-        @keyframes blob {
-            0% { transform: translate(0px, 0px) scale(1); }
-            33% { transform: translate(30px, -50px) scale(1.1); }
-            66% { transform: translate(-20px, 20px) scale(0.9); }
-            100% { transform: translate(0px, 0px) scale(1); }
-        }
-        .animate-blob {
-            animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-            animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-            animation-delay: 4s;
-        }
-    </style>
+<script>
+function togglePassword() {
+    const pwd = document.getElementById('password');
+    const icon = document.getElementById('togglePasswordIcon');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        pwd.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
 </body>
 </html>

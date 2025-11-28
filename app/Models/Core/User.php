@@ -117,11 +117,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the active employee policy for the user
+     * Send the password reset notification.
      */
-    public function activeEmployeePolicy()
+    public function sendPasswordResetNotification($token)
     {
-        return $this->hasOne(\App\Models\EmployeePolicy::class, 'employee_id')
-            ->where('is_active', true);
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
     }
 }
