@@ -4,7 +4,7 @@
             <!-- Hero Content -->
             <div class="hero-content">
                 <h1 class="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
-                    Modern HR Management <span class="text-blue-600 dark:text-blue-400">Simplified</span>
+                    Modern HR Management <span class="text-[#008159] dark:text-[#76E47E]">Simplified</span>
                 </h1>
                 <p class="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-lg">
                     Streamline your HR processes with our all-in-one HR management solution. 
@@ -50,14 +50,14 @@
                         onerror="this.onerror=null; this.src='https://via.placeholder.com/800x600/f0f9ff/0c4a6e?text=HR+Dashboard'"
                     >
                     <!-- Floating elements -->
-                    <div class="floating-element -top-6 -left-6 bg-blue-100 dark:bg-blue-900" style="animation-delay: 0.5s;">
+                    <div class="floating-element -top-6 -left-6 bg-[#D2FE8C]/40 dark:bg-[#008159]/40" style="animation-delay: 0.5s;">
                         <div class="icon-container">
-                            <i class="fas fa-users text-blue-600 dark:text-blue-300"></i>
+                            <i class="fas fa-users text-[#008159] dark:text-[#76E47E]"></i>
                         </div>
                     </div>
-                    <div class="floating-element -bottom-6 -right-6 bg-green-100 dark:bg-green-900" style="animation-delay: 1s;">
+                    <div class="floating-element -bottom-6 -right-6 bg-[#D2FE8C]/40 dark:bg-[#008159]/40" style="animation-delay: 1s;">
                         <div class="icon-container">
-                            <i class="fas fa-chart-line text-green-600 dark:text-green-300"></i>
+                            <i class="fas fa-chart-line text-[#008159] dark:text-[#76E47E]"></i>
                         </div>
                     </div>
                 </div>

@@ -16,6 +16,23 @@
             <x-section-card title="Informasi Subscription">
                 <form method="POST" action="{{ route('superadmin.subscriptions.store') }}">
                     @csrf
+                    
+                    @if(isset($subscriptionRequest))
+                        <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fa-solid fa-info-circle text-blue-400"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        Processing subscription request #{{ $subscriptionRequest->transaction_id }}.
+                                        Please verify details before creating.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="request_id" value="{{ $subscriptionRequest->id }}">
+                    @endif
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -24,7 +41,7 @@
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('instansi_id') border-red-300 dark:border-red-600 @enderror">
                                 <option value="">Pilih Instansi</option>
                                 @foreach($instansis as $instansi)
-                                    <option value="{{ $instansi->id }}" {{ old('instansi_id') == $instansi->id ? 'selected' : '' }}>
+                                    <option value="{{ $instansi->id }}" {{ (old('instansi_id') ?? ($subscriptionRequest->instansi_id ?? '')) == $instansi->id ? 'selected' : '' }}>
                                         {{ $instansi->nama_instansi }} ({{ $instansi->subdomain }})
                                     </option>
                                 @endforeach
@@ -40,7 +57,7 @@
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('package_id') border-red-300 dark:border-red-600 @enderror">
                                 <option value="">Pilih Paket</option>
                                 @foreach($packages as $package)
-                                    <option value="{{ $package->id }}" {{ old('package_id') == $package->id ? 'selected' : '' }}>
+                                    <option value="{{ $package->id }}" {{ (old('package_id') ?? ($subscriptionRequest->package_id ?? '')) == $package->id ? 'selected' : '' }}>
                                         {{ $package->name }} - Rp {{ number_format($package->price, 0, ',', '.') }}/bulan
                                     </option>
                                 @endforeach
@@ -70,7 +87,7 @@
 
                         <div>
                             <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Harga (Rp) <span class="text-red-500">*</span></label>
-                            <input type="number" name="price" id="price" value="{{ old('price') }}" required min="0"
+                            <input type="number" name="price" id="price" value="{{ old('price') ?? ($subscriptionRequest->amount ?? '') }}" required min="0"
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('price') border-red-300 dark:border-red-600 @enderror">
                             @error('price')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -84,7 +101,7 @@
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('payment_method') border-red-300 dark:border-red-600 @enderror">
                                 <option value="">Pilih Metode Pembayaran</option>
                                 @foreach($enabledPaymentMethods as $method)
-                                    <option value="{{ $method['value'] }}" {{ old('payment_method') == $method['value'] ? 'selected' : '' }}>
+                                    <option value="{{ $method['value'] }}" {{ (old('payment_method') ?? ($subscriptionRequest->payment_method ?? '')) == $method['value'] ? 'selected' : '' }}>
                                         {{ $method['label'] }}
                                     </option>
                                 @endforeach
@@ -116,8 +133,17 @@
             const selectedPackageId = this.value;
             const priceInput = document.getElementById('price');
 
+            // Only update if price is empty or user manually changed package
+            // But for now, let's just update it if it matches package price
             if (selectedPackageId && packages[selectedPackageId]) {
-                priceInput.value = packages[selectedPackageId];
+                 // Check if price field is empty or matches previous package price
+                 // For simplicity, just update it. User can edit if needed.
+                 // But wait, if we pre-filled it from request, we might want to keep that value?
+                 // The request amount usually matches package price anyway.
+                 // Let's only update if the field is empty to be safe.
+                 if(!priceInput.value) {
+                    priceInput.value = packages[selectedPackageId];
+                 }
             }
         });
 
@@ -133,10 +159,11 @@
 
         // Auto-update price on page load if package is already selected
         document.addEventListener('DOMContentLoaded', function() {
-            const packageSelect = document.getElementById('package_id');
-            if (packageSelect.value) {
-                packageSelect.dispatchEvent(new Event('change'));
-            }
+            // We don't want to overwrite pre-filled values on load
+            // const packageSelect = document.getElementById('package_id');
+            // if (packageSelect.value) {
+            //     packageSelect.dispatchEvent(new Event('change'));
+            // }
         });
     </script>
 </x-superadmin-layout>

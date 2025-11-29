@@ -100,6 +100,8 @@
                             @error('qris_image')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
+                            <input type="hidden" name="qris_data" id="qris_data" value="{{ old('qris_data') }}">
+                            <p id="qris_status" class="mt-2 text-sm text-gray-500 hidden"></p>
                         </div>
                     </div>
 
@@ -168,6 +170,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script>
         document.getElementById('type').addEventListener('change', function() {
             const type = this.value;
@@ -193,6 +196,48 @@
         // Trigger change event on page load if there's a pre-selected value
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('type').dispatchEvent(new Event('change'));
+        });
+
+        // QR Code Extraction
+        document.getElementById('qris_image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const status = document.getElementById('qris_status');
+            status.textContent = 'Scanning QR code...';
+            status.classList.remove('hidden', 'text-green-600', 'text-red-600');
+            status.classList.add('text-gray-500');
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    context.drawImage(img, 0, 0, img.width, img.height);
+                    const imageData = context.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                        inversionAttempts: "dontInvert",
+                    });
+
+                    if (code) {
+                        console.log("Found QR code", code.data);
+                        document.getElementById('qris_data').value = code.data;
+                        status.textContent = 'QR Code data extracted successfully!';
+                        status.classList.remove('text-gray-500');
+                        status.classList.add('text-green-600');
+                    } else {
+                        console.log("No QR code found.");
+                        status.textContent = 'Could not extract QR data. Please ensure the image is clear.';
+                        status.classList.remove('text-gray-500');
+                        status.classList.add('text-red-600');
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
         });
     </script>
 </x-superadmin-layout>

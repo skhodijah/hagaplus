@@ -42,7 +42,7 @@
 
             <!-- Mobile menu button -->
             <div class="md:hidden flex items-center">
-                <button id="mobile-menu-button" class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+                <button id="mobile-menu-button" class="text-gray-700 dark:text-gray-300 hover:text-[#008159] dark:hover:text-[#76E47E]">
                     <i class="fas fa-bars text-2xl"></i>
                 </button>
             </div>
@@ -70,7 +70,7 @@
                 <a href="{{ route('login') }}" class="mobile-nav-link">
                     Log in
                 </a>
-                <a href="{{ route('register') }}" class="mobile-nav-link text-blue-600 dark:text-blue-400">
+                <a href="{{ route('register') }}" class="mobile-nav-link text-[#008159] dark:text-[#76E47E]">
                     Get Started
                 </a>
             @endauth

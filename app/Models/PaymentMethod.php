@@ -13,6 +13,7 @@ class PaymentMethod extends Model
         'account_name',
         'bank_name',
         'qris_image',
+        'qris_data',
         'description',
         'is_active',
     ];

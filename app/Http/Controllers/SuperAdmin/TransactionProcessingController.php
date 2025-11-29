@@ -152,7 +152,39 @@ class TransactionProcessingController extends Controller
                     throw new \Exception('Failed to update subscription');
                 }
             } else {
-                \Log::info('No subscription_id provided, skipping subscription update');
+                // Create New Subscription
+                $package = DB::table('packages')->find($subscriptionRequest->package_id);
+
+                if (!$package) {
+                    throw new \Exception('Package not found');
+                }
+
+                $subscriptionId = DB::table('subscriptions')->insertGetId([
+                    'instansi_id' => $subscriptionRequest->instansi_id,
+                    'package_id' => $package->id,
+                    'package_name' => $package->name,
+                    'price' => $subscriptionRequest->amount,
+                    'duration' => 1, // Default 1 month
+                    'start_date' => now(),
+                    'end_date' => now()->addMonth(),
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Update request with new subscription ID
+                DB::table('subscription_requests')->where('id', $requestId)->update(['subscription_id' => $subscriptionId]);
+                
+                // Update Instansi status
+                DB::table('instansis')->where('id', $subscriptionRequest->instansi_id)->update([
+                    'status_langganan' => 'active',
+                    'package_id' => $package->id,
+                    'subscription_start' => now(),
+                    'subscription_end' => now()->addMonth(),
+                    'updated_at' => now()
+                ]);
+
+                \Log::info('Created new subscription', ['subscription_id' => $subscriptionId]);
             }
 
             // Update payment status to paid

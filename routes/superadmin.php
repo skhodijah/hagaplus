@@ -43,8 +43,6 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     Route::resource('instansi', InstansiController::class);
 
     // Package management
-    Route::get('/packages/feature-configuration', [PackageController::class, 'featureConfiguration'])->name('packages.feature-configuration');
-    Route::post('/packages/feature-configuration', [PackageController::class, 'updateFeatureConfiguration'])->name('packages.update-feature-configuration');
     Route::resource('packages', PackageController::class);
 
     // Subscription management

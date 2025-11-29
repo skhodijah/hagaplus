@@ -3,27 +3,28 @@
 @tailwind utilities;
 
 @layer components {
+
     /* Navigation */
     .nav-link {
-        @apply text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors;
+        @apply text-gray-700 dark:text-gray-300 hover:text-[#008159] dark:hover:text-[#0EC774] transition-colors;
     }
 
     .mobile-nav-link {
-        @apply block px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md;
+        @apply block px-3 py-2 text-gray-700 dark:text-gray-300 hover:bg-[#D2FE8C]/20 dark:hover:bg-[#008159]/20 rounded-md;
     }
 
     /* Buttons */
     .btn-primary {
-        @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg text-center transition-colors;
+        @apply bg-[#008159] hover:bg-[#0EC774] text-white font-semibold py-3 px-8 rounded-lg text-center transition-colors shadow-lg hover:shadow-[#0EC774]/30;
     }
 
     .btn-secondary {
-        @apply bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-semibold py-3 px-8 rounded-lg border border-gray-300 dark:border-gray-600 text-center transition-colors;
+        @apply bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-white font-semibold py-3 px-8 rounded-lg border border-gray-300 dark:border-gray-600 text-center transition-colors;
     }
 
     /* Section Styling */
     .section-badge {
-        @apply inline-block px-4 py-2 text-sm font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-full mb-4;
+        @apply inline-block px-4 py-2 text-sm font-semibold text-[#008159] dark:text-[#76E47E] bg-[#D2FE8C]/30 dark:bg-[#008159]/30 rounded-full mb-4;
     }
 
     .section-title {
@@ -36,16 +37,16 @@
 
     /* Hero Section */
     .hero-gradient {
-        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 50%, #bbf7d0 100%);
     }
 
     .dark .hero-gradient {
-        background: linear-gradient(135deg, #0c4a6e 0%, #075985 50%, #0369a1 100%);
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
     }
 
     /* Feature Cards */
     .feature-card {
-        @apply bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+        @apply bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-[#76E47E]/30;
     }
 
     /* Floating Elements */
@@ -61,9 +62,12 @@
 
 /* Animations */
 @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0);
     }
+
     50% {
         transform: translateY(-10px);
     }
@@ -75,17 +79,16 @@
 }
 
 ::-webkit-scrollbar-track {
-    background: rgb(243, 244, 246);
-    background: #1f2937;
+    background: #f0fdf4;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #3b82f6;
+    background: #008159;
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #2563eb;
+    background: #0EC774;
 }
 
 /* Responsive Adjustments */
@@ -105,9 +108,9 @@
 }
 
 .dark ::-webkit-scrollbar-thumb {
-    background: #1e40af;
+    background: #008159;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-    background: #1e3a8a;
+    background: #0EC774;
 }

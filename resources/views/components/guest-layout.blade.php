@@ -37,7 +37,7 @@
         </div>
     </div>
     <!-- Right side content -->
-    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white overflow-y-auto">
+    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white relative overflow-y-auto">
         <div class="w-full max-w-md space-y-8 py-12">
             {{ $slot }}
         </div>

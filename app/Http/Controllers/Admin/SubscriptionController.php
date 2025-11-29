@@ -10,10 +10,25 @@ use Carbon\Carbon;
 class SubscriptionController extends Controller
 {
     /**
+     * Check if user is allowed to access subscription management
+     */
+    private function checkAccess()
+    {
+        $user = auth()->user();
+        // Check if user is in employees table
+        $isEmployee = DB::table('employees')->where('user_id', $user->id)->exists();
+        
+        if ($isEmployee) {
+            abort(403, 'Akses ditolak. Halaman ini hanya untuk admin yang bukan pegawai.');
+        }
+    }
+
+    /**
      * Display the subscription management page for admin
      */
     public function index()
     {
+        $this->checkAccess();
         $user = auth()->user();
         $instansi = $user->instansi;
 
@@ -25,11 +40,10 @@ class SubscriptionController extends Controller
             ->update(['status' => 'expired']);
 
         // Get current subscription
-        $currentSubscription = DB::table('subscriptions')
-            ->leftJoin('packages', 'subscriptions.package_id', '=', 'packages.id')
-            ->where('subscriptions.instansi_id', $instansi->id)
-            ->where('subscriptions.status', 'active')
-            ->select('subscriptions.*', 'packages.name as package_name')
+        // Get current subscription
+        $currentSubscription = \App\Models\SuperAdmin\Subscription::with('package')
+            ->where('instansi_id', $instansi->id)
+            ->where('status', 'active')
             ->first();
 
         // Get subscription history
@@ -56,14 +70,22 @@ class SubscriptionController extends Controller
         // Get available packages
         $packages = DB::table('packages')
             ->where('is_active', true)
+            ->orderBy('price', 'asc')
             ->get();
+
+        // Check for pending request
+        $pendingRequest = DB::table('subscription_requests')
+            ->where('instansi_id', $instansi->id)
+            ->whereIn('payment_status', ['pending', 'pending_verification'])
+            ->first();
 
         return view('admin.subscription.index', compact(
             'currentSubscription',
             'subscriptionHistory',
             'paymentHistory',
             'packages',
-            'instansi'
+            'instansi',
+            'pendingRequest'
         ));
     }
 
@@ -72,6 +94,7 @@ class SubscriptionController extends Controller
      */
     public function handleRequest(Request $request)
     {
+        $this->checkAccess();
         $request->validate([
             'request_type' => 'required|in:extension,upgrade,both',
             'extension_months' => 'required_if:request_type,extension|required_if:request_type,both|integer|min:1|max:12',
@@ -89,7 +112,13 @@ class SubscriptionController extends Controller
             ->exists();
 
         if ($existingPendingRequest) {
-            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+            $pendingRequest = DB::table('subscription_requests')
+                ->where('instansi_id', $instansi->id)
+                ->whereIn('payment_status', ['pending', 'pending_verification'])
+                ->first();
+                
+            return redirect()->route('admin.subscription.transaction', $pendingRequest->id)
+                ->with('info', 'Anda memiliki permintaan subscription yang sedang diproses. Silakan selesaikan pembayaran ini terlebih dahulu.');
         }
 
         // Get current subscription (active or inactive)
@@ -100,7 +129,42 @@ class SubscriptionController extends Controller
             ->first();
 
         if (!$currentSubscription) {
-            return redirect()->back()->with('error', 'Tidak ada subscription untuk dikelola. Silakan hubungi superadmin untuk membuat subscription baru.');
+            // Handle New Subscription
+            $targetPackage = DB::table('packages')->find($request->target_package_id);
+            
+            if (!$targetPackage) {
+                 return redirect()->back()->with('error', 'Paket tidak ditemukan.');
+            }
+
+            $paymentId = DB::table('subscription_requests')->insertGetId([
+                'instansi_id' => $instansi->id,
+                'package_id' => $targetPackage->id,
+                'subscription_id' => null,
+                'extension_months' => null,
+                'target_package_id' => $targetPackage->id,
+                'amount' => $targetPackage->price,
+                'payment_method' => 'pending',
+                'payment_status' => 'pending',
+                'transaction_id' => 'NEW-' . $instansi->id . '-' . time(),
+                'notes' => "Pembelian paket baru {$targetPackage->name}. " . ($request->notes ?? ''),
+                'created_by' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // Create notification for superadmin
+            DB::table('notifications')->insert([
+                'user_id' => null, // null means for all superadmins
+                'type' => 'subscription_request',
+                'title' => 'Permintaan Subscription Baru',
+                'message' => "Instansi {$instansi->nama_instansi} mengajukan pembelian paket baru {$targetPackage->name}. Klik untuk melihat detail.",
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return redirect()->route('admin.subscription.transaction', $paymentId)
+                ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');
         }
 
         $requestType = $request->request_type;
@@ -211,53 +275,6 @@ class SubscriptionController extends Controller
         // Redirect to payment page
         return redirect()->route('admin.subscription.transaction', $paymentId)
             ->with('success', 'Permintaan subscription berhasil dibuat. Silakan lakukan pembayaran.');
-
-            // For extension, always extend from current date (when request is made)
-            $extensionStartDate = now();
-            $newEndDate = $extensionStartDate->copy()->addMonths($extensionMonths);
-
-            // Extension cost
-            $extensionCost = $currentSubscription->price * $extensionMonths;
-
-            // Upgrade cost (full difference, not prorated)
-            $upgradeCost = max(0, $targetPackage->price - $currentSubscription->price);
-
-            $totalAmount = $extensionCost + $upgradeCost;
-            $notes = "Perpanjangan {$extensionMonths} bulan + Upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}. Biaya perpanjangan: Rp " . number_format($extensionCost, 0, ',', '.') . ", Biaya upgrade: Rp " . number_format($upgradeCost, 0, ',', '.') . ". " . ($request->notes ?? '');
-            $transactionPrefix = 'BOTH';
-            $whatsappDetails = "perpanjangan subscription {$extensionMonths} bulan + upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}";
-
-            // Create pending payment record
-            $paymentId = DB::table('subscription_requests')->insertGetId([
-                'instansi_id' => $instansi->id,
-                'package_id' => $currentSubscription->package_id,
-                'subscription_id' => $currentSubscription->id,
-                'extension_months' => $extensionMonths,
-                'target_package_id' => $request->target_package_id,
-                'amount' => $totalAmount,
-                'payment_method' => 'pending',
-                'payment_status' => 'pending',
-                'transaction_id' => $transactionPrefix . '-' . $currentSubscription->id . '-' . time(),
-                'notes' => $notes,
-                'created_by' => $user->id,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
-
-        // Create notification for superadmin
-        DB::table('notifications')->insert([
-            'user_id' => null, // null means for all superadmins
-            'type' => 'subscription_request',
-            'title' => 'Permintaan ' . ucfirst($requestType) . ' Subscription',
-            'message' => "Instansi {$instansi->name} mengajukan " . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . " subscription - " . route('superadmin.subscriptions.subscription-requests'),
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        // Redirect to transaction page instead of showing success message
-        return redirect()->route('admin.subscription.transaction', $paymentId)
-            ->with('success', 'Permintaan ' . ($requestType === 'extension' ? 'perpanjangan' : ($requestType === 'upgrade' ? 'upgrade' : 'perpanjangan + upgrade')) . ' subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
 
     /**
@@ -265,6 +282,7 @@ class SubscriptionController extends Controller
      */
     public function requestExtension(Request $request)
     {
+        $this->checkAccess();
         $request->validate([
             'extension_months' => 'required|integer|min:1|max:12',
             'notes' => 'nullable|string|max:500'
@@ -280,7 +298,13 @@ class SubscriptionController extends Controller
             ->exists();
 
         if ($existingPendingRequest) {
-            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+            $pendingRequest = DB::table('subscription_requests')
+                ->where('instansi_id', $instansi->id)
+                ->where('payment_status', 'pending')
+                ->first();
+                
+            return redirect()->route('admin.subscription.transaction', $pendingRequest->id)
+                ->with('info', 'Anda memiliki permintaan subscription yang sedang diproses. Silakan selesaikan pembayaran ini terlebih dahulu.');
         }
 
         // Get current subscription (active or inactive)
@@ -339,6 +363,7 @@ class SubscriptionController extends Controller
      */
     public function requestUpgrade(Request $request)
     {
+        $this->checkAccess();
         $request->validate([
             'target_package_id' => 'required|exists:packages,id',
             'notes' => 'nullable|string|max:500'
@@ -354,7 +379,13 @@ class SubscriptionController extends Controller
             ->exists();
 
         if ($existingPendingRequest) {
-            return redirect()->back()->with('error', 'Anda sudah memiliki permintaan subscription yang sedang diproses. Harap tunggu sampai permintaan sebelumnya selesai atau dibatalkan.');
+            $pendingRequest = DB::table('subscription_requests')
+                ->where('instansi_id', $instansi->id)
+                ->where('payment_status', 'pending')
+                ->first();
+                
+            return redirect()->route('admin.subscription.transaction', $pendingRequest->id)
+                ->with('info', 'Anda memiliki permintaan subscription yang sedang diproses. Silakan selesaikan pembayaran ini terlebih dahulu.');
         }
 
         // Get current subscription (active or inactive)
@@ -365,7 +396,42 @@ class SubscriptionController extends Controller
             ->first();
 
         if (!$currentSubscription) {
-            return redirect()->back()->with('error', 'Tidak ada subscription untuk diupgrade. Silakan hubungi superadmin untuk membuat subscription baru.');
+            // Handle New Subscription
+            $targetPackage = DB::table('packages')->find($request->target_package_id);
+            
+            if (!$targetPackage) {
+                 return redirect()->back()->with('error', 'Paket tidak ditemukan.');
+            }
+
+            $paymentId = DB::table('subscription_requests')->insertGetId([
+                'instansi_id' => $instansi->id,
+                'package_id' => $targetPackage->id,
+                'subscription_id' => null,
+                'extension_months' => null,
+                'target_package_id' => $targetPackage->id,
+                'amount' => $targetPackage->price,
+                'payment_method' => 'pending',
+                'payment_status' => 'pending',
+                'transaction_id' => 'NEW-' . $instansi->id . '-' . time(),
+                'notes' => "Pembelian paket baru {$targetPackage->name}. " . ($request->notes ?? ''),
+                'created_by' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+            
+            // Create notification for superadmin
+            DB::table('notifications')->insert([
+                'user_id' => null, // null means for all superadmins
+                'type' => 'subscription_request',
+                'title' => 'Permintaan Subscription Baru',
+                'message' => "Instansi {$instansi->nama_instansi} mengajukan pembelian paket baru {$targetPackage->name}. Klik untuk melihat detail.",
+                'is_read' => false,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return redirect()->route('admin.subscription.transaction', $paymentId)
+                ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');
         }
 
         $targetPackage = DB::table('packages')->find($request->target_package_id);
@@ -445,6 +511,7 @@ class SubscriptionController extends Controller
     public function cancelPayment($paymentId)
     {
         $user = auth()->user();
+        $instansi = $user->instansi;
 
         $updated = DB::table('subscription_requests')
             ->where('id', $paymentId)
@@ -456,6 +523,41 @@ class SubscriptionController extends Controller
             ]);
 
         if ($updated) {
+            // Check if the current subscription is pending (meaning they just registered and haven't paid)
+            // We check the subscription associated with this request or just the latest pending one
+            $pendingSubscription = \App\Models\SuperAdmin\Subscription::where('instansi_id', $instansi->id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($pendingSubscription) {
+                // Downgrade to TRIAL
+                $trialPackage = \App\Models\SuperAdmin\Package::where('name', 'TRIAL')->first();
+                
+                if ($trialPackage) {
+                    $pendingSubscription->update([
+                        'package_id' => $trialPackage->id,
+                        'status' => 'active',
+                        'price' => 0,
+                        'payment_status' => 'paid', // Free trial is considered paid/active
+                        'is_trial' => true,
+                        'trial_ends_at' => now()->addDays($trialPackage->duration_days),
+                        'start_date' => now(),
+                        'end_date' => now()->addDays($trialPackage->duration_days),
+                    ]);
+
+                    // Update Instansi
+                    $instansi->update([
+                        'package_id' => $trialPackage->id,
+                        'subscription_start' => now(),
+                        'subscription_end' => now()->addDays($trialPackage->duration_days),
+                        'status_langganan' => 'active',
+                        'max_employees' => $trialPackage->max_employees,
+                    ]);
+                    
+                    return redirect()->route('dashboard')->with('success', 'Pembayaran dibatalkan. Anda sekarang menggunakan paket TRIAL.');
+                }
+            }
+
             return redirect()->back()->with('success', 'Permintaan pembayaran telah dibatalkan.');
         }
 

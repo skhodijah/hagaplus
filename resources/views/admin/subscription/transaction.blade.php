@@ -1,222 +1,317 @@
 <x-admin-layout>
-    <div class="py-6 md:py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-8" x-data="{ selectedMethod: {{ $paymentMethods->first()->id ?? 'null' }} }">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Header -->
-            <div class="mb-6 md:mb-8">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">Complete Payment</h1>
-                        <p class="mt-1 text-gray-600 dark:text-gray-400">Upload payment proof to complete your subscription request</p>
-                    </div>
-                    <a href="{{ route('admin.subscription.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                        <i class="fa-solid fa-arrow-left mr-2"></i>Back to Subscription
-                    </a>
-                </div>
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Complete Your Payment</h1>
+                <p class="mt-2 text-gray-600 dark:text-gray-400">Please select a payment method and upload your proof of payment.</p>
             </div>
 
-            <!-- Request Details -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Request Details</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Transaction ID</label>
-                        <p class="text-sm text-gray-900 dark:text-white font-mono">{{ $subscriptionRequest->transaction_id }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Package</label>
-                        <p class="text-sm text-gray-900 dark:text-white">{{ $subscriptionRequest->package_name }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Amount</label>
-                        <p class="text-lg font-semibold text-green-600 dark:text-green-400">Rp {{ number_format($subscriptionRequest->amount, 0, ',', '.') }}</p>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Request Date</label>
-                        <p class="text-sm text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($subscriptionRequest->created_at)->format('d M Y H:i') }}</p>
-                    </div>
-                </div>
-
-                @if($subscriptionRequest->notes)
-                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                        <label class="block text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Notes</label>
-                        <p class="text-sm text-gray-700 dark:text-gray-300">{{ $subscriptionRequest->notes }}</p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Payment Methods -->
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Select Payment Method</h2>
-
-                @if($paymentMethods->count() > 0)
-                    <form id="paymentForm" method="POST" action="{{ route('admin.subscription.transaction.process', $subscriptionRequest->id) }}" enctype="multipart/form-data">
-                        @csrf
-
-                        <!-- Payment Method Selection -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Choose Payment Method <span class="text-red-500">*</span>
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                @foreach($paymentMethods as $paymentMethod)
-                                    <div class="payment-method-option border border-gray-200 dark:border-gray-600 rounded-lg p-4 cursor-pointer transition-all hover:border-blue-500 {{ $loop->first ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : '' }}"
-                                         data-method-id="{{ $paymentMethod->id }}">
-                                        <div class="flex items-start space-x-3">
-                                            <input type="radio" name="payment_method_id" value="{{ $paymentMethod->id }}"
-                                                   class="mt-1" {{ $loop->first ? 'checked' : '' }}>
-                                            <div class="flex-1">
-                                                <div class="flex items-center space-x-2 mb-2">
-                                                    @if($paymentMethod->type === 'qris')
-                                                        <div class="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 rounded flex items-center justify-center">
-                                                            <i class="fa-solid fa-qrcode text-purple-600 dark:text-purple-400 text-xs"></i>
-                                                        </div>
-                                                    @elseif($paymentMethod->type === 'bank_transfer')
-                                                        <div class="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded flex items-center justify-center">
-                                                            <i class="fa-solid fa-building-columns text-blue-600 dark:text-blue-400 text-xs"></i>
-                                                        </div>
-                                                    @else
-                                                        <div class="w-6 h-6 bg-green-100 dark:bg-green-900/30 rounded flex items-center justify-center">
-                                                            <i class="fa-solid fa-mobile-screen-button text-green-600 dark:text-green-400 text-xs"></i>
-                                                        </div>
-                                                    @endif
-                                                    <span class="font-medium text-gray-900 dark:text-white">{{ $paymentMethod->name }}</span>
-                                                </div>
-
-                                                @if($paymentMethod->type === 'bank_transfer')
-                                                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                                        @if($paymentMethod->account_name)
-                                                            <p><strong>Account Name:</strong> {{ $paymentMethod->account_name }}</p>
-                                                        @endif
-                                                        @if($paymentMethod->account_number)
-                                                            <p><strong>Account Number:</strong> <span class="font-mono">{{ $paymentMethod->account_number }}</span></p>
-                                                        @endif
-                                                        @if($paymentMethod->bank_name)
-                                                            <p><strong>Bank:</strong> {{ $paymentMethod->bank_name }}</p>
-                                                        @endif
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Payment Methods -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Payment Method Selection -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Select Payment Method</h2>
+                        </div>
+                        <div class="p-6">
+                            @if($paymentMethods->count() > 0)
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    @foreach($paymentMethods as $method)
+                                        <div @click="selectedMethod = {{ $method->id }}"
+                                             :class="{ 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20': selectedMethod === {{ $method->id }}, 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700': selectedMethod !== {{ $method->id }} }"
+                                             class="cursor-pointer rounded-xl border p-4 transition-all duration-200 flex items-center space-x-4">
+                                            <div class="flex-shrink-0">
+                                                <!-- Icon based on type -->
+                                                @if($method->type === 'bank_transfer')
+                                                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                                        <i class="fa-solid fa-building-columns"></i>
                                                     </div>
-                                                @elseif($paymentMethod->type === 'qris')
-                                                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                        <p>Scan QRIS code to pay</p>
-                                                        @if($paymentMethod->qris_image)
-                                                            <div class="mt-2">
-                                                                <img src="{{ $paymentMethod->qris_image_url }}" alt="QRIS Code" class="w-20 h-20 object-contain border border-gray-200 dark:border-gray-600 rounded">
-                                                            </div>
-                                                        @endif
+                                                @elseif($method->type === 'qris')
+                                                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                                                        <i class="fa-solid fa-qrcode"></i>
                                                     </div>
                                                 @else
-                                                    <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                                        @if($paymentMethod->account_number)
-                                                            <p><strong>Phone/Account:</strong> {{ $paymentMethod->account_number }}</p>
-                                                        @endif
-                                                        @if($paymentMethod->account_name)
-                                                            <p><strong>Name:</strong> {{ $paymentMethod->account_name }}</p>
-                                                        @endif
+                                                    <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center text-green-600 dark:text-green-400">
+                                                        <i class="fa-solid fa-wallet"></i>
                                                     </div>
                                                 @endif
                                             </div>
+                                            <div>
+                                                <h3 class="font-medium text-gray-900 dark:text-white">{{ $method->name }}</h3>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ ucfirst(str_replace('_', ' ', $method->type)) }}</p>
+                                            </div>
+                                            <div class="ml-auto" x-show="selectedMethod === {{ $method->id }}">
+                                                <i class="fa-solid fa-check-circle text-blue-500 text-xl"></i>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+
+                                <!-- Dynamic Payment Details -->
+                                <div class="mt-8 bg-gray-50 dark:bg-gray-700/30 rounded-xl p-6 border border-gray-100 dark:border-gray-700 transition-all duration-300"
+                                     x-show="selectedMethod" x-transition>
+                                    <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Payment Details</h3>
+                                    
+                                    <!-- Total Amount Display -->
+                                    <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+                                        <span class="text-gray-600 dark:text-gray-300 font-medium mb-2 sm:mb-0">Total Amount to Transfer</span>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">Rp {{ number_format($subscriptionRequest->amount, 0, ',', '.') }}</span>
+                                            <button onclick="navigator.clipboard.writeText('{{ $subscriptionRequest->amount }}')" class="text-blue-400 hover:text-blue-600 transition-colors" title="Copy Amount">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </button>
                                         </div>
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
+                                    
+                                    @foreach($paymentMethods as $method)
+                                        <div x-show="selectedMethod === {{ $method->id }}" style="display: none;">
+                                            @if($method->type === 'bank_transfer')
+                                                <div class="space-y-4">
+                                                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <div>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Bank Name</p>
+                                                            <p class="font-semibold text-gray-900 dark:text-white text-lg">{{ $method->bank_name }}</p>
+                                                        </div>
+                                                        <div class="mt-2 sm:mt-0 text-right">
+                                                            <!-- Placeholder for bank logo if needed -->
+                                                            <i class="fa-solid fa-building-columns text-gray-300 text-2xl"></i>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <div>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Account Number</p>
+                                                            <div class="flex items-center space-x-2">
+                                                                <p class="font-mono font-bold text-gray-900 dark:text-white text-xl tracking-wider" id="acc-num-{{ $method->id }}">{{ $method->account_number }}</p>
+                                                                <button onclick="navigator.clipboard.writeText('{{ $method->account_number }}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Copy">
+                                                                    <i class="fa-regular fa-copy"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
-                        <!-- Payment Proof Upload -->
-                        <div class="mb-6">
-                            <label for="payment_proof" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Upload Payment Proof <span class="text-red-500">*</span>
-                            </label>
-                            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
-                                <div class="space-y-1 text-center">
-                                    <i class="fa-solid fa-cloud-upload-alt text-gray-400 text-3xl mb-3"></i>
-                                    <div class="flex text-sm text-gray-600 dark:text-gray-400">
-                                        <label for="payment_proof" class="relative cursor-pointer bg-white dark:bg-gray-800 rounded-md font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>Upload payment proof</span>
-                                            <input id="payment_proof" name="payment_proof" type="file" accept="image/*" class="sr-only" required>
-                                        </label>
-                                        <p class="pl-1">or drag and drop</p>
+                                                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <div>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Account Name</p>
+                                                            <p class="font-medium text-gray-900 dark:text-white">{{ $method->account_name }}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @elseif($method->type === 'qris')
+                                                <div class="text-center" x-data x-init="$nextTick(() => { generateQRIS('{{ $method->qris_data }}', {{ $subscriptionRequest->amount }}, 'qrcode-{{ $method->id }}') })">
+                                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Scan this QR code with your preferred payment app</p>
+                                                    <div class="flex justify-center">
+                                                        <div id="qrcode-{{ $method->id }}" class="inline-block p-4 bg-white rounded-xl shadow-sm border border-gray-200 w-64 h-64 flex items-center justify-center">
+                                                            @if($method->qris_image)
+                                                                <img src="{{ $method->qris_image_url }}" alt="QRIS Code" class="w-full h-full object-contain">
+                                                            @else
+                                                                <span class="text-gray-500">Loading QR...</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <div class="space-y-4">
+                                                    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Payment Instructions</p>
+                                                        <p class="font-medium text-gray-900 dark:text-white mt-1">{{ $method->description ?? 'Please follow the instructions provided.' }}</p>
+                                                    </div>
+                                                    @if($method->account_number)
+                                                    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Number/ID</p>
+                                                        <div class="flex items-center space-x-2">
+                                                            <p class="font-mono font-bold text-gray-900 dark:text-white text-xl">{{ $method->account_number }}</p>
+                                                            <button onclick="navigator.clipboard.writeText('{{ $method->account_number }}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Copy">
+                                                                <i class="fa-regular fa-copy"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                    @if($method->account_name)
+                                                    <div class="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600">
+                                                        <p class="text-xs text-gray-500 dark:text-gray-400">Account Name</p>
+                                                        <p class="font-medium text-gray-900 dark:text-white">{{ $method->account_name }}</p>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-8">
+                                    <p class="text-gray-500">No payment methods available.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Upload Form -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Proof</h2>
+                        </div>
+                        <div class="p-6">
+                            <form method="POST" action="{{ route('admin.subscription.transaction.process', $subscriptionRequest->id) }}" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="payment_method_id" :value="selectedMethod">
+                                
+                                <div class="mb-6">
+                                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-xl hover:border-blue-500 dark:hover:border-blue-500 transition-colors cursor-pointer bg-gray-50 dark:bg-gray-900/50"
+                                         onclick="document.getElementById('payment_proof').click()">
+                                        <div class="space-y-1 text-center">
+                                            <i class="fa-solid fa-cloud-arrow-up text-blue-500 text-4xl mb-3"></i>
+                                            <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                                <span class="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">Click to upload</span>
+                                                <span class="pl-1">or drag and drop</span>
+                                            </div>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 5MB</p>
+                                        </div>
+                                        <input id="payment_proof" name="payment_proof" type="file" accept="image/*" class="sr-only" required onchange="previewFile(this)">
                                     </div>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        PNG, JPG, GIF up to 5MB
-                                    </p>
+                                    <div id="preview-container" class="mt-4 hidden text-center">
+                                        <img id="preview-img" src="" alt="Preview" class="max-h-64 mx-auto rounded-lg shadow-md border border-gray-200">
+                                        <button type="button" onclick="clearFile()" class="mt-2 text-sm text-red-500 hover:text-red-700">Remove</button>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center">
+                                    <i class="fa-solid fa-paper-plane mr-2"></i> Submit Payment Proof
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Summary -->
+                <div class="space-y-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden sticky top-6">
+                        <div class="p-6 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Order Summary</h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 dark:text-gray-400">Transaction ID</span>
+                                <span class="font-mono font-medium text-gray-900 dark:text-white">{{ $subscriptionRequest->transaction_id }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 dark:text-gray-400">Package</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $subscriptionRequest->package_name }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-500 dark:text-gray-400">Date</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($subscriptionRequest->created_at)->format('d M Y') }}</span>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-100 dark:border-gray-700">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold text-gray-900 dark:text-white">Total</span>
+                                    <span class="text-2xl font-bold text-blue-600 dark:text-blue-400">Rp {{ number_format($subscriptionRequest->amount, 0, ',', '.') }}</span>
                                 </div>
                             </div>
-                            <div id="file-preview" class="mt-3 hidden">
-                                <img id="preview-image" src="" alt="Payment Proof Preview" class="max-w-xs max-h-48 object-contain border border-gray-200 dark:border-gray-600 rounded">
-                            </div>
                         </div>
-
-                        <!-- Submit Button -->
-                        <div class="flex justify-end">
-                            <button type="submit" class="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                                <i class="fa-solid fa-upload mr-2"></i>Upload Payment Proof
-                            </button>
+                        <div class="px-6 pb-6">
+                            <form action="{{ route('admin.subscription.cancel-payment', $subscriptionRequest->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to cancel this transaction?');">
+                                @csrf
+                                <button type="submit" class="block w-full py-2 text-center text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors">
+                                    Cancel Transaction
+                                </button>
+                            </form>
+                            <a href="{{ route('admin.subscription.index') }}" class="block w-full py-2 text-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm font-medium transition-colors mt-2">
+                                Return to List
+                            </a>
                         </div>
-                    </form>
-                @else
-                    <div class="text-center py-8">
-                        <i class="fa-solid fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Payment Methods Available</h3>
-                        <p class="text-gray-500 dark:text-gray-400">Please contact superadmin to set up payment methods.</p>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Instructions -->
-            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                <div class="flex items-start space-x-3">
-                    <i class="fa-solid fa-info-circle text-blue-600 dark:text-blue-400 mt-1"></i>
-                    <div>
-                        <h3 class="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Payment Instructions</h3>
-                        <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                            <li>• Select your preferred payment method from the options above</li>
-                            <li>• Make the payment using the details provided</li>
-                            <li>• Take a clear photo/screenshot of the payment proof</li>
-                            <li>• Upload the payment proof using the form above</li>
-                            <li>• Your request will be processed within 1-2 business days</li>
-                        </ul>
-                        <p class="mt-3 text-sm text-blue-700 dark:text-blue-300">
-                            <strong>Note:</strong> Make sure the payment proof clearly shows the transaction details, amount, and date.
-                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
     <script>
-        // Payment method selection
-        document.querySelectorAll('.payment-method-option').forEach(option => {
-            option.addEventListener('click', function() {
-                // Remove selected class from all options
-                document.querySelectorAll('.payment-method-option').forEach(opt => {
-                    opt.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-                });
-
-                // Add selected class to clicked option
-                this.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
-
-                // Check the radio button
-                const radio = this.querySelector('input[type="radio"]');
-                radio.checked = true;
-            });
-        });
-
-        // File preview
-        document.getElementById('payment_proof').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('file-preview');
-            const previewImage = document.getElementById('preview-image');
+        function previewFile(input) {
+            const preview = document.getElementById('preview-img');
+            const container = document.getElementById('preview-container');
+            const file = input.files[0];
 
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    preview.classList.remove('hidden');
-                };
+                    preview.src = e.target.result;
+                    container.classList.remove('hidden');
+                }
                 reader.readAsDataURL(file);
-            } else {
-                preview.classList.add('hidden');
             }
-        });
+        }
+
+        function clearFile() {
+            document.getElementById('payment_proof').value = '';
+            document.getElementById('preview-container').classList.add('hidden');
+        }
+
+        // QRIS Generation Logic
+        function pad(number) {
+            return number < 10 ? "0" + number : number.toString();
+        }
+
+        function toCRC16(input) {
+            let crc = 0xffff;
+            for (let i = 0; i < input.length; i++) {
+                crc ^= input.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1;
+                }
+            }
+            let hex = (crc & 0xffff).toString(16).toUpperCase();
+            return hex.length === 3 ? "0" + hex : hex;
+        }
+
+        function makeString(qris, { nominal } = {}) {
+            if (!qris) return null;
+            if (!nominal) return null;
+
+            let qrisModified = qris.slice(0, -4).replace("010211", "010212");
+            let qrisParts = qrisModified.split("5802ID");
+
+            if (qrisParts.length < 2) return qris; // Fallback if format doesn't match
+
+            let amount = "54" + pad(nominal.toString().length) + nominal;
+            amount += "5802ID";
+
+            let output = qrisParts[0].trim() + amount + qrisParts[1].trim();
+            output += toCRC16(output);
+
+            return output;
+        }
+
+        function generateQRIS(qrisData, amount, elementId) {
+            if (!qrisData || !amount) return;
+
+            try {
+                const qrisDinamis = makeString(qrisData, { nominal: amount });
+                const container = document.getElementById(elementId);
+                
+                if (container && qrisDinamis) {
+                    container.innerHTML = ""; // Clear previous
+                    QRCode.toCanvas(
+                        qrisDinamis,
+                        { margin: 2, width: 256, color: { dark: "#000000", light: "#ffffff" } },
+                        function (err, canvas) {
+                            if (err) {
+                                console.error("QR Code Error:", err);
+                                return;
+                            }
+                            canvas.style.width = "100%";
+                            canvas.style.height = "auto";
+                            container.appendChild(canvas);
+                        }
+                    );
+                }
+            } catch (e) {
+                console.error("Error generating QRIS:", e);
+            }
+        }
     </script>
 </x-admin-layout>

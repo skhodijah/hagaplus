@@ -40,7 +40,8 @@ class PaymentMethodController extends Controller
             'bank_name' => 'nullable|string|max:255',
             'qris_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'qris_data' => 'nullable|string'
         ]);
 
         $data = $request->all();
@@ -94,7 +95,8 @@ class PaymentMethodController extends Controller
             'bank_name' => 'nullable|string|max:255',
             'qris_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'description' => 'nullable|string',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'qris_data' => 'nullable|string'
         ]);
 
         $data = $request->all();

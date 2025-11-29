@@ -110,9 +110,8 @@ class Subscription extends BaseModel
      */
     private function getExtensionThreshold()
     {
-        return \Illuminate\Support\Facades\DB::table('settings')
-            ->where('key', 'subscription_extension_threshold_days')
-            ->value('value') ?? 3;
+        // Settings table was dropped, returning default value
+        return 7;
     }
 
     /**

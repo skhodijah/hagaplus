@@ -43,10 +43,8 @@ class SubscriptionController extends Controller
         $instansis = \App\Models\SuperAdmin\Instansi::where('is_active', true)->get();
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
-        // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('system_settings')
-            ->where('key', 'payment_methods')
-            ->value('value');
+        // Settings table dropped, using defaults
+        $paymentMethodsSetting = null;
 
         if ($paymentMethodsSetting) {
             $paymentMethods = json_decode($paymentMethodsSetting, true);
@@ -65,7 +63,13 @@ class SubscriptionController extends Controller
             return $method['enabled'] ?? true;
         });
 
-        return view('superadmin.subscriptions.create', compact('instansis', 'packages', 'enabledPaymentMethods'));
+        $requestId = request('request_id');
+        $subscriptionRequest = null;
+        if ($requestId) {
+            $subscriptionRequest = DB::table('subscription_requests')->find($requestId);
+        }
+
+        return view('superadmin.subscriptions.create', compact('instansis', 'packages', 'enabledPaymentMethods', 'subscriptionRequest'));
     }
 
     /**
@@ -73,10 +77,8 @@ class SubscriptionController extends Controller
      */
     public function store(Request $request)
     {
-        // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('system_settings')
-            ->where('key', 'payment_methods')
-            ->value('value');
+        // Settings table dropped, using defaults
+        $paymentMethodsSetting = null;
 
         if ($paymentMethodsSetting) {
             $paymentMethods = json_decode($paymentMethodsSetting, true);
@@ -95,6 +97,7 @@ class SubscriptionController extends Controller
             'end_date' => 'required|date|after:start_date',
             'price' => 'nullable|numeric|min:0',
             'payment_method' => 'required|in:' . implode(',', $availablePaymentMethods),
+            'request_id' => 'nullable|exists:subscription_requests,id',
         ]);
 
         // Prevent overlapping active-like subscriptions for the same instansi
@@ -126,22 +129,34 @@ class SubscriptionController extends Controller
 
         $subscription = Subscription::create($validated);
 
-        // Create payment history record
+        // Create or update payment history record
         try {
-            DB::table('subscription_requests')->insert([
-                'instansi_id' => $validated['instansi_id'],
-                'package_id' => $validated['package_id'],
-                'subscription_id' => $subscription->id,
-                'extension_months' => null,
-                'target_package_id' => null,
-                'amount' => $validated['price'],
-                'payment_method' => $validated['payment_method'],
-                'payment_status' => 'paid', // Assuming payment is completed when subscription is created
-                'transaction_id' => 'SUB-' . $subscription->id . '-' . time(),
-                'created_by' => auth()->id(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            if (isset($validated['request_id']) && $validated['request_id']) {
+                // Update existing request
+                DB::table('subscription_requests')
+                    ->where('id', $validated['request_id'])
+                    ->update([
+                        'subscription_id' => $subscription->id,
+                        'payment_status' => 'paid',
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                // Create new request
+                DB::table('subscription_requests')->insert([
+                    'instansi_id' => $validated['instansi_id'],
+                    'package_id' => $validated['package_id'],
+                    'subscription_id' => $subscription->id,
+                    'extension_months' => null,
+                    'target_package_id' => null,
+                    'amount' => $validated['price'],
+                    'payment_method' => $validated['payment_method'],
+                    'payment_status' => 'paid', // Assuming payment is completed when subscription is created
+                    'transaction_id' => 'SUB-' . $subscription->id . '-' . time(),
+                    'created_by' => auth()->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
         } catch (\Exception $e) {
             // Log the error for debugging
             \Log::error('Failed to create payment history record: ' . $e->getMessage(), [
@@ -166,10 +181,8 @@ class SubscriptionController extends Controller
         $subscription = Subscription::with(['instansi', 'package'])->findOrFail($id);
         $packages = \App\Models\SuperAdmin\Package::where('is_active', true)->get();
 
-        // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('settings')
-            ->where('key', 'system.payment_methods')
-            ->value('value');
+        // Settings table dropped, using defaults
+        $paymentMethodsSetting = null;
 
         if ($paymentMethodsSetting) {
             $paymentMethods = json_decode($paymentMethodsSetting, true);
@@ -235,10 +248,8 @@ class SubscriptionController extends Controller
     {
         $subscription = Subscription::findOrFail($id);
 
-        // Get available payment methods from system settings
-        $paymentMethodsSetting = DB::table('settings')
-            ->where('key', 'system.payment_methods')
-            ->value('value');
+        // Settings table dropped, using defaults
+        $paymentMethodsSetting = null;
 
         if ($paymentMethodsSetting) {
             $paymentMethods = json_decode($paymentMethodsSetting, true);
@@ -512,25 +523,7 @@ class SubscriptionController extends Controller
      */
     public function processPayment($paymentId)
     {
-        $payment = DB::table('subscription_requests')
-            ->where('id', $paymentId)
-            ->where('payment_status', 'pending')
-            ->first();
-
-        if (!$payment) {
-            return redirect()->back()->with('error', 'Payment tidak ditemukan atau sudah diproses.');
-        }
-
-        // Get the subscription
-        $subscription = DB::table('subscriptions')
-            ->where('id', $payment->subscription_id)
-            ->first();
-
-        if (!$subscription) {
-            return redirect()->back()->with('error', 'Subscription tidak ditemukan.');
-        }
-
-        // Redirect to edit subscription
-        return redirect()->route('superadmin.subscriptions.edit', $subscription->id);
+        // Redirect to the transaction processing page
+        return redirect()->route('superadmin.subscriptions.process-transaction', $paymentId);
     }
 }

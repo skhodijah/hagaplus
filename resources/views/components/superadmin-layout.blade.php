@@ -391,7 +391,6 @@
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-box-open" label="Package Management" :open="$isPackagesActive" target="menu-packages">
                     <x-layout.sidebar-subitem :href="route('superadmin.packages.index')" label="Manage Packages" :active="request()->routeIs('superadmin.packages.index')" />
-                    <x-layout.sidebar-subitem :href="route('superadmin.packages.feature-configuration')" label="Feature Configuration" :active="request()->routeIs('superadmin.packages.feature-configuration')" />
                 </x-layout.sidebar-accordion>
 
                 <x-layout.sidebar-accordion icon="fa-solid fa-chart-line" label="Reports" :open="$isReportsActive" target="menu-reports">

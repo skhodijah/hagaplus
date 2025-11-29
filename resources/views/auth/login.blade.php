@@ -50,6 +50,28 @@
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Selamat Datang di Haga+</h1>
                 <p class="mt-3 text-gray-600 text-lg">Aplikasi Absensi Terpercaya</p>
             </div>
+            
+            @if (session('error'))
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5 mr-3"></i>
+                        <div>
+                            <p class="text-sm text-red-800 font-medium">{{ session('error') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+            
+            @if (session('success'))
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
+                    <div class="flex items-start">
+                        <i class="fa-solid fa-circle-check text-green-500 mt-0.5 mr-3"></i>
+                        <div>
+                            <p class="text-sm text-green-800 font-medium">{{ session('success') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-6">
                 @csrf
                 <div class="space-y-5">
@@ -95,9 +117,9 @@
                         Masuk
                     </button>
                     <div class="mt-4">
-                        <button type="button" class="w-full flex items-center justify-center py-3.5 px-4 border border-gray-300 rounded-xl text-gray-800 bg-white hover:bg-gray-100 shadow-sm transition-colors">
+                        <a href="{{ route('auth.google') }}" class="w-full flex items-center justify-center py-3.5 px-4 border border-gray-300 rounded-xl text-gray-800 bg-white hover:bg-gray-100 shadow-sm transition-colors">
                             <i class="fa-brands fa-google mr-2"></i> Login dengan Google
-                        </button>
+                        </a>
                     </div>
                 </div>
             </form>
