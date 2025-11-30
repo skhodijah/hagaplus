@@ -157,6 +157,50 @@
                 </div>
             </div>
 
+            <!-- Calculation Details -->
+            <div id="calculation_details" class="bg-blue-50 dark:bg-blue-900/20 rounded-lg shadow-sm p-6 hidden">
+                <h2 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center">
+                    <i class="fa-solid fa-calculator text-blue-600 mr-2"></i>
+                    Rincian Perhitungan
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <h3 class="font-medium text-blue-800 dark:text-blue-200 mb-2">Absensi</h3>
+                        <ul class="space-y-1 text-blue-700 dark:text-blue-300">
+                            <li class="flex justify-between">
+                                <span>Jumlah Alpa:</span>
+                                <span id="detail_absent_days">0 hari</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span>Keterlambatan:</span>
+                                <span id="detail_late_minutes">0 menit</span>
+                            </li>
+                            <li class="flex justify-between border-t border-blue-200 dark:border-blue-700 pt-1 mt-1">
+                                <span>Total Potongan Absensi:</span>
+                                <span id="detail_total_absent_deduction" class="font-bold">Rp 0</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-blue-800 dark:text-blue-200 mb-2">Lembur</h3>
+                        <ul class="space-y-1 text-blue-700 dark:text-blue-300">
+                            <li class="flex justify-between">
+                                <span>Total Lembur:</span>
+                                <span id="detail_overtime_minutes">0 menit</span>
+                            </li>
+                            <li class="flex justify-between">
+                                <span>Rate per Jam:</span>
+                                <span id="detail_overtime_rate">Rp 0</span>
+                            </li>
+                            <li class="flex justify-between border-t border-blue-200 dark:border-blue-700 pt-1 mt-1">
+                                <span>Total Uang Lembur:</span>
+                                <span id="detail_total_overtime" class="font-bold">Rp 0</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
             <!-- TAKE HOME PAY -->
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg shadow-sm p-6 border-2 border-blue-200 dark:border-blue-700">
                 <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -182,29 +226,38 @@
                 </div>
             </div>
 
-            <!-- Payment Info -->
+            <!-- Informasi Rekening Karyawan -->
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informasi Pembayaran</h2>
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-building-columns text-blue-600 mr-2"></i>
+                    Informasi Rekening Karyawan
+                </h2>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tanggal Pembayaran</label>
-                        <input type="date" id="payment_date" name="payment_date" value="{{ old('payment_date') }}" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                <div id="bank-info" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nama Bank</label>
+                            <p id="display_bank_name" class="text-sm font-semibold text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nomor Rekening</label>
+                            <p id="display_bank_account" class="text-sm font-semibold text-gray-900 dark:text-white">-</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Atas Nama</label>
+                            <p id="display_account_holder" class="text-sm font-semibold text-gray-900 dark:text-white">-</p>
+                        </div>
                     </div>
+                </div>
 
-                    <div>
-                        <label for="payment_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status Pembayaran *</label>
-                        <select id="payment_status" name="payment_status" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                            <option value="draft" {{ old('payment_status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="processed" {{ old('payment_status') == 'processed' ? 'selected' : '' }}>Processed</option>
-                            <option value="paid" {{ old('payment_status') == 'paid' ? 'selected' : '' }}>Paid</option>
-                        </select>
-                    </div>
+                <div id="bank-info-empty" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                    <i class="fa-solid fa-info-circle mr-2"></i>
+                    Pilih karyawan untuk melihat informasi rekening
+                </div>
 
-                    <div class="md:col-span-2">
-                        <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
-                        <textarea id="notes" name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">{{ old('notes') }}</textarea>
-                    </div>
+                <div class="mt-4">
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
+                    <textarea id="notes" name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" placeholder="Catatan tambahan (opsional)">{{ old('notes') }}</textarea>
                 </div>
             </div>
 
@@ -260,12 +313,87 @@
             document.getElementById('gaji_bersih').textContent = formatRupiah(gajiBersih);
         }
 
+        async function fetchPayrollData() {
+            const userId = document.getElementById('user_id').value;
+            const month = document.getElementById('period_month').value;
+            const year = document.getElementById('period_year').value;
+
+            if (!userId || !month || !year) return;
+
+            // Show loading state if needed
+            
+            try {
+                const response = await fetch('{{ route("admin.payroll.calculate") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        month: month,
+                        year: year
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch data');
+
+                const data = await response.json();
+
+                // Update form fields
+                document.getElementById('gaji_pokok').value = data.gaji_pokok;
+                document.getElementById('tunjangan_jabatan').value = data.tunjangan_jabatan;
+                document.getElementById('tunjangan_makan').value = data.tunjangan_makan;
+                document.getElementById('tunjangan_transport').value = data.tunjangan_transport;
+                document.getElementById('lembur').value = data.lembur;
+                document.getElementById('bpjs_kesehatan').value = data.bpjs_kesehatan;
+                document.getElementById('bpjs_tk').value = data.bpjs_tk;
+                document.getElementById('potongan_absensi').value = data.potongan_absensi;
+                document.getElementById('pph21').value = data.pph21;
+
+                // Update Details Section
+                if (data.details) {
+                    document.getElementById('calculation_details').classList.remove('hidden');
+                    document.getElementById('detail_absent_days').textContent = data.details.absent_days + ' hari';
+                    document.getElementById('detail_late_minutes').textContent = data.details.late_minutes + ' menit';
+                    document.getElementById('detail_total_absent_deduction').textContent = formatRupiah(data.potongan_absensi);
+                    document.getElementById('detail_overtime_minutes').textContent = data.details.overtime_minutes + ' menit';
+                    document.getElementById('detail_overtime_rate').textContent = formatRupiah(data.details.overtime_rate_per_hour) + '/jam';
+                    document.getElementById('detail_total_overtime').textContent = formatRupiah(data.lembur);
+                }
+
+                // Update Bank Info
+                if (data.bank_name || data.bank_account_number || data.bank_account_holder) {
+                    document.getElementById('bank-info').classList.remove('hidden');
+                    document.getElementById('bank-info-empty').classList.add('hidden');
+                    document.getElementById('display_bank_name').textContent = data.bank_name || '-';
+                    document.getElementById('display_bank_account').textContent = data.bank_account_number || '-';
+                    document.getElementById('display_account_holder').textContent = data.bank_account_holder || '-';
+                } else {
+                    document.getElementById('bank-info').classList.add('hidden');
+                    document.getElementById('bank-info-empty').classList.remove('hidden');
+                }
+
+                // Recalculate totals
+                calculateTotals();
+
+            } catch (error) {
+                console.error('Error fetching payroll data:', error);
+                // Optional: Show error message to user
+            }
+        }
+
         // Add event listeners to all input fields
         document.addEventListener('DOMContentLoaded', function() {
             const inputs = document.querySelectorAll('input[type="number"]');
             inputs.forEach(input => {
                 input.addEventListener('input', calculateTotals);
             });
+
+            // Listen for changes in user, month, year to fetch data
+            document.getElementById('user_id').addEventListener('change', fetchPayrollData);
+            document.getElementById('period_month').addEventListener('change', fetchPayrollData);
+            document.getElementById('period_year').addEventListener('change', fetchPayrollData);
 
             // Initial calculation
             calculateTotals();

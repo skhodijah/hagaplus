@@ -52,25 +52,25 @@
                     <!-- Bank Transfer Fields -->
                     <div id="bankFields" class="hidden space-y-6">
                         <div>
-                            <label for="account_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Account Name
+                            <label for="bank_account_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Account Name <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="account_name" id="account_name" value="{{ old('account_name') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                   placeholder="e.g., PT. Company Name">
-                            @error('account_name')
+                            <input type="text" name="bank_account_name" id="bank_account_name" value="{{ old('bank_account_name') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('bank_account_name') border-red-300 dark:border-red-600 @enderror"
+                                   placeholder="e.g., PT. Company Name" required>
+                            @error('bank_account_name')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Account Number
+                            <label for="bank_account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Account Number <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="account_number" id="account_number" value="{{ old('account_number') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                   placeholder="e.g., 1234567890">
-                            @error('account_number')
+                            <input type="text" name="bank_account_number" id="bank_account_number" value="{{ old('bank_account_number') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('bank_account_number') border-red-300 dark:border-red-600 @enderror"
+                                   placeholder="e.g., 1234567890" required>
+                            @error('bank_account_number')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
@@ -108,25 +108,25 @@
                     <!-- E-Wallet Fields -->
                     <div id="ewalletFields" class="hidden space-y-6">
                         <div>
-                            <label for="account_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Account Name
+                            <label for="ewallet_account_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Account Name <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="account_name" id="ewallet_account_name" value="{{ old('account_name') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                   placeholder="e.g., John Doe">
-                            @error('account_name')
+                            <input type="text" name="ewallet_account_name" id="ewallet_account_name" value="{{ old('ewallet_account_name') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('ewallet_account_name') border-red-300 dark:border-red-600 @enderror"
+                                   placeholder="e.g., John Doe" required>
+                            @error('ewallet_account_name')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div>
-                            <label for="account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Phone/Account Number
+                            <label for="ewallet_account_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Phone/Account Number <span class="text-red-500">*</span>
                             </label>
-                            <input type="text" name="account_number" id="ewallet_account_number" value="{{ old('account_number') }}"
-                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                   placeholder="e.g., 081234567890">
-                            @error('account_number')
+                            <input type="text" name="ewallet_account_number" id="ewallet_account_number" value="{{ old('ewallet_account_number') }}"
+                                   class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('ewallet_account_number') border-red-300 dark:border-red-600 @enderror"
+                                   placeholder="e.g., 081234567890" required>
+                            @error('ewallet_account_number')
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                             @enderror
                         </div>
@@ -186,16 +186,43 @@
             // Show relevant fields based on type
             if (type === 'bank_transfer') {
                 bankFields.classList.remove('hidden');
+                // Make bank fields required
+                document.getElementById('bank_account_name').required = true;
+                document.getElementById('bank_account_number').required = true;
+                // Make e-wallet fields not required
+                document.getElementById('ewallet_account_name').required = false;
+                document.getElementById('ewallet_account_number').required = false;
             } else if (type === 'qris') {
                 qrisFields.classList.remove('hidden');
+                // Make all other fields not required
+                document.getElementById('bank_account_name').required = false;
+                document.getElementById('bank_account_number').required = false;
+                document.getElementById('ewallet_account_name').required = false;
+                document.getElementById('ewallet_account_number').required = false;
             } else if (type === 'ewallet') {
                 ewalletFields.classList.remove('hidden');
+                // Make e-wallet fields required
+                document.getElementById('ewallet_account_name').required = true;
+                document.getElementById('ewallet_account_number').required = true;
+                // Make bank fields not required
+                document.getElementById('bank_account_name').required = false;
+                document.getElementById('bank_account_number').required = false;
             }
         });
 
         // Trigger change event on page load if there's a pre-selected value
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('type').dispatchEvent(new Event('change'));
+            const typeSelect = document.getElementById('type');
+            typeSelect.dispatchEvent(new Event('change'));
+            
+            // Set initial values from old input if exists
+            @if(old('type') === 'bank_transfer')
+                document.getElementById('bank_account_name').value = '{{ old('bank_account_name') }}';
+                document.getElementById('bank_account_number').value = '{{ old('bank_account_number') }}';
+            @elseif(old('type') === 'ewallet')
+                document.getElementById('ewallet_account_name').value = '{{ old('ewallet_account_name') }}';
+                document.getElementById('ewallet_account_number').value = '{{ old('ewallet_account_number') }}';
+            @endif
         });
 
         // QR Code Extraction

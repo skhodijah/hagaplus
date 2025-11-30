@@ -40,7 +40,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Models\Core\User::where('role', 'admin')->count() }}</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Models\Core\User::doesntHave('employee')->where('system_role_id', '!=', 1)->count() }}</p>
                         </div>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Employees</p>
-                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Models\Core\User::where('role', 'employee')->count() }}</p>
+                            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ \App\Models\Core\User::has('employee')->count() }}</p>
                         </div>
                     </div>
                 </div>
@@ -79,11 +79,11 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
-                        <select name="role" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <select name="role_type" class="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">All Roles</option>
-                            <option value="superadmin" {{ request('role') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
-                            <option value="admin" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                            <option value="employee" {{ request('role') == 'employee' ? 'selected' : '' }}>Employee</option>
+                            <option value="superadmin" {{ request('role_type') == 'superadmin' ? 'selected' : '' }}>Super Admin</option>
+                            <option value="admin" {{ request('role_type') == 'admin' ? 'selected' : '' }}>Admin</option>
+                            <option value="employee" {{ request('role_type') == 'employee' ? 'selected' : '' }}>Employee</option>
                         </select>
                     </div>
 
@@ -172,14 +172,22 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
+                                        @php
+                                            $roleType = 'admin'; // Default to admin if no employee record
+                                            if ($user->system_role_id == 1) {
+                                                $roleType = 'superadmin';
+                                            } elseif ($user->employee) {
+                                                $roleType = 'employee';
+                                            }
+                                        @endphp
                                         <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
-                                            @switch($user->role)
-                                                @case('superadmin') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
-                                                @case('admin') bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
-                                                @case('employee') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                            @switch($roleType)
+                                                @case('superadmin') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 @break
+                                                @case('admin') bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 @break
+                                                @case('employee') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 @break
                                                 @default bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200
                                             @endswitch">
-                                            {{ ucfirst($user->role) }}
+                                            {{ ucfirst($roleType) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
@@ -203,7 +211,7 @@
                                             <a href="{{ route('superadmin.users.edit', $user) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                                 <i class="fa-solid fa-edit"></i>
                                             </a>
-                                            @if($user->role !== 'superadmin')
+                                            @if($user->system_role_id !== 1)
                                                 <form method="POST" action="{{ route('superadmin.users.destroy', $user) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this user?')">
                                                     @csrf
                                                     @method('DELETE')

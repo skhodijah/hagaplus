@@ -19,11 +19,9 @@ class AttendanceController extends Controller
 
         // Get all employees with their branch information
         // Get all employees with their branch information
-        $employees = User::whereHas('systemRole', function($q) {
-                $q->where('slug', 'employee');
-            })
-            ->where('instansi_id', $instansiId)
-            ->with(['employee.branch'])
+        $employees = User::where('instansi_id', $instansiId)
+            ->has('employee')
+            ->with(['employee.branch', 'employee.position', 'systemRole'])
             ->get();
 
         $attendances = Attendance::whereHas('user', function ($query) use ($instansiId) {

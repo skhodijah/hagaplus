@@ -28,6 +28,7 @@ class AttendancePolicy extends BaseModel
 
     protected $casts = [
         'work_days' => 'array',
+        'attendance_methods' => 'array',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'auto_checkout_time' => 'datetime',

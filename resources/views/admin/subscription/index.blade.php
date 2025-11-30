@@ -122,9 +122,15 @@
                     </div>
                     <div class="flex gap-3 w-full md:w-auto">
                         @if(!isset($pendingRequest) || !$pendingRequest)
-                        <button @click="showExtensionModal = true" class="flex-1 md:flex-none bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-50 transition shadow-sm text-sm">
-                            Extend Now
-                        </button>
+                            @if(!$currentSubscription->is_trial && $currentSubscription->price > 0)
+                                <button @click="showExtensionModal = true" class="flex-1 md:flex-none bg-white text-blue-600 px-6 py-2.5 rounded-xl font-bold hover:bg-blue-50 transition shadow-sm text-sm">
+                                    Extend Now
+                                </button>
+                            @else
+                                <div class="flex-1 md:flex-none bg-yellow-50 text-yellow-700 px-6 py-2.5 rounded-xl font-bold text-sm border border-yellow-200">
+                                    Trial - Upgrade to Extend
+                                </div>
+                            @endif
                         @endif
                         <button onclick="document.getElementById('history-section').scrollIntoView({behavior: 'smooth'})" class="flex-1 md:flex-none bg-blue-800 bg-opacity-40 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-opacity-50 transition border border-blue-400 border-opacity-30 text-sm">
                             History

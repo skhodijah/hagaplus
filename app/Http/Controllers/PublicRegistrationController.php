@@ -16,7 +16,8 @@ class PublicRegistrationController extends Controller
 {
     public function create()
     {
-        return view('public.register-instansi');
+        $packages = Package::where('is_active', true)->get();
+        return view('public.register-instansi', compact('packages'));
     }
 
     public function store(Request $request)
@@ -32,35 +33,50 @@ class PublicRegistrationController extends Controller
             'user_name' => 'required|string|max:255',
             'user_email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
+            // Package field
+            'package_id' => 'nullable|exists:packages,id',
         ]);
 
-        // Ensure a Free package exists (price 0, duration 30 days, max_employees 5)
-        $freePackage = Package::where('name', 'Free')->first();
-        if (!$freePackage) {
-            $freePackage = Package::create([
-                'name' => 'Free',
-                'description' => 'Paket gratis percobaan dengan fitur terbatas',
-                'price' => 0,
-                'duration_days' => 30,
-                'max_employees' => 5,
-                'max_branches' => 1,
-                'features' => ['qr', 'basic_reports'],
-                'is_active' => true,
-            ]);
+        // Determine selected package
+        $selectedPackage = null;
+        if (!empty($validated['package_id'])) {
+            $selectedPackage = Package::find($validated['package_id']);
         }
 
-        // Create instansi as active with Free package
+        // If no package selected or selected package is Free/Trial, ensure Free package exists
+        $isTrial = false;
+        if (!$selectedPackage || $selectedPackage->price == 0 || stripos($selectedPackage->name, 'Free') !== false || stripos($selectedPackage->name, 'Trial') !== false) {
+            $isTrial = true;
+            // Ensure a Free package exists if not selected
+            if (!$selectedPackage) {
+                $selectedPackage = Package::where('name', 'Free')->first();
+                if (!$selectedPackage) {
+                    $selectedPackage = Package::create([
+                        'name' => 'Free',
+                        'description' => 'Paket gratis percobaan dengan fitur terbatas',
+                        'price' => 0,
+                        'duration_days' => 30,
+                        'max_employees' => 5,
+                        'max_branches' => 1,
+                        'features' => ['qr', 'basic_reports'],
+                        'is_active' => true,
+                    ]);
+                }
+            }
+        }
+
+        // Create instansi
         $instansi = Instansi::create([
             'nama_instansi' => $validated['nama_instansi'],
             'subdomain' => $validated['subdomain'],
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['address'] ?? null,
-            'package_id' => $freePackage->id,
+            'package_id' => $selectedPackage->id,
             'is_active' => true,
-            'status_langganan' => 'active',
-            'max_employees' => 5,
-            'max_branches' => 1,
+            'status_langganan' => $isTrial ? 'active' : 'inactive', // Inactive if paid package pending payment
+            'max_employees' => $selectedPackage->max_employees,
+            'max_branches' => $selectedPackage->max_branches,
         ]);
 
         // Create admin user for this instansi
@@ -68,30 +84,50 @@ class PublicRegistrationController extends Controller
             'name' => $validated['user_name'],
             'email' => $validated['user_email'],
             'password' => Hash::make($validated['password']),
-            'role' => 'admin',
+            'system_role_id' => 2, // Admin role
             'instansi_id' => $instansi->id,
         ]);
 
-        // Create active trial subscription 30 days
-        $start = Carbon::now()->toDateString();
-        $end = Carbon::now()->addDays(30)->toDateString();
-        Subscription::create([
-            'instansi_id' => $instansi->id,
-            'package_id' => $freePackage->id,
-            'status' => 'active',
-            'start_date' => $start,
-            'end_date' => $end,
-            'price' => 0,
-            'is_trial' => true,
-            'trial_ends_at' => $end,
-        ]);
+        if ($isTrial) {
+            // Create active trial subscription
+            $start = Carbon::now()->toDateString();
+            $end = Carbon::now()->addDays($selectedPackage->duration_days ?? 30)->toDateString();
+            
+            Subscription::create([
+                'instansi_id' => $instansi->id,
+                'package_id' => $selectedPackage->id,
+                'status' => 'active',
+                'start_date' => $start,
+                'end_date' => $end,
+                'price' => 0,
+                'is_trial' => true,
+                'trial_ends_at' => $end,
+            ]);
 
-        // Notify superadmin (user_id = 1) that a new instansi was auto-provisioned
+            $message = 'Pendaftaran berhasil. Silakan login menggunakan email dan password yang Anda buat.';
+        } else {
+            // Create pending subscription request (transaction)
+            DB::table('subscription_requests')->insert([
+                'instansi_id' => $instansi->id,
+                'package_id' => $selectedPackage->id,
+                'amount' => $selectedPackage->price,
+                'payment_status' => 'pending',
+                'transaction_id' => 'REG-' . $instansi->id . '-' . time(),
+                'created_by' => $user->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'notes' => 'Pendaftaran baru dengan paket ' . $selectedPackage->name,
+            ]);
+
+            $message = 'Pendaftaran berhasil. Silakan login dan selesaikan pembayaran untuk mengaktifkan akun Anda.';
+        }
+
+        // Notify superadmin (user_id = 1)
         try {
             DB::table('notifications')->insert([
                 'user_id' => 1,
-                'title' => 'Instansi Baru (Free Trial) Terdaftar',
-                'message' => 'Instansi "' . $instansi->nama_instansi . '" dibuat otomatis dengan paket Free dan admin ' . $user->email . '.',
+                'title' => 'Instansi Baru Terdaftar',
+                'message' => 'Instansi "' . $instansi->nama_instansi . '" mendaftar dengan paket ' . $selectedPackage->name . '.',
                 'type' => 'info',
                 'is_read' => 0,
                 'created_at' => now(),
@@ -102,6 +138,6 @@ class PublicRegistrationController extends Controller
         }
 
         return redirect()->route('login')
-            ->with('status', 'Pendaftaran berhasil. Silakan login menggunakan email dan password yang Anda buat.');
+            ->with('status', $message);
     }
 } 

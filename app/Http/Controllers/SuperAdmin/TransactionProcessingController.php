@@ -257,17 +257,6 @@ class TransactionProcessingController extends Controller
                 'updated_at' => now()
             ]);
 
-        // Create notification for the instansi admin
-        DB::table('notifications')->insert([
-            'user_id' => $subscriptionRequest->created_by,
-            'type' => 'subscription_rejected',
-            'title' => 'Subscription Request Rejected',
-            'message' => "Your subscription request has been rejected. Reason: " . $request->rejection_reason,
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
         return redirect()->route('superadmin.subscriptions.subscription-requests')->with('success', 'Transaction rejected successfully.');
     }
 }

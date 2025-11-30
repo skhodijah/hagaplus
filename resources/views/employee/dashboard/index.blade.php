@@ -56,12 +56,12 @@
                                     • {{ $employee->department->name ?? '' }}
                                 @endif
                             </p>
-                            @if(isset($policy) && $policy->formatted_schedule)
+                            @if($employee->effective_policy && $employee->effective_policy->work_start_time)
                                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    Jam Kerja: {{ $policy->formatted_schedule }}
+                                    Jam Kerja: {{ \Carbon\Carbon::parse($employee->effective_policy->work_start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($employee->effective_policy->work_end_time)->format('H:i') }}
                                 </p>
                             @endif
                         </div>
@@ -100,6 +100,17 @@
                         <div class="w-3 h-3 rounded-full {{ $todayStatus === 'Sedang Bekerja' ? 'bg-blue-500' : ($todayStatus === 'Sedang Cuti' ? 'bg-orange-500' : 'bg-emerald-500') }} animate-pulse"></div>
                     @endif
                 </div>
+                
+                @if($employee->effective_policy && $employee->effective_policy->work_start_time)
+                <div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                    <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Jam Kerja: <span class="font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($employee->effective_policy->work_start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($employee->effective_policy->work_end_time)->format('H:i') }}</span></span>
+                    </div>
+                </div>
+                @endif
             </div>
 
             <!-- Quick Actions -->
@@ -314,7 +325,17 @@
                         </div>
                         <div>
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Kalender Absensi</h3>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">Pantau kehadiran Anda</p>
+                            <div class="flex flex-col">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Pantau kehadiran Anda</p>
+                                @if($employee->effective_policy && $employee->effective_policy->work_start_time)
+                                    <p class="text-xs text-blue-600 dark:text-blue-400 mt-1 font-medium flex items-center">
+                                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Jam Kerja: {{ \Carbon\Carbon::parse($employee->effective_policy->work_start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($employee->effective_policy->work_end_time)->format('H:i') }}
+                                    </p>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">

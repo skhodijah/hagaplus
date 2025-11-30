@@ -15,7 +15,9 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $employee = Employee::where('user_id', $user->id)->with(['instansi', 'branch'])->first();
+        $employee = Employee::where('user_id', $user->id)
+            ->with(['instansi', 'branch', 'attendancePolicy', 'policy', 'division.policy'])
+            ->first();
 
         if (!$employee) {
             return view('employee.dashboard.index', [
@@ -146,15 +148,10 @@ class DashboardController extends Controller
             ];
         }
 
-        // Get effective policy for the employee
-        $policy = $employee->effective_policy;
+        // Get effective work days from policy hierarchy
         $workDays = [];
-        
-        if ($policy && $policy->work_days) {
-            // work_days is a JSON array, decode if needed
-            $workDays = is_array($policy->work_days) ? $policy->work_days : json_decode($policy->work_days, true);
-            // Ensure it's an array
-            $workDays = $workDays ?? [];
+        if ($employee->effective_policy && $employee->effective_policy->work_days) {
+            $workDays = $employee->effective_policy->work_days;
         }
 
         return view('employee.dashboard.index', [
@@ -170,7 +167,6 @@ class DashboardController extends Controller
             'currentYear' => $currentYear,
             'branchData' => $branchData,
             'workDuration' => $workDuration,
-            'policy' => $policy,
             'workDays' => $workDays,
         ]);
     }

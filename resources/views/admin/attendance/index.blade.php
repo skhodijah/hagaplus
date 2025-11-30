@@ -62,8 +62,8 @@
                         <div class="overflow-x-auto">
                             <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
                                 <thead>
-                                    <tr class="bg-gray-100 dark:bg-gray-700">
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+                                    <tr class="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10 shadow-sm">
+                                        <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-200 uppercase tracking-wider min-w-[250px] bg-gray-100 dark:bg-gray-700">Employee Details</th>
                                         @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
                                             <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ $day }}</th>
                                         @endfor
@@ -71,12 +71,29 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     @foreach ($branchEmployees as $employee)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                                <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
-                                                   class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                                    {{ $employee->name }}
-                                                </a>
+                                        @php
+                                            $isRegularEmployee = $employee->systemRole && $employee->systemRole->slug === 'employee';
+                                            $rowClass = $isRegularEmployee 
+                                                ? 'hover:bg-gray-50 dark:hover:bg-gray-700' 
+                                                : 'bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20';
+                                        @endphp
+                                        <tr class="{{ $rowClass }} transition-colors duration-150 border-b border-gray-100 dark:border-gray-700">
+                                            <td class="px-4 py-3 whitespace-nowrap">
+                                                <div class="flex flex-col">
+                                                    <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
+                                                       class="text-sm font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 mb-0.5">
+                                                        {{ $employee->name }}
+                                                    </a>
+                                                    <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                        <span class="font-medium truncate max-w-[150px]" title="{{ $employee->employee->position->name ?? 'No Position' }}">
+                                                            {{ $employee->employee->position->name ?? '-' }}
+                                                        </span>
+                                                        <span class="mx-1.5 text-gray-300 dark:text-gray-600">|</span>
+                                                        <span class="{{ !$isRegularEmployee ? 'text-purple-600 dark:text-purple-400 font-bold uppercase text-[10px] tracking-wide' : '' }}">
+                                                            {{ $employee->systemRole->name ?? '-' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </td>
                                             @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
                                                 @php
@@ -159,8 +176,8 @@
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
                             <thead>
-                                <tr class="bg-gray-100 dark:bg-gray-700">
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+                                <tr class="bg-gray-100 dark:bg-gray-700 sticky top-0 z-10 shadow-sm">
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-200 uppercase tracking-wider min-w-[250px] bg-gray-100 dark:bg-gray-700">Employee Details</th>
                                     @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{{ $day }}</th>
                                     @endfor
@@ -168,12 +185,29 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                 @foreach ($employeesWithoutBranch as $employee)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td class="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
-                                               class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                                {{ $employee->name }}
-                                            </a>
+                                    @php
+                                        $isRegularEmployee = $employee->systemRole && $employee->systemRole->slug === 'employee';
+                                        $rowClass = $isRegularEmployee 
+                                            ? 'hover:bg-gray-50 dark:hover:bg-gray-700' 
+                                            : 'bg-purple-50 dark:bg-purple-900/10 hover:bg-purple-100 dark:hover:bg-purple-900/20';
+                                    @endphp
+                                    <tr class="{{ $rowClass }} transition-colors duration-150 border-b border-gray-100 dark:border-gray-700">
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <div class="flex flex-col">
+                                                <a href="{{ route('admin.attendance.employee', [$employee->id, 'month' => $month]) }}"
+                                                   class="text-sm font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 mb-0.5">
+                                                    {{ $employee->name }}
+                                                </a>
+                                                <div class="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                                                    <span class="font-medium truncate max-w-[150px]" title="{{ $employee->employee->position->name ?? 'No Position' }}">
+                                                        {{ $employee->employee->position->name ?? '-' }}
+                                                    </span>
+                                                    <span class="mx-1.5 text-gray-300 dark:text-gray-600">|</span>
+                                                    <span class="{{ !$isRegularEmployee ? 'text-purple-600 dark:text-purple-400 font-bold uppercase text-[10px] tracking-wide' : '' }}">
+                                                        {{ $employee->systemRole->name ?? '-' }}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </td>
                                         @for ($day = 1; $day <= \Carbon\Carbon::createFromFormat('Y-m', $month)->daysInMonth; $day++)
                                             @php

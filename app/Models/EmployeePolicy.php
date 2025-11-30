@@ -70,7 +70,17 @@ class EmployeePolicy extends Model
      */
     public function employee(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Admin\Employee::class);
+        // The employee_id column in this table actually holds the user_id
+        // So we relate to Employee model via its user_id column
+        return $this->belongsTo(\App\Models\Admin\Employee::class, 'employee_id', 'user_id');
+    }
+
+    /**
+     * Get the user that owns the policy.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Core\User::class, 'employee_id');
     }
 
     /**

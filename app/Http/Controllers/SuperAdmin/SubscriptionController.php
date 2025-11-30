@@ -20,7 +20,9 @@ class SubscriptionController extends Controller
             ->update(['status' => 'expired']);
 
         // Ambil data subscription dengan relasi instansi & package
-        $subscriptions = Subscription::with(['instansi', 'package'])->paginate(10);
+        $subscriptions = Subscription::with(['instansi', 'package'])
+            ->where('is_trial', false)
+            ->paginate(10);
 
         return view('superadmin.subscriptions.index', compact('subscriptions'));
     }

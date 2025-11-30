@@ -37,10 +37,20 @@ class Payroll extends Model
         'total_potongan',
         'gaji_bersih',
         // Other
+        'created_date',
         'payment_date',
         'payment_status',
         'notes',
         'created_by',
+        // Approval
+        'approved_by',
+        'approved_at',
+        'approval_status',
+        'rejection_reason',
+        // Bank Details
+        'bank_name',
+        'bank_account_number',
+        'bank_account_holder',
     ];
 
     protected $casts = [
@@ -63,13 +73,10 @@ class Payroll extends Model
         'total_pendapatan' => 'decimal:2',
         'total_potongan' => 'decimal:2',
         'gaji_bersih' => 'decimal:2',
+        'created_date' => 'date',
         'payment_date' => 'date',
+        'approved_at' => 'datetime',
     ];
-
-    public function instansi(): BelongsTo
-    {
-        return $this->belongsTo(Instansi::class);
-    }
 
     public function user(): BelongsTo
     {
@@ -84,6 +91,11 @@ class Payroll extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 
     // Calculate totals automatically

@@ -67,9 +67,14 @@ class SubscriptionController extends Controller
             ->orderBy('subscription_requests.created_at', 'desc')
             ->get();
 
-        // Get available packages
+        // Get available packages (exclude trial/free packages)
         $packages = DB::table('packages')
             ->where('is_active', true)
+            ->where('price', '>', 0)
+            ->where(function($query) {
+                $query->where('name', 'NOT LIKE', '%trial%')
+                      ->where('name', 'NOT LIKE', '%free%');
+            })
             ->orderBy('price', 'asc')
             ->get();
 
@@ -318,6 +323,11 @@ class SubscriptionController extends Controller
             return redirect()->back()->with('error', 'Tidak ada subscription untuk diperpanjang. Silakan hubungi superadmin untuk membuat subscription baru.');
         }
 
+        // Prevent trial subscriptions from being extended
+        if ($currentSubscription->is_trial || $currentSubscription->price == 0) {
+            return redirect()->back()->with('error', 'Paket trial tidak dapat diperpanjang. Silakan upgrade ke paket berbayar terlebih dahulu.');
+        }
+
         // For extension, always extend from current date (when request is made)
         $extensionStartDate = now();
         $extensionMonths = (int) $request->extension_months;
@@ -437,7 +447,10 @@ class SubscriptionController extends Controller
         $targetPackage = DB::table('packages')->find($request->target_package_id);
 
         // Calculate price difference (upgrade cost)
-        $priceDifference = $targetPackage->price - $currentSubscription->price;
+        // Get the current package price from packages table to ensure we have the latest price
+        $currentPackage = DB::table('packages')->find($currentSubscription->package_id);
+        
+        $priceDifference = $targetPackage->price - $currentPackage->price;
         if ($priceDifference < 0) {
             $priceDifference = 0; // No charge for downgrade
         }
@@ -457,17 +470,6 @@ class SubscriptionController extends Controller
             'created_by' => $user->id,
             'created_at' => now(),
             'updated_at' => now()
-        ]);
-
-        // Create notification for superadmin
-        DB::table('notifications')->insert([
-            'user_id' => null, // null means for all superadmins
-            'type' => 'subscription_request',
-            'title' => 'Permintaan Upgrade Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan upgrade dari paket " . ($instansi->package->name ?? 'N/A') . " ke paket {$targetPackage->name}. Klik untuk melihat detail.",
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         // Redirect to transaction page instead of showing success message

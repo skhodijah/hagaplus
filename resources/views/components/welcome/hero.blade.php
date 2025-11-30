@@ -44,7 +44,7 @@
             <div class="hero-image relative">
                 <div class="relative">
                     <img 
-                        src="{{ asset('images/hero-dashboard.png') }}" 
+                        src="https://images.pexels.com/photos/8962519/pexels-photo-8962519.jpeg" 
                         alt="HR Management Dashboard" 
                         class="rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 float-animation"
                     >

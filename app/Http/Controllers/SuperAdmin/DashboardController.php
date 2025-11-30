@@ -7,7 +7,7 @@ use App\Models\SuperAdmin\Instansi;
 use App\Models\SuperAdmin\Package;
 use App\Models\SuperAdmin\Subscription;
 use App\Models\Core\User;
-use App\Models\Notification;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -145,23 +145,7 @@ class DashboardController extends Controller
         $superAdminId = User::whereHas('systemRole', function($q) {
             $q->where('slug', 'superadmin');
         })->value('id');
-        $recentNotifications = Schema::hasTable('notifications')
-            ? DB::table('notifications')
-                ->when($superAdminId, fn($q) => $q->where('user_id', $superAdminId))
-                ->latest()
-                ->take(10)
-                ->get()
-            : collect();
 
-        // Get notifications for the current user
-        $notifications = Notification::where('user_id', Auth::id())
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        $unreadCount = Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
-            ->count();
 
         // Get instansi-related metrics (superadmin manages companies, not individual employees)
         $totalActiveInstansi = Instansi::where('status_langganan', 'active')->count();
@@ -218,8 +202,7 @@ class DashboardController extends Controller
             'newCompanies7d' => $newCompanies7d,
             'expiring30d' => $expiring30d,
             'thisMonthRevenueFormatted' => $thisMonthRevenueFormatted,
-            'notifications' => $notifications,
-            'unreadCount' => $unreadCount,
+
             'instansiGrowth' => $instansiGrowth,
             'activeInstansiGrowth' => $activeInstansiGrowth,
             'revenueGrowth' => $revenueGrowth,
@@ -575,12 +558,7 @@ class DashboardController extends Controller
         return back()->withErrors(['general' => 'No changes were made.']);
     }
 
-    public function settingsNotifications(Request $request)
-    {
-        return view('superadmin.settings.notifications', [
-            'user' => $request->user(),
-        ]);
-    }
+
 
     public function validateCurrentPassword(Request $request)
     {
@@ -597,10 +575,5 @@ class DashboardController extends Controller
         return response()->json(['valid' => false]);
     }
 
-    public function updateSettingsNotifications(Request $request)
-    {
-        // For now, just redirect back with success
-        // In a real implementation, you'd save notification preferences
-        return back()->with('status', 'notifications-updated');
-    }
+
 }

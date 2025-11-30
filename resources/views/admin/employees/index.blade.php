@@ -70,13 +70,96 @@
             </div>
         @endif
 
-        <!-- Add Employee Button -->
+        <!-- Setup Checklist or Add Employee Button -->
         @hasPermission('create-employees')
-        <div class="mb-4">
-            <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors duration-200">
-                <i class="fa-solid fa-plus mr-2"></i>Add Employee
-            </a>
-        </div>
+        @if(!$canCreateEmployee)
+            <!-- Setup Checklist -->
+            <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 bg-amber-100 dark:bg-amber-900/40 rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-list-check text-2xl text-amber-600 dark:text-amber-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                            Setup Required Before Adding Employees
+                        </h3>
+                        <p class="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                            Please complete the following setup steps before you can add employees:
+                        </p>
+                        <div class="space-y-3">
+                            <!-- Attendance Policy -->
+                            <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border {{ $setupChecks['attendance_policy'] ? 'border-green-200 dark:border-green-800' : 'border-amber-200 dark:border-amber-800' }}">
+                                <div class="flex items-center gap-3">
+                                    @if($setupChecks['attendance_policy'])
+                                        <i class="fa-solid fa-check-circle text-green-600 dark:text-green-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Attendance Policy Configured</span>
+                                    @else
+                                        <i class="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Configure Attendance Policy</span>
+                                    @endif
+                                </div>
+                                @if(!$setupChecks['attendance_policy'])
+                                    <a href="{{ route('admin.attendance-policy.index') }}" 
+                                       class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                        <i class="fa-solid fa-arrow-right mr-2"></i>
+                                        Setup Now
+                                    </a>
+                                @endif
+                            </div>
+
+                            <!-- Divisions -->
+                            <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border {{ $setupChecks['has_divisions'] ? 'border-green-200 dark:border-green-800' : 'border-amber-200 dark:border-amber-800' }}">
+                                <div class="flex items-center gap-3">
+                                    @if($setupChecks['has_divisions'])
+                                        <i class="fa-solid fa-check-circle text-green-600 dark:text-green-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Divisions Created</span>
+                                    @else
+                                        <i class="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Create at least one Division</span>
+                                    @endif
+                                </div>
+                                @if(!$setupChecks['has_divisions'])
+                                    <a href="{{ route('admin.divisions.index') }}" 
+                                       class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                        <i class="fa-solid fa-arrow-right mr-2"></i>
+                                        Setup Now
+                                    </a>
+                                @endif
+                            </div>
+
+                            <!-- Departments & Positions (Hierarchy) -->
+                            <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border {{ ($setupChecks['has_departments'] && $setupChecks['has_positions']) ? 'border-green-200 dark:border-green-800' : 'border-amber-200 dark:border-amber-800' }}">
+                                <div class="flex items-center gap-3">
+                                    @if($setupChecks['has_departments'] && $setupChecks['has_positions'])
+                                        <i class="fa-solid fa-check-circle text-green-600 dark:text-green-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Departments & Positions Created</span>
+                                    @else
+                                        <i class="fa-solid fa-circle-exclamation text-amber-600 dark:text-amber-400 text-lg"></i>
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Create Departments & Positions</span>
+                                    @endif
+                                </div>
+                                @if(!$setupChecks['has_departments'] || !$setupChecks['has_positions'])
+                                    <a href="{{ route('admin.hierarchy.index') }}" 
+                                       class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                                        <i class="fa-solid fa-arrow-right mr-2"></i>
+                                        Setup Now
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @else
+            <!-- Add Employee Button -->
+            <div class="mb-4">
+                <a href="{{ route('admin.employees.create') }}" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm">
+                    <i class="fa-solid fa-plus mr-2"></i>Add Employee
+                </a>
+            </div>
+        @endif
         @endhasPermission
 
         <!-- Employees Table -->

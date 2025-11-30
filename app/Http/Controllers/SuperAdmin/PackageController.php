@@ -92,6 +92,9 @@ class PackageController extends Controller
 
     public function destroy(\App\Models\SuperAdmin\Package $package)
     {
+        if ($package->name === 'TRIAL') {
+            return redirect()->back()->with('error', 'Package TRIAL tidak dapat dihapus.');
+        }
         $package->delete();
         return redirect()->route('superadmin.packages.index')->with('success', 'Package berhasil dihapus.');
     }

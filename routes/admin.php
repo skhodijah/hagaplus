@@ -76,8 +76,19 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('attendance/employee/{userId}', [AttendanceController::class, 'employeeAttendance'])->name('attendance.employee');
     });
 
+    // Attendance Policy
+    Route::get('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'index'])->name('attendance-policy.index');
+    Route::post('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'store'])->name('attendance-policy.store');
+    Route::put('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'update'])->name('attendance-policy.update');
+
     // Payroll management
     Route::middleware('permission:view-payroll')->group(function () {
+        Route::post('payroll/calculate', [PayrollController::class, 'calculate'])->name('payroll.calculate');
+        Route::get('payroll/export', [PayrollController::class, 'export'])->name('payroll.export');
+        Route::get('payroll/{payroll}/print', [PayrollController::class, 'print'])->name('payroll.print');
+        Route::post('payroll/bulk-approve', [PayrollController::class, 'bulkApprove'])->name('payroll.bulk-approve');
+        Route::post('payroll/bulk-reject', [PayrollController::class, 'bulkReject'])->name('payroll.bulk-reject');
+        Route::post('payroll/bulk-mark-as-paid', [PayrollController::class, 'bulkMarkAsPaid'])->name('payroll.bulk-mark-as-paid');
         Route::resource('payroll', PayrollController::class);
     });
 
@@ -141,14 +152,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
             ->name('reimbursements.bulk-reject');
     });
 
-    // Notifications
-    Route::get('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
-    Route::put('/notifications/{id}/read', [App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::put('/notifications/{id}/unread', [App\Http\Controllers\Admin\NotificationController::class, 'markAsUnread'])->name('notifications.unread');
-    Route::put('/notifications/mark-all-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/{id}', [App\Http\Controllers\Admin\NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
-    Route::get('/notifications/unread-count', [App\Http\Controllers\Admin\NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+
 
     // Admin Management
     Route::resource('admins', App\Http\Controllers\Admin\AdminManagementController::class);

@@ -21,6 +21,7 @@ Route::middleware(['auth', 'role:employee'])->prefix('employee')->name('employee
     // Employee's own payroll
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
     Route::get('/payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
+    Route::get('/payroll/{id}/print', [PayrollController::class, 'print'])->name('payroll.print');
 
     // Employee's leave applications (Pengajuan Cuti)
     Route::get('/leaves', [LeaveController::class, 'index'])->name('leaves.index');

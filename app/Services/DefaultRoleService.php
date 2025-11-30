@@ -16,10 +16,14 @@ class DefaultRoleService
         $defaultRoles = self::getDefaultRolesData();
 
         foreach ($defaultRoles as $roleData) {
+            // Determine system_role_id based on role name
+            // Employee = 3, all others (Approver, Supervisor, Manager, HR, Finance) = 2 (Admin)
+            $systemRoleId = ($roleData['name'] === 'Employee') ? 3 : 2;
+            
             // Create the role
             $role = InstansiRole::create([
                 'instansi_id' => $instansiId,
-                'system_role_id' => 3, // Employee system role
+                'system_role_id' => $systemRoleId,
                 'name' => $roleData['name'],
                 'description' => $roleData['description'],
                 'is_active' => true,

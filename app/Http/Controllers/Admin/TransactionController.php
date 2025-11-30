@@ -19,10 +19,16 @@ class TransactionController extends Controller
 
         // Get the subscription request
         $subscriptionRequest = DB::table('subscription_requests')
-            ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
+            ->leftJoin('packages as current_package', 'subscription_requests.package_id', '=', 'current_package.id')
+            ->leftJoin('packages as target_package', 'subscription_requests.target_package_id', '=', 'target_package.id')
             ->where('subscription_requests.id', $requestId)
             ->where('subscription_requests.instansi_id', $user->instansi_id)
-            ->select('subscription_requests.*', 'packages.name as package_name')
+            ->select(
+                'subscription_requests.*', 
+                'current_package.name as current_package_name',
+                'target_package.name as target_package_name',
+                DB::raw('COALESCE(target_package.name, current_package.name) as package_name')
+            )
             ->first();
 
         if (!$subscriptionRequest) {
@@ -73,17 +79,6 @@ class TransactionController extends Controller
                 'updated_at' => now()
             ]);
 
-        // Create notification for superadmin
-        DB::table('notifications')->insert([
-            'user_id' => null, // null means for all superadmins
-            'type' => 'payment_proof_uploaded',
-            'title' => 'Bukti Pembayaran Diupload',
-            'message' => "Instansi {$user->instansi->nama_instansi} telah mengupload bukti pembayaran untuk permintaan subscription. " . route('superadmin.subscriptions.subscription-requests'),
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        return redirect()->route('admin.subscription.index')->with('success', 'Bukti pembayaran berhasil diupload. Superadmin akan memproses permintaan Anda dalam waktu 1-2 hari kerja.');
+        return redirect()->route('admin.subscription.index')->with('success', 'Bukti pembayaran berhasil diupload. Tim kami akan memproses permintaan Anda dalam waktu 1-2 hari kerja.');
     }
 }

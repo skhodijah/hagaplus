@@ -17,8 +17,10 @@ class EmployeeController extends Controller
 {
     public function index(Request $request)
     {
+        $instansiId = Auth::user()->instansi_id;
+        
         $query = Employee::with(['user', 'branch', 'instansi', 'division', 'instansiRole', 'department', 'position'])
-            ->where('instansi_id', Auth::user()->instansi_id);
+            ->where('instansi_id', $instansiId);
 
         // Search functionality
         if ($request->has('search') && !empty($request->search)) {
@@ -51,11 +53,26 @@ class EmployeeController extends Controller
         $employees = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Get unique departments for filter dropdown
-        $departments = \App\Models\Admin\Department::where('instansi_id', Auth::user()->instansi_id)
+        $departments = \App\Models\Admin\Department::where('instansi_id', $instansiId)
             ->orderBy('name')
             ->get();
 
-        return view('admin.employees.index', compact('employees', 'departments'));
+        // Check setup requirements
+        $setupChecks = [
+            'attendance_policy' => \App\Models\Admin\AttendancePolicy::where('company_id', $instansiId)
+                ->where('is_default', true)
+                ->exists(),
+            'has_divisions' => \App\Models\Admin\Division::where('instansi_id', $instansiId)->exists(),
+            'has_departments' => \App\Models\Admin\Department::where('instansi_id', $instansiId)->exists(),
+            'has_positions' => \App\Models\Admin\Position::where('instansi_id', $instansiId)->exists(),
+        ];
+
+        $canCreateEmployee = $setupChecks['attendance_policy'] && 
+                            $setupChecks['has_divisions'] && 
+                            $setupChecks['has_departments'] && 
+                            $setupChecks['has_positions'];
+
+        return view('admin.employees.index', compact('employees', 'departments', 'setupChecks', 'canCreateEmployee'));
     }
 
     public function create()
@@ -166,6 +183,11 @@ class EmployeeController extends Controller
                 }
             }
 
+            // Get default attendance policy for this instansi
+            $defaultPolicy = \App\Models\Admin\AttendancePolicy::where('company_id', Auth::user()->instansi_id)
+                ->where('is_default', true)
+                ->first();
+
             // Create employee
             Employee::create(array_merge([
                 'user_id' => $user->id,
@@ -178,6 +200,7 @@ class EmployeeController extends Controller
                 'department_id' => $request->department_id,
                 'manager_id' => $request->manager_id,
                 'supervisor_id' => $request->supervisor_id,
+                'attendance_policy_id' => $defaultPolicy ? $defaultPolicy->id : null, // Auto-assign default policy
                 // Employment
                 'status' => $request->status,
                 'status_karyawan' => $request->status_karyawan,

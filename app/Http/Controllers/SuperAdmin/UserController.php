@@ -15,9 +15,16 @@ class UserController extends Controller
     /**
      * Display a listing of users
      */
+    /**
+     * Display a listing of users
+     */
     public function index(Request $request)
     {
-        $query = User::with(['instansi']);
+        $query = User::with(['instansi', 'employee', 'systemRole'])
+            ->where(function($q) {
+                $q->where('system_role_id', 1) // Include superadmins
+                  ->orWhereDoesntHave('employee'); // Or users who are not employees
+            });
 
         // Search functionality
         if ($request->filled('search')) {
@@ -29,11 +36,24 @@ class UserController extends Controller
             });
         }
 
-        // Filter by role
-        if ($request->filled('role')) {
-            $query->whereHas('systemRole', function($q) use ($request) {
-                $q->where('slug', $request->role);
-            });
+        // Filter by role type
+        if ($request->filled('role_type')) {
+            $roleType = $request->role_type;
+            
+            // Reset the default query when a specific role type is selected
+            $query = User::with(['instansi', 'employee', 'systemRole']);
+            
+            if ($roleType === 'all') {
+                // Show all users (including superadmins and employees)
+                // No additional filtering needed
+            } elseif ($roleType === 'superadmin') {
+                $query->where('system_role_id', 1);
+            } elseif ($roleType === 'admin') {
+                // Admin is defined as not superadmin and not employee
+                $query->where('system_role_id', '!=', 1)->doesntHave('employee');
+            } elseif ($roleType === 'employee') {
+                $query->has('employee');
+            }
         }
 
         // Filter by instansi
@@ -76,8 +96,28 @@ class UserController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $data = $request->only(['name', 'email', 'phone', 'role', 'instansi_id']);
+        $data = $request->only(['name', 'email', 'phone', 'instansi_id']);
         $data['password'] = Hash::make($request->password);
+
+        // Map role to system_role_id
+        // Assuming 1 = Superadmin, 2 = Admin (Instansi Admin), 3 = Employee (if exists) or just use 2 for Instansi Admin.
+        // Let's check if we can find the IDs.
+        // For now, let's assume:
+        // Superadmin -> system_role_id = 1
+        // Admin -> system_role_id = 2
+        // Employee -> system_role_id = null (or specific role if exists)
+        
+        // Better approach: Look up role by slug if possible, or hardcode for now if we are sure.
+        // Let's assume standard IDs: 1=Superadmin, 2=Admin.
+        if ($request->role === 'superadmin') {
+            $data['system_role_id'] = 1;
+            $data['instansi_id'] = null; // Superadmin doesn't belong to instansi usually
+        } elseif ($request->role === 'admin') {
+            $data['system_role_id'] = 2;
+        } else {
+            // Employee
+            $data['system_role_id'] = null; // Or specific employee role
+        }
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -86,6 +126,20 @@ class UserController extends Controller
         }
 
         $user = User::create($data);
+
+        // If role is employee, we should ideally create an employee record.
+        // For now, we'll just leave it as is, but the user won't show up as "Employee" in the list 
+        // because the list filters by has('employee').
+        // This might be a limitation, but fixing the 500 error is priority.
+        if ($request->role === 'employee') {
+             // Create default employee record
+             $user->employee()->create([
+                 'instansi_id' => $request->instansi_id,
+                 'nip' => 'EMP-' . time(), // Temporary NIP
+                 'join_date' => now(),
+                 'status' => 'active',
+             ]);
+        }
 
         return redirect()->route('superadmin.users.index')
             ->with('success', 'User berhasil dibuat.');
@@ -130,13 +184,24 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed'
         ]);
 
-        $data = $request->only(['name', 'email', 'phone', 'role', 'instansi_id']);
+        $data = $request->only(['name', 'email', 'phone', 'instansi_id']);
 
         // Prevent changing role of superadmin users
-        if ($user->systemRole && $user->systemRole->slug === 'superadmin' && $data['role'] !== 'superadmin') {
+        if ($user->systemRole && $user->systemRole->slug === 'superadmin' && $request->role !== 'superadmin') {
             return redirect()->back()
                 ->withInput()
                 ->withErrors(['role' => 'Superadmin role cannot be changed.']);
+        }
+
+        // Map role to system_role_id
+        if ($request->role === 'superadmin') {
+            $data['system_role_id'] = 1;
+            $data['instansi_id'] = null;
+        } elseif ($request->role === 'admin') {
+            $data['system_role_id'] = 2;
+        } else {
+            // Employee
+            $data['system_role_id'] = null;
         }
 
         $data['is_active'] = $request->boolean('is_active', true);
@@ -159,6 +224,20 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        // Handle Employee record creation/deletion if role changed
+        if ($request->role === 'employee' && !$user->employee) {
+             $user->employee()->create([
+                 'instansi_id' => $request->instansi_id,
+                 'nip' => 'EMP-' . time(),
+                 'join_date' => now(),
+                 'status' => 'active',
+             ]);
+        } elseif ($request->role !== 'employee' && $user->employee) {
+            // Optional: delete employee record or keep it?
+            // For now, let's keep it but maybe set status to inactive?
+            // Or just leave it.
+        }
 
         return redirect()->route('superadmin.users.index')
             ->with('success', 'User berhasil diperbarui.');

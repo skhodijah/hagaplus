@@ -4,7 +4,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\InstansiController;
 use App\Http\Controllers\SuperAdmin\PackageController;
 use App\Http\Controllers\SuperAdmin\SubscriptionController;
-use App\Http\Controllers\SuperAdmin\NotificationController;
+
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\SuperAdmin\PaymentMethodController;
 use App\Http\Controllers\SuperAdmin\TransactionProcessingController;
@@ -72,23 +72,10 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
         return view('superadmin.reports.export');
     })->name('reports.export');
 
-    // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::get('/notifications/bulk', [NotificationController::class, 'bulk'])->name('notifications.bulk');
-    Route::post('/notifications/send-bulk', [NotificationController::class, 'sendBulk'])->name('notifications.send-bulk');
-    Route::put('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
-    Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::delete('/notifications', [NotificationController::class, 'destroyAll'])->name('notifications.destroy-all');
-    Route::get('/notifications/count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
-    Route::get('/api/employees', [NotificationController::class, 'getEmployees'])->name('api.employees');
-
     // Settings
     Route::get('/settings/profile', [DashboardController::class, 'settingsProfile'])->name('settings.profile');
     Route::patch('/settings/profile', [DashboardController::class, 'updateSettingsProfile'])->name('settings.profile.update');
     Route::post('/settings/validate-password', [DashboardController::class, 'validateCurrentPassword'])->name('settings.validate-password');
-    Route::get('/settings/notifications', [DashboardController::class, 'settingsNotifications'])->name('settings.notifications');
-    Route::patch('/settings/notifications', [DashboardController::class, 'updateSettingsNotifications'])->name('settings.notifications.update');
 
     // Payment Methods
     Route::resource('payment-methods', PaymentMethodController::class);

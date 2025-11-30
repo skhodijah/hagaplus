@@ -58,9 +58,9 @@ class EmployeePolicyController extends Controller
             'employee_id' => [
                 'required',
                 'exists:employees,id',
-                Rule::unique('employee_policies')->where(function ($query) use ($instansi) {
-                    return $query->where('instansi_id', $instansi->id);
-                }),
+                // We need to check uniqueness based on the user_id associated with this employee_id
+                // But since we can't easily join in the rule, we'll do a manual check or rely on the DB constraint failure handling
+                // For now, let's just validate it exists in employees table
             ],
             // All other fields are nullable because they override only what's set
             'work_days' => 'nullable|array',
@@ -87,8 +87,28 @@ class EmployeePolicyController extends Controller
             'allowed_radius_meters' => 'nullable|numeric|min:0|max:10000',
         ]);
 
+        // Get the employee to find their user_id
+        $employee = Employee::findOrFail($validated['employee_id']);
+        
+        // Check if policy already exists for this user
+        $existingPolicy = EmployeePolicy::where('employee_id', $employee->user_id)
+            ->where('instansi_id', $instansi->id)
+            ->first();
+            
+        if ($existingPolicy) {
+            return back()->withErrors(['employee_id' => 'This employee already has a specific policy assigned.']);
+        }
+
+        // Replace employee_id (from employees table) with user_id (from users table)
+        // The column in employee_policies table is named 'employee_id' but refers to users.id
+        $validated['employee_id'] = $employee->user_id;
         $validated['instansi_id'] = $instansi->id;
         $validated['is_active'] = true;
+        
+        // Ensure name is set (it's required in DB but not in form)
+        if (!isset($validated['name'])) {
+            $validated['name'] = 'Policy for ' . $employee->user->name;
+        }
 
         EmployeePolicy::create($validated);
 

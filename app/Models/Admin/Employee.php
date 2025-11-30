@@ -208,7 +208,9 @@ class Employee extends BaseModel
      */
     public function policy()
     {
-        return $this->hasOne(EmployeePolicy::class, 'employee_id');
+        // The employee_policies table uses user_id in its employee_id column
+        // So we match employees.user_id with employee_policies.employee_id
+        return $this->hasOne(EmployeePolicy::class, 'employee_id', 'user_id');
     }
 
     public function attendancePolicy()
@@ -218,6 +220,9 @@ class Employee extends BaseModel
 
     /**
      * Get the effective policy for the employee (merging override and division policy)
+     */
+    /**
+     * Get the effective policy for the employee (merging override, division, and default policy)
      */
     public function getEffectivePolicyAttribute()
     {
@@ -233,23 +238,57 @@ class Employee extends BaseModel
 
         $attributes = [];
         
+        // Level 3: Employee Specific Policy (Highest Priority)
         $employeePolicy = $this->policy;
+        
+        // Level 2: Division Policy
         $divisionPolicy = $this->division ? $this->division->policy : null;
+        
+        // Level 1: Default Attendance Policy (Lowest Priority)
+        $defaultPolicy = $this->attendancePolicy;
 
         foreach ($policyFields as $field) {
             if ($employeePolicy && !is_null($employeePolicy->$field)) {
                 $attributes[$field] = $employeePolicy->$field;
             } elseif ($divisionPolicy && !is_null($divisionPolicy->$field)) {
                 $attributes[$field] = $divisionPolicy->$field;
+            } elseif ($defaultPolicy) {
+                // Map fields from AttendancePolicy to EffectivePolicy structure
+                // Note: Field names might differ slightly, need mapping
+                switch ($field) {
+                    case 'work_start_time':
+                        $attributes[$field] = $defaultPolicy->start_time ? $defaultPolicy->start_time->format('H:i:s') : null;
+                        break;
+                    case 'work_end_time':
+                        $attributes[$field] = $defaultPolicy->end_time ? $defaultPolicy->end_time->format('H:i:s') : null;
+                        break;
+                    case 'grace_period_minutes':
+                        $attributes[$field] = $defaultPolicy->late_tolerance;
+                        break;
+                    case 'early_leave_grace_minutes':
+                        $attributes[$field] = $defaultPolicy->early_checkout_tolerance;
+                        break;
+                    case 'break_times':
+                        // Simple break duration to break_times format if needed, or just null for now
+                        $attributes[$field] = null; 
+                        break;
+                    default:
+                        $attributes[$field] = $defaultPolicy->$field ?? null;
+                }
             } else {
                 $attributes[$field] = null;
             }
         }
 
-        // Defaults
+        // Defaults if still null
         if (is_null($attributes['grace_period_minutes'])) $attributes['grace_period_minutes'] = 15;
         if (is_null($attributes['max_late_minutes'])) $attributes['max_late_minutes'] = 120;
         if (is_null($attributes['work_hours_per_day'])) $attributes['work_hours_per_day'] = 8;
+        
+        // Ensure work_days is array
+        if (isset($attributes['work_days']) && is_string($attributes['work_days'])) {
+             $attributes['work_days'] = json_decode($attributes['work_days'], true);
+        }
         
         return new \App\Support\EffectivePolicy($attributes);
     }

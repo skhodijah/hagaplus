@@ -1,27 +1,28 @@
 <x-admin-layout>
-    <div class="py-2">
-        <x-page-header
-            title="Edit Payroll Record"
-            subtitle="Update payroll record details"
-        />
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between">
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Edit Slip Gaji</h1>
+                <a href="{{ route('admin.payroll.show', $payroll) }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>Kembali
+                </a>
+            </div>
+        </div>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-            <form method="POST" action="{{ route('admin.payroll.update', $payroll) }}" id="payroll-form">
-                @csrf
-                @method('PUT')
+        <!-- Form -->
+        <form method="POST" action="{{ route('admin.payroll.update', $payroll) }}" class="space-y-6">
+            @csrf
+            @method('PUT')
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Basic Information -->
-                    <div class="md:col-span-2">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Basic Information</h3>
-                    </div>
-
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Informasi Karyawan & Periode</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Employee *</label>
-                        <select id="user_id" name="user_id"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('user_id') border-red-500 @enderror"
-                                required>
-                            <option value="">Select Employee</option>
+                        <label for="user_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Karyawan *</label>
+                        <select id="user_id" name="user_id" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            <option value="">Pilih Karyawan</option>
                             @foreach($employees as $employee)
                                 <option value="{{ $employee->id }}" {{ old('user_id', $payroll->user_id) == $employee->id ? 'selected' : '' }}>
                                     {{ $employee->name }} - {{ $employee->email }}
@@ -33,219 +34,242 @@
                         @enderror
                     </div>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label for="period_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Year *</label>
-                            <select id="period_year" name="period_year"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('period_year') border-red-500 @enderror"
-                                    required>
-                                @for ($y = date('Y') + 1; $y >= 2020; $y--)
-                                    <option value="{{ $y }}" {{ old('period_year', $payroll->period_year) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                                @endfor
-                            </select>
-                            @error('period_year')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="period_month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Month *</label>
-                            <select id="period_month" name="period_month"
-                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('period_month') border-red-500 @enderror"
-                                    required>
-                                @for ($m = 1; $m <= 12; $m++)
-                                    <option value="{{ $m }}" {{ old('period_month', $payroll->period_month) == $m ? 'selected' : '' }}>
-                                        {{ date('F', mktime(0, 0, 0, $m, 1)) }}
-                                    </option>
-                                @endfor
-                            </select>
-                            @error('period_month')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-
-                    <!-- Salary Information -->
-                    <div class="md:col-span-2 mt-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Salary Information</h3>
-                    </div>
-
                     <div>
-                        <label for="basic_salary" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Basic Salary *</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                            </div>
-                            <input type="number" id="basic_salary" name="basic_salary" value="{{ old('basic_salary', $payroll->basic_salary) }}"
-                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('basic_salary') border-red-500 @enderror"
-                                   min="0" step="0.01" required placeholder="0">
-                        </div>
-                        @error('basic_salary')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="overtime_amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Overtime Amount</label>
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                            </div>
-                            <input type="number" id="overtime_amount" name="overtime_amount" value="{{ old('overtime_amount', $payroll->overtime_amount) }}"
-                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('overtime_amount') border-red-500 @enderror"
-                                   min="0" step="0.01" placeholder="0">
-                        </div>
-                        @error('overtime_amount')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Allowances -->
-                    <div class="md:col-span-2">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white mb-2">Allowances</h4>
-                        <div id="allowances-container">
-                            @if($payroll->allowances && count($payroll->allowances) > 0)
-                                @foreach($payroll->allowances as $name => $amount)
-                                    <div class="allowance-item grid grid-cols-2 gap-4 mb-2">
-                                        <input type="text" name="allowance_names[]" value="{{ $name }}" placeholder="Allowance name"
-                                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                                            </div>
-                                            <input type="number" name="allowances[]" value="{{ $amount }}" placeholder="0" min="0" step="0.01"
-                                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white allowance-amount">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @endif
-                            <div class="allowance-item grid grid-cols-2 gap-4 mb-2">
-                                <input type="text" name="allowance_names[]" placeholder="Allowance name"
-                                       class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                                    </div>
-                                    <input type="number" name="allowances[]" placeholder="0" min="0" step="0.01"
-                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white allowance-amount">
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" id="add-allowance" class="mt-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                            <i class="fa-solid fa-plus mr-1"></i>Add Allowance
-                        </button>
-                    </div>
-
-                    <!-- Deductions -->
-                    <div class="md:col-span-2">
-                        <h4 class="text-md font-medium text-gray-900 dark:text-white mb-2">Deductions</h4>
-                        <div id="deductions-container">
-                            @if($payroll->deductions && count($payroll->deductions) > 0)
-                                @foreach($payroll->deductions as $name => $amount)
-                                    <div class="deduction-item grid grid-cols-2 gap-4 mb-2">
-                                        <input type="text" name="deduction_names[]" value="{{ $name }}" placeholder="Deduction name"
-                                               class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                        <div class="relative">
-                                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                                            </div>
-                                            <input type="number" name="deductions[]" value="{{ $amount }}" placeholder="0" min="0" step="0.01"
-                                                   class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white deduction-amount">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @endif
-                            <div class="deduction-item grid grid-cols-2 gap-4 mb-2">
-                                <input type="text" name="deduction_names[]" placeholder="Deduction name"
-                                       class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <span class="text-gray-500 dark:text-gray-400 text-sm font-medium">Rp</span>
-                                    </div>
-                                    <input type="number" name="deductions[]" placeholder="0" min="0" step="0.01"
-                                           class="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white deduction-amount">
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" id="add-deduction" class="mt-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                            <i class="fa-solid fa-plus mr-1"></i>Add Deduction
-                        </button>
-                    </div>
-
-                    <!-- Payment Information -->
-                    <div class="md:col-span-2 mt-6">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Payment Information</h3>
-                    </div>
-
-                    <div>
-                        <label for="payment_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Status *</label>
-                        <select id="payment_status" name="payment_status"
-                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('payment_status') border-red-500 @enderror"
-                                required>
-                            <option value="draft" {{ old('payment_status', $payroll->payment_status) == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="processed" {{ old('payment_status', $payroll->payment_status) == 'processed' ? 'selected' : '' }}>Processed</option>
-                            <option value="paid" {{ old('payment_status', $payroll->payment_status) == 'paid' ? 'selected' : '' }}>Paid</option>
+                        <label for="period_month" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bulan *</label>
+                        <select id="period_month" name="period_month" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            @for ($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}" {{ old('period_month', $payroll->period_month) == $m ? 'selected' : '' }}>
+                                    {{ date('F', mktime(0, 0, 0, $m, 1)) }}
+                                </option>
+                            @endfor
                         </select>
-                        @error('payment_status')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
                     </div>
 
                     <div>
-                        <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Date</label>
-                        <input type="date" id="payment_date" name="payment_date" value="{{ old('payment_date', $payroll->payment_date ? $payroll->payment_date->format('Y-m-d') : '') }}"
-                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('payment_date') border-red-500 @enderror">
-                        @error('payment_date')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                        <label for="period_year" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tahun *</label>
+                        <select id="period_year" name="period_year" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            @for ($y = date('Y') + 1; $y >= 2020; $y--)
+                                <option value="{{ $y }}" {{ old('period_year', $payroll->period_year) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENDAPATAN -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-plus-circle text-green-600 mr-2"></i>
+                    PENDAPATAN
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="gaji_pokok" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gaji Pokok *</label>
+                        <input type="number" id="gaji_pokok" name="gaji_pokok" value="{{ old('gaji_pokok', $payroll->gaji_pokok) }}" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                     </div>
 
-                    <div class="md:col-span-2">
-                        <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-                        <textarea id="notes" name="notes" rows="3"
-                                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white @error('notes') border-red-500 @enderror">{{ old('notes', $payroll->notes) }}</textarea>
-                        @error('notes')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                    <div>
+                        <label for="tunjangan_jabatan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Jabatan</label>
+                        <input type="number" id="tunjangan_jabatan" name="tunjangan_jabatan" value="{{ old('tunjangan_jabatan', $payroll->tunjangan_jabatan) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="tunjangan_makan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Makan</label>
+                        <input type="number" id="tunjangan_makan" name="tunjangan_makan" value="{{ old('tunjangan_makan', $payroll->tunjangan_makan) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="tunjangan_transport" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tunjangan Transport</label>
+                        <input type="number" id="tunjangan_transport" name="tunjangan_transport" value="{{ old('tunjangan_transport', $payroll->tunjangan_transport) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="lembur" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Lembur</label>
+                        <input type="number" id="lembur" name="lembur" value="{{ old('lembur', $payroll->lembur) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="bonus" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bonus</label>
+                        <input type="number" id="bonus" name="bonus" value="{{ old('bonus', $payroll->bonus) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="reimburse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reimburse</label>
+                        <input type="number" id="reimburse" name="reimburse" value="{{ old('reimburse', $payroll->reimburse) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="thr" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">THR</label>
+                        <input type="number" id="thr" name="thr" value="{{ old('thr', $payroll->thr) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                     </div>
                 </div>
 
-                <!-- Salary Summary -->
-                <div class="mt-8 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Salary Summary</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Total Gross</label>
-                            <p id="total-gross" class="text-lg font-semibold text-gray-900 dark:text-white">Rp {{ number_format($payroll->total_gross, 0, ',', '.') }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Total Deductions</label>
-                            <p id="total-deductions" class="text-lg font-semibold text-red-600 dark:text-red-400">Rp {{ number_format($payroll->total_deductions, 0, ',', '.') }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Net Salary</label>
-                            <p id="net-salary" class="text-lg font-semibold text-green-600 dark:text-green-400">Rp {{ number_format($payroll->net_salary, 0, ',', '.') }}</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Status</label>
-                            <p id="summary-status" class="text-lg font-semibold text-gray-900 dark:text-white">{{ ucfirst($payroll->payment_status) }}</p>
-                        </div>
+                <div class="mt-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Pendapatan:</span>
+                        <span id="total-pendapatan" class="text-lg font-bold text-green-600 dark:text-green-400">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POTONGAN -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-minus-circle text-red-600 mr-2"></i>
+                    POTONGAN
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="bpjs_kesehatan" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Kesehatan</label>
+                        <input type="number" id="bpjs_kesehatan" name="bpjs_kesehatan" value="{{ old('bpjs_kesehatan', $payroll->bpjs_kesehatan) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="bpjs_tk" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">BPJS Ketenagakerjaan</label>
+                        <input type="number" id="bpjs_tk" name="bpjs_tk" value="{{ old('bpjs_tk', $payroll->bpjs_tk) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="pph21" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">PPh21</label>
+                        <input type="number" id="pph21" name="pph21" value="{{ old('pph21', $payroll->pph21) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="potongan_absensi" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Potongan Absensi</label>
+                        <input type="number" id="potongan_absensi" name="potongan_absensi" value="{{ old('potongan_absensi', $payroll->potongan_absensi) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="kasbon" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kasbon</label>
+                        <input type="number" id="kasbon" name="kasbon" value="{{ old('kasbon', $payroll->kasbon) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+
+                    <div>
+                        <label for="potongan_lainnya" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Potongan Lainnya</label>
+                        <input type="number" id="potongan_lainnya" name="potongan_lainnya" value="{{ old('potongan_lainnya', $payroll->potongan_lainnya) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                     </div>
                 </div>
 
-                <div class="mt-8 flex items-center justify-end space-x-4">
-                    <a href="{{ route('admin.payroll.show', $payroll) }}"
-                       class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                        Cancel
-                    </a>
-                    <button type="submit"
-                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
-                        <i class="fa-solid fa-save mr-2"></i>Update Payroll Record
-                    </button>
+                <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Potongan:</span>
+                        <span id="total-potongan" class="text-lg font-bold text-red-600 dark:text-red-400">Rp 0</span>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <!-- INFORMASI REKENING KARYAWAN -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <i class="fa-solid fa-building-columns text-blue-600 mr-2"></i>
+                    Informasi Rekening Karyawan
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nama Bank</label>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $payroll->bank_name ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nomor Rekening</label>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $payroll->bank_account_number ?? '-' }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Atas Nama</label>
+                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $payroll->bank_account_holder ?? '-' }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Catatan</label>
+                    <textarea id="notes" name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">{{ old('notes', $payroll->notes) }}</textarea>
+                </div>
+            </div>
+
+            <!-- RINGKASAN -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-700 rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Ringkasan Gaji</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Total Pendapatan</div>
+                        <div id="summary-pendapatan" class="text-2xl font-bold text-green-600 dark:text-green-400">Rp 0</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Total Potongan</div>
+                        <div id="summary-potongan" class="text-2xl font-bold text-red-600 dark:text-red-400">Rp 0</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">Gaji Bersih (THP)</div>
+                        <div id="gaji-bersih" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Rp 0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOMBOL AKSI -->
+            <div class="flex justify-end space-x-4">
+                <a href="{{ route('admin.payroll.show', $payroll) }}" class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors">
+                    Batal
+                </a>
+                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">
+                    <i class="fa-solid fa-save mr-2"></i>Update Slip Gaji
+                </button>
+            </div>
+        </form>
     </div>
 
-    <script src="{{ asset('js/admin/payroll.js') }}"></script>
+    <script>
+        // Auto-calculate totals
+        function formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(number);
+        }
+
+        function calculateTotals() {
+            // Pendapatan
+            const gajiPokok = parseFloat(document.getElementById('gaji_pokok').value) || 0;
+            const tunjanganJabatan = parseFloat(document.getElementById('tunjangan_jabatan').value) || 0;
+            const tunjanganMakan = parseFloat(document.getElementById('tunjangan_makan').value) || 0;
+            const tunjanganTransport = parseFloat(document.getElementById('tunjangan_transport').value) || 0;
+            const lembur = parseFloat(document.getElementById('lembur').value) || 0;
+            const bonus = parseFloat(document.getElementById('bonus').value) || 0;
+            const reimburse = parseFloat(document.getElementById('reimburse').value) || 0;
+            const thr = parseFloat(document.getElementById('thr').value) || 0;
+
+            const totalPendapatan = gajiPokok + tunjanganJabatan + tunjanganMakan + tunjanganTransport + lembur + bonus + reimburse + thr;
+
+            // Potongan
+            const bpjsKesehatan = parseFloat(document.getElementById('bpjs_kesehatan').value) || 0;
+            const bpjsTk = parseFloat(document.getElementById('bpjs_tk').value) || 0;
+            const pph21 = parseFloat(document.getElementById('pph21').value) || 0;
+            const potonganAbsensi = parseFloat(document.getElementById('potongan_absensi').value) || 0;
+            const kasbon = parseFloat(document.getElementById('kasbon').value) || 0;
+            const potonganLainnya = parseFloat(document.getElementById('potongan_lainnya').value) || 0;
+
+            const totalPotongan = bpjsKesehatan + bpjsTk + pph21 + potonganAbsensi + kasbon + potonganLainnya;
+
+            // Gaji Bersih
+            const gajiBersih = totalPendapatan - totalPotongan;
+
+            // Update display
+            document.getElementById('total-pendapatan').textContent = formatRupiah(totalPendapatan);
+            document.getElementById('total-potongan').textContent = formatRupiah(totalPotongan);
+            document.getElementById('summary-pendapatan').textContent = formatRupiah(totalPendapatan);
+            document.getElementById('summary-potongan').textContent = formatRupiah(totalPotongan);
+            document.getElementById('gaji-bersih').textContent = formatRupiah(gajiBersih);
+        }
+
+        // Add event listeners to all input fields
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', calculateTotals);
+        });
+
+        // Calculate on page load
+        calculateTotals();
+    </script>
 </x-admin-layout>

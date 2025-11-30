@@ -1,5 +1,19 @@
 @php
     $pendingRevisionsCount = \App\Models\Admin\AttendanceRevision::where('status', 'pending')->count();
+    $pendingLeavesCount = \App\Models\Admin\Leave::where('status', 'pending')
+        ->whereHas('user', function($query) {
+            $query->where('instansi_id', Auth::user()->instansi_id);
+        })
+        ->count();
+    $pendingReimbursementsCount = \DB::table('reimbursements')
+        ->join('users', 'reimbursements.user_id', '=', 'users.id')
+        ->where('reimbursements.status', 'pending')
+        ->where('users.instansi_id', Auth::user()->instansi_id)
+        ->count();
+    $pendingSubscriptionRequest = \DB::table('subscription_requests')
+        ->where('instansi_id', Auth::user()->instansi_id)
+        ->whereIn('payment_status', ['pending', 'pending_verification'])
+        ->exists();
 @endphp
 
 <!DOCTYPE html>
@@ -117,7 +131,12 @@
                             </span>
                             <span>Time & Attendance</span>
                         </div>
-                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'attendance' ? 'rotate-180' : ''"></i>
+                        <div class="flex items-center gap-2">
+                            @if($pendingRevisionsCount > 0 || $pendingLeavesCount > 0)
+                                <span class="inline-flex items-center justify-center w-2 h-2 bg-red-500 rounded-full"></span>
+                            @endif
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'attendance' ? 'rotate-180' : ''"></i>
+                        </div>
                     </button>
                     <div x-show="openMenu === 'attendance'" x-collapse class="pl-11 pr-3 space-y-1">
                         @hasPermission('view-attendance')
@@ -141,11 +160,19 @@
                         @endhasPermission
                         @hasPermission('view-leaves')
                         <a href="{{ route('admin.leaves.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200 flex justify-between items-center
                                   {{ request()->routeIs('admin.leaves.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Leave Requests
+                            <span>Leave Requests</span>
+                            @if($pendingLeavesCount > 0)
+                                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-100 bg-red-500 rounded-full">{{ $pendingLeavesCount }}</span>
+                            @endif
                         </a>
                         @endhasPermission
+                        <a href="{{ route('admin.attendance-policy.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.attendance-policy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Attendance Policy
+                        </a>
                     </div>
                 </div>
                 @endhasAnyPermission
@@ -167,7 +194,12 @@
                             </span>
                             <span>Finance</span>
                         </div>
-                        <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'finance' ? 'rotate-180' : ''"></i>
+                        <div class="flex items-center gap-2">
+                            @if($pendingReimbursementsCount > 0)
+                                <span class="inline-flex items-center justify-center w-2 h-2 bg-red-500 rounded-full"></span>
+                            @endif
+                            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200 opacity-50" :class="openMenu === 'finance' ? 'rotate-180' : ''"></i>
+                        </div>
                     </button>
                     <div x-show="openMenu === 'finance'" x-collapse class="pl-11 pr-3 space-y-1">
                         @hasPermission('view-payroll')
@@ -179,9 +211,12 @@
                         @endhasPermission
                         @hasPermission('view-reimbursements')
                         <a href="{{ route('admin.reimbursements.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200 flex justify-between items-center
                                   {{ request()->routeIs('admin.reimbursements.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Reimbursements
+                            <span>Reimbursements</span>
+                            @if($pendingReimbursementsCount > 0)
+                                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-100 bg-red-500 rounded-full">{{ $pendingReimbursementsCount }}</span>
+                            @endif
                         </a>
                         @endhasPermission
                     </div>
@@ -343,195 +378,6 @@
                             <span class="block dark:hidden"><i class="fa-solid fa-moon"></i></span>
                             <span class="hidden dark:block"><i class="fa-solid fa-sun"></i></span>
                         </button>
-
-                        <!-- Notifications -->
-                        <div class="relative" x-data="{ open: false, notifications: [], unreadCount: 0 }" 
-                             x-init="
-                                open = false;
-                                fetchNotifications();
-                                setInterval(fetchNotifications, 30000);
-                                
-                                window.addEventListener('beforeunload', () => open = false);
-                                document.addEventListener('click', function(e) {
-                                    const clicked = e.target;
-                                    if (clicked.closest('button#prev-month') || clicked.closest('button#next-month') || 
-                                        (clicked.tagName === 'A' && clicked.href && clicked.href.includes('month='))) {
-                                        open = false;
-                                    }
-                                });
-                                
-                                function fetchNotifications() {
-                                    fetch('{{ route('admin.notifications.index') }}')
-                                        .then(response => response.json())
-                                        .then(data => {
-                                            notifications = data.notifications;
-                                            unreadCount = data.unread_count;
-                                        });
-                                }
-                                
-                                function markAsRead(notificationId) {
-                                    fetch(`/admin/notifications/${notificationId}/read`, {
-                                        method: 'PUT',
-                                        headers: {
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
-                                            'Content-Type': 'application/json'
-                                        }
-                                    }).then(() => {
-                                        fetchNotifications();
-                                    });
-                                }
-                                
-                                function markAllAsRead() {
-                                    fetch('/admin/notifications/mark-all-read', {
-                                        method: 'PUT',
-                                        headers: {
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
-                                            'Content-Type': 'application/json'
-                                        }
-                                    }).then(() => {
-                                        fetchNotifications();
-                                    });
-                                }
-                                
-                                function deleteNotification(notificationId) {
-                                    fetch(`/admin/notifications/${notificationId}`, {
-                                        method: 'DELETE',
-                                        headers: {
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
-                                            'Content-Type': 'application/json'
-                                        }
-                                    }).then(() => {
-                                        fetchNotifications();
-                                    });
-                                }
-                                
-                                function getNotificationIcon(type) {
-                                    const icons = {
-                                        'success': 'fa-check-circle text-green-600 dark:text-green-400',
-                                        'error': 'fa-exclamation-circle text-red-600 dark:text-red-400',
-                                        'warning': 'fa-exclamation-triangle text-yellow-600 dark:text-yellow-400',
-                                        'info': 'fa-info-circle text-blue-600 dark:text-blue-400',
-                                        'attendance': 'fa-calendar-check text-blue-600 dark:text-blue-400',
-                                        'leave': 'fa-calendar-times text-orange-600 dark:text-orange-400',
-                                        'leaves': 'fa-calendar-times text-orange-600 dark:text-orange-400',
-                                        'payroll': 'fa-money-bill-wave text-green-600 dark:text-green-400',
-                                        'user': 'fa-user-plus text-purple-600 dark:text-purple-400'
-                                    };
-                                    return icons[type] || 'fa-bell text-gray-600 dark:text-gray-400';
-                                }
-
-                                function getNotificationBadge(type) {
-                                    const badges = {
-                                        'success': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                        'error': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-                                        'warning': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                                        'info': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                                        'attendance': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-                                        'leave': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-                                        'leaves': 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
-                                        'payroll': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                                        'user': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300'
-                                    };
-                                    return badges[type] || 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
-                                }
-
-                                function formatDate(dateString) {
-                                    const date = new Date(dateString);
-                                    const now = new Date();
-                                    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-                                    const diffInHours = Math.floor(diffInMinutes / 60);
-                                    const diffInDays = Math.floor(diffInHours / 24);
-
-                                    if (diffInMinutes < 1) return 'Just now';
-                                    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-                                    if (diffInHours < 24) return `${diffInHours}h ago`;
-                                    if (diffInDays === 1) return 'Yesterday';
-                                    if (diffInDays < 7) return `${diffInDays}d ago`;
-
-                                    return date.toLocaleDateString('id-ID', {
-                                        day: 'numeric',
-                                        month: 'short',
-                                        year: 'numeric'
-                                    });
-                                }
-                             ">
-                            <button @click="open = !open" class="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200 relative" title="Notifications">
-                                <i class="fa-solid fa-bell"></i>
-                                <span x-show="unreadCount > 0" class="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center" x-text="unreadCount"></span>
-                            </button>
-                            
-                            <!-- Notifications Dropdown -->
-                            <div x-show="open" 
-                                 x-cloak
-                                 @click.away="open = false" 
-                                 class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100"
-                                 x-transition:leave="transition ease-in duration-150"
-                                 x-transition:leave-start="opacity-100 scale-100"
-                                 x-transition:leave-end="opacity-0 scale-95">
-                                
-                                <!-- Header -->
-                                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                                    <div class="flex items-center justify-between">
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
-                                        <button @click="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                            Mark all as read
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <!-- Notifications List -->
-                                <div class="max-h-96 overflow-y-auto">
-                                    <template x-for="notification in notifications" :key="notification.id">
-                                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200"
-                                             :class="{ 'bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-4 border-l-blue-500': !notification.is_read }"
-                                             @click="markAsRead(notification.id)">
-                                            <div class="flex items-start space-x-3">
-                                                <div class="flex-shrink-0 mt-0.5">
-                                                    <div class="w-10 h-10 rounded-full flex items-center justify-center" :class="getNotificationBadge(notification.type)">
-                                                        <i :class="getNotificationIcon(notification.type)" class="text-sm"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-1 min-w-0">
-                                                    <div class="flex items-start justify-between">
-                                                        <p class="text-sm font-semibold text-gray-900 dark:text-white" x-text="notification.title"></p>
-                                                        <div class="flex items-center space-x-2 ml-2">
-                                                            <span x-show="!notification.is_read" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                                                New
-                                                            </span>
-                                                            <button @click.stop="deleteNotification(notification.id)"
-                                                                    class="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-                                                                <i class="fa-solid fa-times text-xs"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed" x-text="notification.message"></p>
-                                                    <div class="flex items-center justify-between mt-2">
-                                                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="formatDate(notification.created_at)"></p>
-                                                        <span class="text-xs font-medium capitalize px-2 py-1 rounded" :class="getNotificationBadge(notification.type)" x-text="notification.type"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                    
-                                    <div x-show="notifications.length === 0" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                        <i class="fa-solid fa-bell-slash text-2xl mb-2"></i>
-                                        <p>No notifications</p>
-                                    </div>
-                                </div>
-                                
-                                <!-- Footer -->
-                                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                                    <a href="{{ route('admin.notifications.index') }}" class="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center">
-                                        <i class="fa-solid fa-external-link-alt mr-2 text-xs"></i>
-                                        View all notifications
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
 
                         <a href="#" class="hidden sm:inline-flex p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200" title="Recent Activities"><i class="fa-solid fa-clock"></i></a>
                         

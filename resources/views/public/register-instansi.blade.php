@@ -69,8 +69,37 @@
                         </div>
                     </div>
 
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mt-8 mb-3">Pilih Paket</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        @foreach($packages as $package)
+                            <label class="relative border rounded-lg p-4 cursor-pointer hover:border-blue-500 dark:border-gray-600 dark:hover:border-blue-400 transition-colors {{ (stripos($package->name, 'Free') !== false || stripos($package->name, 'Trial') !== false) ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' : '' }}">
+                                <input type="radio" name="package_id" value="{{ $package->id }}" class="sr-only" {{ (stripos($package->name, 'Free') !== false || stripos($package->name, 'Trial') !== false) ? 'checked' : '' }}>
+                                <div class="flex flex-col h-full">
+                                    <div class="mb-2">
+                                        <span class="font-bold text-lg text-gray-900 dark:text-white">{{ $package->name }}</span>
+                                        @if($package->price == 0)
+                                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                                Free
+                                            </span>
+                                        @else
+                                            <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                Rp {{ number_format($package->price, 0, ',', '.') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">{{ $package->description }}</p>
+                                    <ul class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                        <li><i class="fas fa-check text-green-500 mr-1"></i> {{ $package->max_employees }} Karyawan</li>
+                                        <li><i class="fas fa-check text-green-500 mr-1"></i> {{ $package->max_branches }} Cabang</li>
+                                        <li><i class="fas fa-check text-green-500 mr-1"></i> {{ $package->duration_days }} Hari</li>
+                                    </ul>
+                                </div>
+                            </label>
+                        @endforeach
+                    </div>
+
                     <div class="mt-6 flex justify-between items-center">
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Dengan mendaftar, Anda setuju akun akan aktif dengan paket Free (maks 5 karyawan, 1 cabang, fitur terbatas) selama 30 hari.</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-300">Dengan mendaftar, Anda menyetujui Syarat dan Ketentuan yang berlaku.</p>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Daftarkan Instansi</button>
                     </div>
                 </form>

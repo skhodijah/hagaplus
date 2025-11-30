@@ -44,14 +44,31 @@ class PaymentMethodController extends Controller
             'qris_data' => 'nullable|string'
         ]);
 
-        $data = $request->all();
+        $data = [
+            'name' => $request->input('name'),
+            'type' => $request->input('type'),
+            'description' => $request->input('description'),
+            'is_active' => $request->has('is_active'),
+        ];
 
-        // Handle QRIS image upload
-        if ($request->hasFile('qris_image')) {
-            $file = $request->file('qris_image');
-            $filename = 'qris_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('qris', $filename, 'public');
-            $data['qris_image'] = $path;
+        // Handle fields based on payment type
+        if ($request->input('type') === 'bank_transfer') {
+            $data['account_name'] = $request->input('bank_account_name');
+            $data['account_number'] = $request->input('bank_account_number');
+            $data['bank_name'] = $request->input('bank_name');
+        } elseif ($request->input('type') === 'ewallet') {
+            $data['account_name'] = $request->input('ewallet_account_name');
+            $data['account_number'] = $request->input('ewallet_account_number');
+        } elseif ($request->input('type') === 'qris') {
+            $data['qris_data'] = $request->input('qris_data');
+            
+            // Handle QRIS image upload
+            if ($request->hasFile('qris_image')) {
+                $file = $request->file('qris_image');
+                $filename = 'qris_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('qris', $filename, 'public');
+                $data['qris_image'] = $path;
+            }
         }
 
         PaymentMethod::create($data);
@@ -99,19 +116,45 @@ class PaymentMethodController extends Controller
             'qris_data' => 'nullable|string'
         ]);
 
-        $data = $request->all();
+        $data = [
+            'name' => $request->input('name'),
+            'type' => $request->input('type'),
+            'description' => $request->input('description'),
+            'is_active' => $request->has('is_active'),
+        ];
 
-        // Handle QRIS image upload
-        if ($request->hasFile('qris_image')) {
-            // Delete old image if exists
-            if ($paymentMethod->qris_image && Storage::disk('public')->exists($paymentMethod->qris_image)) {
-                Storage::disk('public')->delete($paymentMethod->qris_image);
+        // Handle fields based on payment type
+        if ($request->input('type') === 'bank_transfer') {
+            $data['account_name'] = $request->input('bank_account_name');
+            $data['account_number'] = $request->input('bank_account_number');
+            $data['bank_name'] = $request->input('bank_name');
+            // Clear QRIS related fields when switching to bank transfer
+            $data['qris_image'] = null;
+            $data['qris_data'] = null;
+        } elseif ($request->input('type') === 'ewallet') {
+            $data['account_name'] = $request->input('ewallet_account_name');
+            $data['account_number'] = $request->input('ewallet_account_number');
+            $data['bank_name'] = null; // Clear bank name when switching to e-wallet
+            $data['qris_image'] = null;
+            $data['qris_data'] = null;
+        } elseif ($request->input('type') === 'qris') {
+            $data['account_name'] = null;
+            $data['account_number'] = null;
+            $data['bank_name'] = null;
+            $data['qris_data'] = $request->input('qris_data');
+            
+            // Handle QRIS image upload
+            if ($request->hasFile('qris_image')) {
+                // Delete old image if exists
+                if ($paymentMethod->qris_image && Storage::disk('public')->exists($paymentMethod->qris_image)) {
+                    Storage::disk('public')->delete($paymentMethod->qris_image);
+                }
+
+                $file = $request->file('qris_image');
+                $filename = 'qris_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('qris', $filename, 'public');
+                $data['qris_image'] = $path;
             }
-
-            $file = $request->file('qris_image');
-            $filename = 'qris_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('qris', $filename, 'public');
-            $data['qris_image'] = $path;
         }
 
         $paymentMethod->update($data);

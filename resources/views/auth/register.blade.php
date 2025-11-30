@@ -39,12 +39,12 @@
         </div>
     </div>
     <!-- Right Side - Register Form -->
-    <div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-white relative overflow-y-auto">
-        <a href="{{ route('home') }}" class="absolute top-8 left-8 text-gray-500 hover:text-[#008159] transition-colors flex items-center gap-2 group">
+    <div class="w-full lg:w-1/2 flex flex-col p-8 bg-white relative overflow-y-auto">
+        <a href="{{ route('home') }}" class="absolute top-0 left-0 p-8 text-gray-500 hover:text-[#008159] transition-colors flex items-center gap-2 group z-20">
             <i class="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform"></i>
             <span class="font-medium">Kembali</span>
         </a>
-        <div class="w-full max-w-md space-y-8 py-12">
+        <div class="w-full max-w-md space-y-8 py-12 m-auto relative z-10">
             <div class="text-center">
                 <img src="{{ asset('images/Haga.png') }}" alt="Haga Logo" class="h-24 w-auto object-contain drop-shadow-md mx-auto mb-4">
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Buat Akun Baru</h1>

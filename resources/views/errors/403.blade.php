@@ -42,7 +42,7 @@
                     Go Back
                 </button>
                 
-                <a href="{{ route('admin.dashboard') }}" class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center font-medium transform hover:-translate-y-0.5">
+                <a href="{{ route('dashboard') }}" class="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-500/40 transition-all duration-200 flex items-center justify-center font-medium transform hover:-translate-y-0.5">
                     <i class="fa-solid fa-gauge mr-2"></i>
                     Return to Dashboard
                 </a>

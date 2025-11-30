@@ -72,11 +72,11 @@
                 </div>
             </div>
 
-            <!-- Right Column - Company Info -->
+            <!-- Right Column - Company Info & Attendance Policy -->
             <div class="col-span-4 flex items-center">
-                <div class="border-l border-gray-200 pl-6 h-full">
+                <div class="border-l border-gray-200 pl-6 h-full space-y-6">
                     @if($employee->instansi)
-                    <div class="mb-4">
+                    <div>
                         <p class="text-sm text-gray-500 mb-1">Perusahaan</p>
                         <p class="text-sm font-medium text-gray-900">{{ $employee->instansi->nama_instansi }}</p>
                     </div>
@@ -86,6 +86,40 @@
                     <div>
                         <p class="text-sm text-gray-500 mb-1">Cabang</p>
                         <p class="text-sm font-medium text-gray-900">{{ $employee->branch->name }}</p>
+                    </div>
+                    @endif
+
+                    @if($employee->effective_policy && $employee->effective_policy->work_start_time)
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500 mb-2">Kebijakan Absensi</p>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-xs">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span class="text-gray-700">{{ \Carbon\Carbon::parse($employee->effective_policy->work_start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($employee->effective_policy->work_end_time)->format('H:i') }}</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="text-gray-700">
+                                    @php
+                                        $dayNames = [
+                                            'monday' => 'Sen',
+                                            'tuesday' => 'Sel',
+                                            'wednesday' => 'Rab',
+                                            'thursday' => 'Kam',
+                                            'friday' => 'Jum',
+                                            'saturday' => 'Sab',
+                                            'sunday' => 'Min',
+                                        ];
+                                        $workDays = collect($employee->effective_policy->work_days)->map(fn($day) => $dayNames[$day] ?? $day)->join(', ');
+                                    @endphp
+                                    {{ $workDays }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     @endif
                 </div>

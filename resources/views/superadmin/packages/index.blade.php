@@ -91,7 +91,7 @@
                                     <form method="POST" action="{{ route('superadmin.packages.destroy', $package) }}" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this package?')">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm">
+                                        <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" {{ $package->name === 'TRIAL' ? 'disabled' : '' }}>
                                             <i class="fa-solid fa-trash-can mr-2"></i> Delete
                                         </button>
                                     </form>
