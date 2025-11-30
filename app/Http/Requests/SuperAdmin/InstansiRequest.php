@@ -23,7 +23,6 @@ class InstansiRequest extends FormRequest
     {
         return [
             'nama_instansi' => 'required|string|max:255',
-            'subdomain' => 'required|string|max:100|unique:instansis,subdomain,' . $this->route('instansi'),
             'status_langganan' => 'required|in:active,inactive,suspended',
         ];
     }
@@ -37,8 +36,7 @@ class InstansiRequest extends FormRequest
     {
         return [
             'nama_instansi.required' => 'Nama instansi harus diisi.',
-            'subdomain.required' => 'Subdomain harus diisi.',
-            'subdomain.unique' => 'Subdomain sudah digunakan.',
+
             'status_langganan.required' => 'Status langganan harus diisi.',
         ];
     }

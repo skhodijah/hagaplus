@@ -33,39 +33,61 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $googleUser = session('google_user');
+
+        // If user submitted the form with "google_auth_no_password" but session is gone
+        if (!$googleUser && $request->password === 'google_auth_no_password') {
+            return redirect()->route('auth.google')
+                ->with('error', 'Sesi Google berakhir. Silakan login ulang.');
+        }
+        
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'company_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        ];
 
-        // Generate unique subdomain
-        $baseSubdomain = \Illuminate\Support\Str::slug($request->company_name);
-        $subdomain = $baseSubdomain;
-        $counter = 1;
-        
-        while (Instansi::where('subdomain', $subdomain)->exists()) {
-            $subdomain = $baseSubdomain . '-' . $counter;
-            $counter++;
+        if (!$googleUser) {
+            $rules['password'] = ['required', 'confirmed', Rules\Password::defaults()];
         }
+
+        $request->validate($rules);
 
         // Create Instansi
         $instansi = Instansi::create([
             'nama_instansi' => $request->company_name,
-            'subdomain' => $subdomain,
             'email' => $request->email,
             'is_active' => true,
         ]);
 
-        // Create User
-        $user = User::create([
+        // Check for Google User session
+        $googleUser = session('google_user');
+        
+        $password = $request->password;
+        if ($googleUser) {
+            $password = \Illuminate\Support\Str::random(24);
+        }
+
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => Hash::make($password),
             'instansi_id' => $instansi->id,
             'system_role_id' => 2, // Default role untuk user yang mendaftar
-        ]);
+        ];
+
+        // Add Google data if applicable
+        if ($googleUser && $googleUser->email === $request->email) {
+            $userData['google_id'] = $googleUser->id;
+            $userData['email_verified_at'] = now();
+            $userData['avatar'] = $googleUser->avatar;
+            
+            // Clear session
+            session()->forget('google_user');
+        }
+
+        // Create User
+        $user = User::create($userData);
 
         // Dapatkan paket TRIAL (ID 5)
         $trialPackage = Package::find(5);
@@ -131,12 +153,18 @@ class RegisteredUserController extends Controller
         
         // Semua logika subscription sudah dipindah ke atas
 
+        // Check email verification setting
+        $emailVerificationSetting = \App\Models\SystemSetting::where('key', 'email_verification_enabled')->first();
+        if ($emailVerificationSetting && $emailVerificationSetting->value === 'false') {
+            $user->markEmailAsVerified();
+        }
+
         event(new Registered($user));
 
         Auth::login($user);
 
-        if (isset($isTrial) && !$isTrial) {
-            return redirect()->route('admin.subscription.index');
+        if (!$user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
         }
 
         return redirect(route('dashboard', absolute: false));

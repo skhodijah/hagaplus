@@ -56,6 +56,37 @@
                 <!-- Hidden Package Input -->
                 <input type="hidden" name="package" value="{{ request('package') }}">
 
+                <!-- Google Register Button -->
+                <div class="mb-6">
+                    <a href="{{ route('auth.google') }}" class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200">
+                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="h-5 w-5 mr-2" alt="Google Logo">
+                        Daftar dengan Google
+                    </a>
+                    
+                    <div class="relative mt-6">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Atau daftar dengan email</span>
+                        </div>
+                    </div>
+                </div>
+                
+                @php
+                    $googleUser = session('google_user');
+                @endphp
+                
+                @if($googleUser)
+                    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center">
+                        <img src="{{ $googleUser->avatar }}" alt="{{ $googleUser->name }}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <p class="text-sm font-medium text-blue-900">Mendaftar sebagai {{ $googleUser->name }}</p>
+                            <p class="text-xs text-blue-700">{{ $googleUser->email }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="space-y-5">
                     <!-- Name -->
                     <div>
@@ -66,7 +97,7 @@
                             </div>
                             <input id="name" name="name" type="text" required autofocus autocomplete="name"
                                 class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0EC774]/50 focus:border-[#0EC774] bg-gray-50 focus:bg-white" 
-                                placeholder="Nama Anda" value="{{ old('name') }}">
+                                placeholder="Nama Anda" value="{{ old('name', $googleUser->name ?? '') }}" {{ isset($googleUser) ? 'readonly' : '' }}>
                         </div>
                         <x-input-error :messages="$errors->get('name')" class="mt-2" />
                     </div>
@@ -94,11 +125,12 @@
                             </div>
                             <input id="email" name="email" type="email" required autocomplete="username"
                                 class="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0EC774]/50 focus:border-[#0EC774] bg-gray-50 focus:bg-white" 
-                                placeholder="nama@perusahaan.com" value="{{ old('email') }}">
+                                placeholder="nama@perusahaan.com" value="{{ old('email', $googleUser->email ?? '') }}" {{ isset($googleUser) ? 'readonly' : '' }}>
                         </div>
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
+                    @if(!isset($googleUser))
                     <!-- Password -->
                     <div>
                         <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
@@ -132,6 +164,13 @@
                         </div>
                         <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                     </div>
+                    @else
+                        <input type="hidden" name="password" value="google_auth_no_password">
+                        <input type="hidden" name="password_confirmation" value="google_auth_no_password">
+                        <div class="bg-green-50 text-green-700 p-3 rounded-lg text-sm border border-green-200">
+                            <i class="fa-solid fa-check-circle mr-2"></i> Password tidak diperlukan karena Anda mendaftar menggunakan Google.
+                        </div>
+                    @endif
                 </div>
 
                 <div>

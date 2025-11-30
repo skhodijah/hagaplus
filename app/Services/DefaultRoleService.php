@@ -10,6 +10,7 @@ class DefaultRoleService
 {
     /**
      * Create default roles for an instansi
+     * 3 Simple Roles: Employee, User (Approver), HRD
      */
     public static function createDefaultRoles(int $instansiId): void
     {
@@ -17,7 +18,7 @@ class DefaultRoleService
 
         foreach ($defaultRoles as $roleData) {
             // Determine system_role_id based on role name
-            // Employee = 3, all others (Approver, Supervisor, Manager, HR, Finance) = 2 (Admin)
+            // Employee = 3, User & HRD = 2 (Admin)
             $systemRoleId = ($roleData['name'] === 'Employee') ? 3 : 2;
             
             // Create the role
@@ -38,40 +39,113 @@ class DefaultRoleService
 
     /**
      * Get default roles data
+     * Simplified to 3 roles only
      */
     private static function getDefaultRolesData(): array
     {
         return [
+            // 1. EMPLOYEE - Karyawan Biasa
             [
                 'name' => 'Employee',
-                'description' => 'Peran standar karyawan',
-                'permissions' => ['view-attendance', 'view-leaves', 'view-payroll'],
+                'description' => 'Karyawan - Absen, ajukan cuti/izin/lembur, lihat riwayat sendiri',
+                'permissions' => [
+                    'view-attendance',      // Lihat absensi sendiri
+                    'view-leaves',          // Lihat cuti sendiri
+                    'view-payroll',         // Lihat slip gaji sendiri
+                ],
             ],
+            
+            // 2. USER - Kepala Divisi / Atasan Langsung / Approver
             [
-                'name' => 'Approver',
-                'description' => 'Menyetujui izin/cuti/lembur',
-                'permissions' => ['view-employees', 'view-attendance', 'approve-attendance-revisions', 'view-leaves', 'approve-leaves', 'view-payroll'],
+                'name' => 'User',
+                'description' => 'Kepala Divisi / Atasan - Approve cuti/izin/lembur bawahan, lihat laporan divisi',
+                'permissions' => [
+                    'view-employees',               // Lihat data bawahan
+                    'view-attendance',              // Lihat absensi
+                    'approve-attendance-revisions', // Approve absen manual/revisi
+                    'view-leaves',                  // Lihat pengajuan cuti
+                    'approve-leaves',               // Approve/reject cuti/izin/lembur
+                    'view-payroll',                 // Lihat payroll
+                    'view-reports',                 // Lihat laporan divisi
+                ],
             ],
+            
+            // 3. HRD - Human Resource Department
             [
-                'name' => 'Supervisor',
-                'description' => 'Monitoring dan approval operasional',
-                'permissions' => ['view-employees', 'view-attendance', 'edit-attendance', 'approve-attendance-revisions', 'view-leaves', 'approve-leaves', 'view-payroll', 'view-reports'],
-            ],
-            [
-                'name' => 'Manager',
-                'description' => 'Pengambil keputusan tingkat tinggi',
-                'permissions' => ['view-employees', 'create-employees', 'edit-employees', 'view-attendance', 'edit-attendance', 'approve-attendance-revisions', 'view-leaves', 'approve-leaves', 'manage-leave-policies', 'view-payroll', 'view-reports', 'export-reports', 'manage-employee-policies', 'manage-division-policies'],
-            ],
-            [
-                'name' => 'HR',
-                'description' => 'Kelola data karyawan, departemen, kebijakan absensi',
-                'permissions' => ['view-employees', 'create-employees', 'edit-employees', 'delete-employees', 'view-attendance', 'edit-attendance', 'approve-attendance-revisions', 'view-leaves', 'approve-leaves', 'manage-leave-policies', 'view-payroll', 'manage-departments', 'manage-divisions', 'manage-positions', 'manage-employee-policies', 'manage-division-policies', 'view-reports', 'export-reports', 'manage-branches'],
-            ],
-            [
-                'name' => 'Finance',
-                'description' => 'Penggajian/keuangan',
-                'permissions' => ['view-employees', 'view-attendance', 'view-leaves', 'view-payroll', 'process-payroll', 'edit-payroll', 'view-reports', 'export-reports'],
+                'name' => 'HRD',
+                'description' => 'HRD - Kelola karyawan, divisi, kebijakan, rekap absensi, payroll',
+                'permissions' => [
+                    // Employee Management
+                    'view-employees',
+                    'create-employees',
+                    'edit-employees',
+                    'delete-employees',
+                    
+                    // Attendance Management
+                    'view-attendance',
+                    'edit-attendance',
+                    'approve-attendance-revisions',
+                    
+                    // Leave Management
+                    'view-leaves',
+                    'approve-leaves',
+                    'manage-leave-policies',
+                    
+                    // Payroll
+                    'view-payroll',
+                    'process-payroll',
+                    'edit-payroll',
+                    
+                    // Organization Structure
+                    'manage-departments',
+                    'manage-divisions',
+                    'manage-positions',
+                    'manage-branches',
+                    
+                    // Policies & Settings
+                    'manage-employee-policies',
+                    'manage-division-policies',
+                    
+                    // Reports
+                    'view-reports',
+                    'export-reports',
+                ],
             ],
         ];
+    }
+    
+    /**
+     * Update existing instansi roles to new simplified structure
+     * This will be used for migration
+     */
+    public static function migrateToSimplifiedRoles(int $instansiId): void
+    {
+        DB::transaction(function () use ($instansiId) {
+            // Get existing roles
+            $existingRoles = InstansiRole::where('instansi_id', $instansiId)->get();
+            
+            // Map old roles to new roles
+            $roleMapping = [
+                'Employee' => 'Employee',
+                'Approver' => 'User',
+                'Supervisor' => 'User',
+                'Manager' => 'User',
+                'HR' => 'HRD',
+                'Finance' => 'HRD',
+            ];
+            
+            // Delete old non-default roles first
+            InstansiRole::where('instansi_id', $instansiId)
+                ->where('is_default', false)
+                ->delete();
+            
+            // Delete all default roles
+            InstansiRole::where('instansi_id', $instansiId)
+                ->where('is_default', true)
+                ->delete();
+            
+            // Create new simplified roles
+            self::createDefaultRoles($instansiId);
+        });
     }
 }

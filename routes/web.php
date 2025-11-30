@@ -16,7 +16,7 @@ Route::get('/pricing', [PricingController::class, 'index'])->name('pricing');
 Route::get('/auth/google', [App\Http\Controllers\Auth\GoogleAuthController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [App\Http\Controllers\Auth\GoogleAuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -37,10 +37,6 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('employee.dashboard');
     })->name('dashboard');
 });
-
-// Public Instansi Registration
-Route::get('/register-instansi', [PublicRegistrationController::class, 'create'])->name('public.register.instansi.create');
-Route::post('/register-instansi', [PublicRegistrationController::class, 'store'])->name('public.register.instansi.store');
 
 // Include role-based route files
 require __DIR__ . '/auth.php';

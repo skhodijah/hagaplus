@@ -198,16 +198,16 @@
                                 Approval Hierarchy
                             </h4>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
-                                Tentukan hierarki approval untuk karyawan ini. Approval flows: <strong>Supervisor → Manager → HR/Finance</strong>
+                                Tentukan hierarki approval untuk karyawan ini. Approval flow: <strong>Employee → User (Atasan) → HRD</strong>
                             </p>
                         </div>
 
                         <div>
                             <label for="supervisor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Direct Supervisor <span class="text-blue-500">(Level 1 Approval)</span>
+                                Atasan Langsung <span class="text-blue-500">(Approver - Role: User)</span>
                             </label>
                             <select id="supervisor_id" name="supervisor_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">Select Supervisor (Optional)</option>
+                                <option value="">Select Atasan (Optional)</option>
                                 @foreach($potentialSupervisors as $supervisor)
                                     <option value="{{ $supervisor->id }}" 
                                         data-department-id="{{ $supervisor->department_id }}"
@@ -220,16 +220,16 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Supervisor langsung (atasan tim) - akan menerima approval pertama
+                                Atasan langsung dengan role "User" - akan approve cuti/izin/lembur/absen manual
                             </p>
                         </div>
 
                         <div>
                             <label for="manager_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Department/Division Manager <span class="text-purple-500">(Level 2 Approval)</span>
+                                Backup Approver <span class="text-purple-500">(Optional)</span>
                             </label>
                             <select id="manager_id" name="manager_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">Select Manager (Optional)</option>
+                                <option value="">Select Backup Approver (Optional)</option>
                                 @foreach($potentialManagers as $manager)
                                     <option value="{{ $manager->id }}" 
                                         data-department-id="{{ $manager->department_id }}"
@@ -242,21 +242,32 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Manager departemen/divisi - akan menerima approval kedua (setelah supervisor)
+                                Backup approver jika atasan langsung tidak tersedia
                             </p>
                         </div>
 
-                        <div class="md:col-span-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <div class="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                             <div class="flex items-start">
                                 <i class="fa-solid fa-circle-info text-blue-500 mt-1 mr-3"></i>
                                 <div class="text-sm text-gray-700 dark:text-gray-300">
-                                    <p class="font-semibold mb-2">Approval Flow berdasarkan jenis request:</p>
-                                    <ul class="space-y-1 ml-4">
-                                        <li>• <strong>Izin/Cuti/Sakit/Edit Absen:</strong> Employee → Supervisor → Manager</li>
-                                        <li>• <strong>Reimburse & Penggantian Biaya:</strong> Employee → Supervisor → Manager → Finance</li>
-                                    </ul>
-                                    <p class="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                                        Jika supervisor tidak ditentukan, approval langsung ke Manager. Jika manager tidak ditentukan, langsung ke HR.
+                                    <p class="font-semibold mb-2">📋 Approval Flow Sederhana (3 Level):</p>
+                                    <div class="space-y-2 ml-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-20 font-medium text-blue-600">Employee</span>
+                                            <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                            <span class="w-20 font-medium text-purple-600">User</span>
+                                            <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                            <span class="w-20 font-medium text-green-600">HRD</span>
+                                        </div>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• <strong>Cuti/Izin/Sakit:</strong> Employee → User (approve) ✓</li>
+                                            <li>• <strong>Lembur:</strong> Employee → User (approve) ✓</li>
+                                            <li>• <strong>Absen Manual:</strong> Employee → User (approve) ✓</li>
+                                            <li>• <strong>Reimbursement:</strong> Employee → User → HRD (final) ✓</li>
+                                        </ul>
+                                    </div>
+                                    <p class="mt-3 text-xs text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 p-2 rounded">
+                                        💡 <strong>Catatan:</strong> Jika atasan tidak ditentukan, approval langsung ke HRD. Role "User" = Kepala Divisi/Dept/Supervisor.
                                     </p>
                                 </div>
                             </div>

@@ -44,37 +44,29 @@
                             </div>
 
                             <!-- Card Body -->
-                            <div class="p-6 flex-grow space-y-6">
+                            <div class="p-6 flex-grow">
                                 <!-- Limits -->
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl">
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Employees</p>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $package->max_employees }}</p>
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <i class="fa-solid fa-users text-blue-600 dark:text-blue-400"></i>
+                                        </div>
+                                        <p class="text-xs text-blue-700 dark:text-blue-300 uppercase tracking-wider mb-1">Employees</p>
+                                        <p class="text-2xl font-bold text-blue-900 dark:text-blue-100">{{ $package->max_employees }}</p>
                                     </div>
-                                    <div class="bg-gray-50 dark:bg-gray-700/30 p-3 rounded-xl">
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Branches</p>
-                                        <p class="font-semibold text-gray-900 dark:text-white">{{ $package->max_branches }}</p>
+                                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <i class="fa-solid fa-user-shield text-purple-600 dark:text-purple-400"></i>
+                                        </div>
+                                        <p class="text-xs text-purple-700 dark:text-purple-300 uppercase tracking-wider mb-1">Admins</p>
+                                        <p class="text-2xl font-bold text-purple-900 dark:text-purple-100">{{ $package->max_admins }}</p>
                                     </div>
-                                </div>
-
-                                <!-- Features -->
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Included Features</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        @if($package->features && count($package->features) > 0)
-                                            @foreach(array_slice($package->features, 0, 5) as $feature)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
-                                                    {{ ucwords(str_replace('_', ' ', $feature)) }}
-                                                </span>
-                                            @endforeach
-                                            @if(count($package->features) > 5)
-                                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                                                    +{{ count($package->features) - 5 }} more
-                                                </span>
-                                            @endif
-                                        @else
-                                            <span class="text-sm text-gray-400 italic">No specific features</span>
-                                        @endif
+                                    <div class="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl border border-green-200 dark:border-green-800">
+                                        <div class="flex items-center justify-between mb-2">
+                                            <i class="fa-solid fa-building text-green-600 dark:text-green-400"></i>
+                                        </div>
+                                        <p class="text-xs text-green-700 dark:text-green-300 uppercase tracking-wider mb-1">Branches</p>
+                                        <p class="text-2xl font-bold text-green-900 dark:text-green-100">{{ $package->max_branches }}</p>
                                     </div>
                                 </div>
                             </div>

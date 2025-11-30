@@ -211,6 +211,50 @@
                 </div>
             </nav>
 
+            <!-- System Settings -->
+            <div class="px-3 py-4 border-t border-gray-200 dark:border-gray-700">
+                @php
+                    $settingVal = \App\Models\SystemSetting::where('key', 'email_verification_enabled')->value('value');
+                    $emailVerificationEnabled = $settingVal !== 'false'; // Default to true if not set
+                @endphp
+                <div class="flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <span class="flex items-center" title="Toggle Email Verification Requirement">
+                        <i class="fa-solid fa-shield-halved mr-2 w-5 text-center"></i>
+                        <span>Verifikasi Email</span>
+                    </span>
+                    <button 
+                        x-data="{ enabled: {{ $emailVerificationEnabled ? 'true' : 'false' }} }"
+                        @click="
+                            enabled = !enabled;
+                            fetch('{{ route('superadmin.settings.toggle-email-verification') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({ enabled: enabled })
+                            }).then(res => res.json()).then(data => {
+                                if(data.success) {
+                                    // Optional: Show toast
+                                } else {
+                                    enabled = !enabled; // Revert on failure
+                                }
+                            }).catch(() => {
+                                enabled = !enabled; // Revert on error
+                            });
+                        "
+                        :class="enabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    >
+                        <span
+                            aria-hidden="true"
+                            :class="enabled ? 'translate-x-5' : 'translate-x-0'"
+                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                        ></span>
+                    </button>
+                </div>
+            </div>
+
             <!-- User Profile Section -->
             <div class="border-t border-gray-200 dark:border-gray-700 p-4">
                 <div class="flex items-center justify-between">

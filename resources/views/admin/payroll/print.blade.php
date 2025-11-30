@@ -8,67 +8,46 @@
     <style>
         @page { 
             size: A4 portrait; 
-            margin: 12mm; 
+            margin: 0;
         }
         body { 
-            background: white; 
-            font-size: 11px; 
+            background: white;
+            margin: 0;
+            padding: 0;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
         @media print {
-            body * {
-                visibility: hidden;
+            .no-print {
+                display: none !important;
             }
-            #printable-area, #printable-area * {
-                visibility: visible;
-            }
-            #printable-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                padding: 0;
-                margin: 0;
-            }
-            #printBtn {
-                display: none;
+            body {
+                margin: 0 !important;
+                padding: 0 !important;
             }
         }
         @media screen {
-            #printable-area {
-                max-width: 210mm;
-                margin: 0 auto;
-                padding: 20px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            body {
+                background: #f3f4f6;
+                padding: 20px 0;
             }
         }
     </style>
 </head>
-<body class="p-4">
-    <div class="flex justify-end mb-4">
-        <button id="printBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
-            <i class="fas fa-print mr-2"></i> Cetak Slip Gaji
+<body>
+    <!-- Print Button (Screen Only) -->
+    <div class="no-print" style="text-align: center; padding: 15px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 50; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 12px 32px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 600; box-shadow: 0 2px 4px rgba(37,99,235,0.3);">
+            <i class="fas fa-print" style="margin-right: 8px;"></i> Cetak Slip Gaji
         </button>
     </div>
 
-    <div id="printable-area">
-        @include('admin.payroll.print-content', ['payroll' => $payroll])
-    </div>
+    <!-- Payslip Content (Original Design) -->
+    @include('admin.payroll.print-content', ['payroll' => $payroll])
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const printBtn = document.getElementById('printBtn');
-            
-            if (printBtn) {
-                printBtn.addEventListener('click', function() {
-                    window.print();
-                });
-            }
-            
-            // Optional: Auto-print when the page loads
-            // window.print();
-        });
+        // Optional: Auto print on load
+        // window.onload = function() { window.print(); }
     </script>
 </body>
 </html>

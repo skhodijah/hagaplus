@@ -103,7 +103,7 @@
                                         <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">Informasi Instansi</h4>
                                         <p class="text-sm text-blue-700 dark:text-blue-300">
                                             <strong>{{ $subscription->instansi->nama_instansi }}</strong><br>
-                                            Subdomain: {{ $subscription->instansi->subdomain }}.hagaplus.com<br>
+
                                             Email: {{ $subscription->instansi->email ?? 'Tidak ada' }}
                                         </p>
                                     </div>

@@ -136,7 +136,7 @@ class DashboardController extends Controller
         $revenueForecastFormatted = $revenueForecast > 0 ? 'Rp ' . number_format($revenueForecast, 0, ',', '.') : '—';
 
         // Customer lists
-        $instansiWithStatus = Instansi::select('id', 'nama_instansi', 'subdomain', 'status_langganan', 'created_at')
+        $instansiWithStatus = Instansi::select('id', 'nama_instansi', 'status_langganan', 'created_at')
             ->latest()->take(10)->get();
         $overduePayments = DB::table('subscription_requests')->where('payment_status', 'pending')->latest()->take(10)->get();
 

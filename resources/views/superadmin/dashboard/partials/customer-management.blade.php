@@ -8,7 +8,7 @@
                         <li class="py-2 flex items-center justify-between">
                             <div>
                                 <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $i->nama_instansi }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ $i->subdomain }}</p>
+
                             </div>
                             <span class="px-2 py-1 text-xs rounded-full
                                 @if($i->status_langganan==='active') bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300

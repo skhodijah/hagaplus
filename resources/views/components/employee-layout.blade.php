@@ -144,9 +144,15 @@
                 <div class="flex items-center space-x-3 px-3 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-[#10C874]/50 dark:hover:border-[#049460]/50 transition-all duration-200">
                     <div class="flex-shrink-0">
                         <div class="w-10 h-10 rounded-lg overflow-hidden border-2 border-[#10C874]/30 dark:border-[#049460]/30">
-                            <img src="{{ Auth::user()->avatar ?? 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) . '&color=049460&background=D5FF88' }}"
-                                alt="{{ Auth::user()->name }}"
-                                class="w-full h-full object-cover">
+                            @if(Auth::user()->employee && Auth::user()->employee->profile_picture)
+                                <img src="{{ asset('storage/' . Auth::user()->employee->profile_picture) }}"
+                                    alt="{{ Auth::user()->name }}"
+                                    class="w-full h-full object-cover">
+                            @else
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&color=049460&background=D5FF88"
+                                    alt="{{ Auth::user()->name }}"
+                                    class="w-full h-full object-cover">
+                            @endif
                         </div>
                     </div>
                     <div class="flex-1 min-w-0">

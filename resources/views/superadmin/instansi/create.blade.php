@@ -22,20 +22,6 @@
                         </div>
 
                         <div>
-                            <label for="subdomain" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subdomain <span class="text-red-500">*</span></label>
-                            <div class="flex rounded-md shadow-sm">
-                                <input type="text" name="subdomain" id="subdomain" value="{{ old('subdomain') }}" required
-                                       class="flex-1 min-w-0 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-none rounded-l-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('subdomain') border-red-300 dark:border-red-600 @enderror">
-                                <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-sm">
-                                    .hagaplus.com
-                                </span>
-                            </div>
-                            @error('subdomain')
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
                             <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email Kontak</label>
                             <input type="email" name="email" id="email" value="{{ old('email') }}"
                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm @error('email') border-red-300 dark:border-red-600 @enderror">

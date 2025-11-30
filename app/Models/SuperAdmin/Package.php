@@ -13,8 +13,6 @@ class Package extends BaseModel
         'description',
         'price',
         'duration_days',
-        'features',
-        'permissions',
         'max_employees',
         'max_admins',
         'max_branches',
@@ -23,8 +21,6 @@ class Package extends BaseModel
 
     protected $casts = [
         'price' => 'decimal:2',
-        'features' => 'array',
-        'permissions' => 'array',
         'is_active' => 'boolean',
     ];
 

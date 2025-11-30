@@ -42,7 +42,7 @@
                                 <option value="">Pilih Instansi</option>
                                 @foreach($instansis as $instansi)
                                     <option value="{{ $instansi->id }}" {{ (old('instansi_id') ?? ($subscriptionRequest->instansi_id ?? '')) == $instansi->id ? 'selected' : '' }}>
-                                        {{ $instansi->nama_instansi }} ({{ $instansi->subdomain }})
+                                        {{ $instansi->nama_instansi }}
                                     </option>
                                 @endforeach
                             </select>

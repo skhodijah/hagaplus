@@ -10,7 +10,7 @@ use App\Http\Controllers\SuperAdmin\PaymentMethodController;
 use App\Http\Controllers\SuperAdmin\TransactionProcessingController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['auth', 'role:superadmin', 'verified'])->prefix('superadmin')->name('superadmin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
@@ -80,5 +80,8 @@ Route::middleware(['auth', 'role:superadmin'])->prefix('superadmin')->name('supe
     // Payment Methods
     Route::resource('payment-methods', PaymentMethodController::class);
     Route::patch('payment-methods/{payment_method}/toggle-status', [PaymentMethodController::class, 'toggleStatus'])->name('payment-methods.toggle-status');
+
+    // System Settings
+    Route::post('/settings/toggle-email-verification', [App\Http\Controllers\SuperAdmin\SystemSettingController::class, 'toggleEmailVerification'])->name('settings.toggle-email-verification');
 
 });

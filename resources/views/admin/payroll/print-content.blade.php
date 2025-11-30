@@ -29,7 +29,7 @@
     }, $endOfMonth) + 1;
 @endphp
 
-<div class="bg-gray-100 dark:bg-gray-900 p-8 rounded-xl shadow-inner overflow-auto relative">
+<div class="bg-white mx-auto relative" style="width: 210mm; min-height: 297mm; padding: 12mm;">
     <!-- Watermark -->
     @if($payroll->user->instansi && $payroll->user->instansi->logo)
     <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
@@ -37,7 +37,7 @@
     </div>
     @endif
 
-    <div class="bg-white mx-auto shadow-lg relative z-10" style="width: 210mm; min-height: 297mm; padding: 12mm;">
+    <div class="relative z-10">
         <!-- HEADER -->
         <div class="flex justify-between items-start">
             <div class="flex items-start space-x-2">

@@ -46,7 +46,6 @@ class InstansiController extends Controller
     {
         $validated = $request->validate([
             'nama_instansi' => 'required|string|max:255',
-            'subdomain' => 'required|string|max:50|unique:instansis,subdomain',
             'email' => 'nullable|email|max:255|unique:instansis,email',
             'phone' => 'nullable|string|max:20',
         ]);
@@ -54,7 +53,6 @@ class InstansiController extends Controller
         // Create new instansi without subscription details
         $instansi = Instansi::create([
             'nama_instansi' => $validated['nama_instansi'],
-            'subdomain' => $validated['subdomain'],
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'is_active' => true,
@@ -90,12 +88,6 @@ class InstansiController extends Controller
     {
         $validated = $request->validate([
             'nama_instansi' => 'required|string|max:255',
-            'subdomain' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('instansis', 'subdomain')->ignore($instansi->id),
-            ],
             'email' => [
                 'nullable',
                 'email',
@@ -110,7 +102,6 @@ class InstansiController extends Controller
         // Map form fields to database columns
         $updateData = [
             'nama_instansi' => $validated['nama_instansi'],
-            'subdomain' => $validated['subdomain'],
             'email' => $validated['email'] ?? null,
             'phone' => $validated['phone'] ?? null,
             'address' => $validated['alamat'] ?? null,
@@ -198,7 +189,7 @@ class InstansiController extends Controller
             return (object) [
                 'id' => $instansi->id,
                 'nama_instansi' => $instansi->nama_instansi,
-                'subdomain' => $instansi->subdomain,
+
                 'is_active' => (bool) $instansi->is_active,
                 'package_name' => $instansi->package->name ?? '-',
                 'subscription_status' => $latest?->current_status ?? null,

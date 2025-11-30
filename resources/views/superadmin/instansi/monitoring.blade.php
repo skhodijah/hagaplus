@@ -33,7 +33,7 @@
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-800">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $i->nama_instansi }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ $i->subdomain }}.hagaplus.com</div>
+
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center space-x-2">

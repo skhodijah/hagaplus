@@ -150,18 +150,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 @foreach($packages as $package)
                     @php
-                        $features = $package->features;
-                        if (is_string($features)) {
-                            $decoded = json_decode($features);
-                            // Check if double encoded
-                            if (is_string($decoded)) {
-                                $features = json_decode($decoded);
-                            } else {
-                                $features = $decoded;
-                            }
-                        }
-                        $features = is_array($features) ? $features : [];
-                        
                         $isCurrent = $currentSubscription && $currentSubscription->package_id == $package->id;
                         $isPopular = $package->name === 'PROFESSIONAL';
                     @endphp
@@ -185,14 +173,24 @@
                         </div>
 
                         <ul class="space-y-3 mb-8 flex-1">
-                            @foreach($features as $feature)
-                                <li class="flex items-start text-xs text-gray-600 dark:text-gray-300">
-                                    <div class="mt-0.5 mr-2 flex-shrink-0 w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                                        <i class="fa-solid fa-check text-green-600 dark:text-green-400 text-[8px]"></i>
-                                    </div>
-                                    <span class="leading-tight">{{ $feature }}</span>
-                                </li>
-                            @endforeach
+                            <li class="flex items-start text-xs text-gray-600 dark:text-gray-300">
+                                <div class="mt-0.5 mr-2 flex-shrink-0 w-4 h-4 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                    <i class="fa-solid fa-users text-blue-600 dark:text-blue-400 text-[8px]"></i>
+                                </div>
+                                <span class="leading-tight">Up to {{ $package->max_employees }} Employees</span>
+                            </li>
+                            <li class="flex items-start text-xs text-gray-600 dark:text-gray-300">
+                                <div class="mt-0.5 mr-2 flex-shrink-0 w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                    <i class="fa-solid fa-user-shield text-purple-600 dark:text-purple-400 text-[8px]"></i>
+                                </div>
+                                <span class="leading-tight">Up to {{ $package->max_admins }} Admins</span>
+                            </li>
+                            <li class="flex items-start text-xs text-gray-600 dark:text-gray-300">
+                                <div class="mt-0.5 mr-2 flex-shrink-0 w-4 h-4 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                    <i class="fa-solid fa-building text-green-600 dark:text-green-400 text-[8px]"></i>
+                                </div>
+                                <span class="leading-tight">Up to {{ $package->max_branches }} Branches</span>
+                            </li>
                         </ul>
 
                         <div class="mt-auto">

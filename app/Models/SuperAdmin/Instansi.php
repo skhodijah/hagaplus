@@ -33,7 +33,6 @@ class Instansi extends Model
     protected $fillable = [
         'nama_instansi',
         'display_name',
-        'subdomain',
         'email',
         'phone',
         'address',

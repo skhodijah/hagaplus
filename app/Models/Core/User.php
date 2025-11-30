@@ -2,7 +2,7 @@
 
 namespace App\Models\Core;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use App\Traits\HasRole;
 use App\Traits\HasSubscription;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasRole, HasSubscription;
@@ -123,5 +123,21 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
+
+    /**
+     * Send the email verification notification.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        // Check setting
+        $setting = \App\Models\SystemSetting::where('key', 'email_verification_enabled')->first();
+        
+        // If setting exists and is explicitly 'false', do not send
+        if ($setting && $setting->value === 'false') {
+            return;
+        }
+
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }
