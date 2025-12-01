@@ -22,6 +22,14 @@ class EmployeeController extends Controller
         $query = Employee::with(['user', 'branch', 'instansi', 'division', 'instansiRole', 'department', 'position'])
             ->where('instansi_id', $instansiId);
 
+        // Filter by branch for non-superadmin users (Admin and Employee roles)
+        $user = Auth::user();
+        $user->load('employee'); // Explicitly load the employee relationship
+        
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $query->where('branch_id', $user->employee->branch_id);
+        }
+
         // Search functionality
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
@@ -92,8 +100,38 @@ class EmployeeController extends Controller
             ->active()
             ->orderBy('name')
             ->get();
+
+        // Check for branch restriction
+        $user = Auth::user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
+
+        // Fetch potential supervisors/managers (all employees in the same instansi)
+        $supervisorsQuery = Employee::where('instansi_id', Auth::user()->instansi_id)
+            ->with(['user', 'division', 'department', 'instansiRole']);
+            
+        if ($branchId) {
+            $supervisorsQuery->where('branch_id', $branchId);
+        }
         
-        return view('admin.employees.create', compact('divisions', 'departments', 'positions'));
+        $potentialSupervisors = $supervisorsQuery->get()->sortBy('user.name');
+
+        $potentialManagers = $potentialSupervisors; // Same pool for now
+        
+        // Fetch branches with filtering
+        $branchesQuery = \App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)
+            ->where('is_active', true)
+            ->orderBy('name');
+            
+        if ($branchId) {
+            $branchesQuery->where('id', $branchId);
+        }
+        
+        $branches = $branchesQuery->get();
+        
+        return view('admin.employees.create', compact('divisions', 'departments', 'positions', 'potentialSupervisors', 'potentialManagers', 'branches'));
     }
 
     public function store(Request $request)
@@ -296,25 +334,38 @@ class EmployeeController extends Controller
             ->orderBy('name')
             ->get();
 
-        $baseQuery = Employee::where('instansi_id', Auth::user()->instansi_id)
+        // Check for branch restriction
+        $user = Auth::user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
+
+        // Fetch all potential supervisors (all employees in instansi except self)
+        $supervisorsQuery = Employee::where('instansi_id', Auth::user()->instansi_id)
             ->where('id', '!=', $employee->id)
-            ->with(['user', 'position', 'department', 'division', 'instansiRole']);
+            ->with(['user', 'division', 'department', 'instansiRole']);
 
-        $potentialSupervisors = (clone $baseQuery)->whereHas('instansiRole', function($q) {
-                $q->where('name', 'LIKE', '%Supervisor%')
-                  ->orWhere('name', 'LIKE', '%Manager%');
-            })
-            ->get()
-            ->sortBy('user.name');
+        if ($branchId) {
+            $supervisorsQuery->where('branch_id', $branchId);
+        }
+        
+        $potentialSupervisors = $supervisorsQuery->get()->sortBy('user.name');
 
-        $potentialManagers = (clone $baseQuery)->whereHas('instansiRole', function($q) {
-                $q->where('name', 'LIKE', '%Manager%');
-            })
-            ->get()
-            ->sortBy('user.name');
+        $potentialManagers = $potentialSupervisors; // Same pool
 
-        return view('admin.employees.edit', compact('employee', 'divisions', 'roles', 'departments', 'positions', 'potentialSupervisors', 'potentialManagers'));
+        // Fetch branches with filtering
+        $branchesQuery = \App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)
+            ->where('is_active', true)
+            ->orderBy('name');
+            
+        if ($branchId) {
+            $branchesQuery->where('id', $branchId);
+        }
+        
+        $branches = $branchesQuery->get();
 
+        return view('admin.employees.edit', compact('employee', 'divisions', 'roles', 'departments', 'positions', 'potentialSupervisors', 'potentialManagers', 'branches'));
     }
 
     public function update(Request $request, Employee $employee)

@@ -16,21 +16,7 @@ class EmployeePolicyController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $instansi = $user->instansi;
-
-        $policies = EmployeePolicy::where('instansi_id', $instansi->id)
-            ->with('employee')
-            ->get();
-            
-        $employees = Employee::where('employees.instansi_id', $instansi->id)
-            ->join('users', 'employees.user_id', '=', 'users.id')
-            ->orderBy('users.name')
-            ->select('employees.*')
-            ->with('user')
-            ->get();
-
-        return view('admin.employee-policies.index', compact('policies', 'employees'));
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies']);
     }
 
     /**
@@ -39,9 +25,17 @@ class EmployeePolicyController extends Controller
     public function create()
     {
         $user = Auth::user();
-        $employees = Employee::where('instansi_id', $user->instansi_id)
-            ->whereDoesntHave('policy')
-            ->get();
+        $user->load('employee');
+        
+        $employeesQuery = Employee::where('instansi_id', $user->instansi_id)
+            ->whereDoesntHave('policy');
+        
+        // Branch filtering for non-superadmin users
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $employeesQuery->where('branch_id', $user->employee->branch_id);
+        }
+        
+        $employees = $employeesQuery->get();
             
         return view('admin.employee-policies.create', compact('employees'));
     }
@@ -112,7 +106,7 @@ class EmployeePolicyController extends Controller
 
         EmployeePolicy::create($validated);
 
-        return redirect()->route('admin.employee-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Employee Policy created successfully.');
     }
 
@@ -171,7 +165,7 @@ class EmployeePolicyController extends Controller
 
         $employeePolicy->update($validated);
 
-        return redirect()->route('admin.employee-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Employee Policy updated successfully.');
     }
 
@@ -184,7 +178,7 @@ class EmployeePolicyController extends Controller
 
         $employeePolicy->delete();
 
-        return redirect()->route('admin.employee-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Employee Policy deleted successfully.');
     }
 

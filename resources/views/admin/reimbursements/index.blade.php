@@ -4,7 +4,11 @@
     allSelected: false,
     toggleAll() {
         this.allSelected = !this.allSelected;
-        this.selected = this.allSelected ? [{{ $reimbursements->pluck('id')->implode(',') }}] : [];
+        if (this.allSelected) {
+            this.selected = Array.from(document.querySelectorAll('input[type=checkbox][x-model=selected]')).map(el => el.value);
+        } else {
+            this.selected = [];
+        }
     }
 }">
     <!-- Header -->
@@ -29,9 +33,8 @@
                 <select name="status" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                     <option value="">All Status</option>
                     <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                    <option value="approved_supervisor" {{ request('status') == 'approved_supervisor' ? 'selected' : '' }}>Approved by Supervisor</option>
-                    <option value="approved_manager" {{ request('status') == 'approved_manager' ? 'selected' : '' }}>Approved by Manager</option>
-                    <option value="verified_finance" {{ request('status') == 'verified_finance' ? 'selected' : '' }}>Verified by Finance</option>
+                    <option value="approved_supervisor" {{ request('status') == 'approved_supervisor' ? 'selected' : '' }}>Approved by User (Kepala Divisi)</option>
+                    <option value="verified_finance" {{ request('status') == 'verified_finance' ? 'selected' : '' }}>Approved by HRD</option>
                     <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
                     <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
                 </select>
@@ -84,7 +87,7 @@
                 <div>
                     <p class="text-sm text-blue-700 dark:text-blue-300 font-medium">In Progress</p>
                     <p class="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-                        {{ $reimbursements->whereIn('status', ['approved_supervisor', 'approved_manager', 'verified_finance'])->count() }}
+                        {{ $reimbursements->whereIn('status', ['approved_supervisor'])->count() }}
                     </p>
                 </div>
                 <div class="w-12 h-12 bg-blue-200 dark:bg-blue-700/30 rounded-xl flex items-center justify-center">
@@ -162,15 +165,11 @@
                         </template>
                         <button type="submit" name="level" value="supervisor" 
                                 class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
-                            <i class="fa-solid fa-user-tie w-5"></i> As Supervisor
+                            <i class="fa-solid fa-user-tie w-5"></i> As User (Kepala Divisi)
                         </button>
-                        <button type="submit" name="level" value="manager" 
+                        <button type="submit" name="level" value="hrd" 
                                 class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
-                            <i class="fa-solid fa-user-shield w-5"></i> As Manager
-                        </button>
-                        <button type="submit" name="level" value="finance" 
-                                class="block w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
-                            <i class="fa-solid fa-money-check-dollar w-5"></i> As Finance
+                            <i class="fa-solid fa-user-shield w-5"></i> As HRD
                         </button>
                     </form>
                 </div>
@@ -266,16 +265,14 @@
                                     $statusClasses = [
                                         'pending' => 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800',
                                         'approved_supervisor' => 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-                                        'approved_manager' => 'bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800',
                                         'verified_finance' => 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
                                         'paid' => 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
                                         'rejected' => 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800',
                                     ];
                                     $statusLabels = [
                                         'pending' => 'Pending',
-                                        'approved_supervisor' => 'Supervisor ✓',
-                                        'approved_manager' => 'Manager ✓',
-                                        'verified_finance' => 'Finance ✓',
+                                        'approved_supervisor' => 'User (Kepala Divisi) ✓',
+                                        'verified_finance' => 'HRD ✓',
                                         'paid' => 'Paid',
                                         'rejected' => 'Rejected',
                                     ];

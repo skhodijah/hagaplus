@@ -80,7 +80,7 @@ class EmployeePolicyTemplateController extends Controller
 
         EmployeePolicyTemplate::create($validated);
 
-        return redirect()->route('admin.employee-policy-templates.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Template created successfully.');
     }
 
@@ -149,7 +149,7 @@ class EmployeePolicyTemplateController extends Controller
 
         $employeePolicyTemplate->update($validated);
 
-        return redirect()->route('admin.employee-policy-templates.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Template updated successfully.');
     }
 
@@ -162,7 +162,7 @@ class EmployeePolicyTemplateController extends Controller
 
         $employeePolicyTemplate->delete();
 
-        return redirect()->route('admin.employee-policy-templates.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'employee_policies'])
             ->with('success', 'Template deleted successfully.');
     }
 

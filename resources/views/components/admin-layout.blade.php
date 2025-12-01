@@ -64,22 +64,27 @@
             </div>
 
             <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" x-data="{ 
-                openMenu: '{{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.division-policies.*') ? 'people' : (request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') ? 'attendance' : (request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') ? 'finance' : (request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') ? 'organization' : ''))) }}'
+                openMenu: '{{ 
+                    request()->routeIs('admin.employees.*') ? 'people' : 
+                    (request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') ? 'attendance' : 
+                    (request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') ? 'finance' : 
+                    (request()->routeIs('admin.branches.*') || request()->routeIs('admin.organization.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') ? 'organization' : ''))) 
+                }}'
             }">
                 <!-- Dashboard -->
                 <x-layout.sidebar-link :href="route('admin.dashboard')" icon="fa-solid fa-gauge" label="Dashboard" :active="request()->routeIs('admin.dashboard')" />
 
                 <!-- People -->
-                @hasAnyPermission('view-employees', 'manage-employee-policies', 'manage-division-policies')
+                @hasAnyPermission('view-employees')
                 <div class="space-y-1 pt-2">
                     <button @click="openMenu = openMenu === 'people' ? '' : 'people'" 
                             class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                                   {{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') 
+                                   {{ request()->routeIs('admin.employees.*') 
                                       ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                         <div class="flex items-center">
                             <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
-                                       {{ request()->routeIs('admin.employees.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') 
+                                       {{ request()->routeIs('admin.employees.*') 
                                           ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
                                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
                                 <i class="fa-solid fa-users text-xs"></i>
@@ -96,35 +101,21 @@
                             Employee List
                         </a>
                         @endhasPermission
-                        @hasPermission('manage-division-policies')
-                        <a href="{{ route('admin.division-policies.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.division-policies.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Division Policies
-                        </a>
-                        @endhasPermission
-                        @hasPermission('manage-employee-policies')
-                        <a href="{{ route('admin.employee-policies.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.employee-policies.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Employee Policies
-                        </a>
-                        @endhasPermission
                     </div>
                 </div>
                 @endhasAnyPermission
 
                 <!-- Time & Attendance -->
-                @hasAnyPermission('view-attendance', 'view-leaves', 'approve-attendance-revisions')
+                @hasAnyPermission('view-attendance', 'view-leaves', 'approve-attendance-revisions', 'manage-attendance-policy', 'manage-division-policies', 'manage-employee-policies')
                 <div class="space-y-1 pt-2">
                     <button @click="openMenu = openMenu === 'attendance' ? '' : 'attendance'" 
                             class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                                   {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') 
+                                   {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*')
                                       ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                         <div class="flex items-center">
                             <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
-                                       {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') 
+                                       {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*')
                                           ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
                                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
                                 <i class="fa-solid fa-calendar-check text-xs"></i>
@@ -168,10 +159,11 @@
                             @endif
                         </a>
                         @endhasPermission
-                        <a href="{{ route('admin.attendance-policy.index') }}" 
+                        
+                        <a href="{{ route('admin.policies.index') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.attendance-policy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Attendance Policy
+                                  {{ request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Policies
                         </a>
                     </div>
                 </div>
@@ -228,12 +220,12 @@
                 <div class="space-y-1 pt-2">
                     <button @click="openMenu = openMenu === 'organization' ? '' : 'organization'" 
                             class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                                   {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') 
+                                   {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.organization.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*')
                                       ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                         <div class="flex items-center">
                             <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
-                                       {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') 
+                                       {{ request()->routeIs('admin.branches.*') || request()->routeIs('admin.organization.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*')
                                           ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
                                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
                                 <i class="fa-solid fa-sitemap text-xs"></i>
@@ -250,13 +242,15 @@
                             Branches
                         </a>
                         @endhasPermission
-                        @hasPermission('manage-roles')
-                        <a href="{{ route('admin.roles.index') }}" 
+                        
+                        @hasAnyPermission('manage-roles', 'manage-divisions', 'manage-departments', 'manage-positions')
+                        <a href="{{ route('admin.organization.index') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.roles.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Roles & Permissions
+                                  {{ request()->routeIs('admin.organization.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Structure & Roles
                         </a>
-                        @endhasPermission
+                        @endhasAnyPermission
+
                         @hasPermission('manage-roles')
                         <a href="{{ route('admin.admins.index') }}" 
                            class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
@@ -264,20 +258,6 @@
                             Manage Admins
                         </a>
                         @endhasPermission
-                        @hasPermission('manage-divisions')
-                        <a href="{{ route('admin.divisions.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.divisions.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Divisions
-                        </a>
-                        @endhasPermission
-                        @hasAnyPermission('manage-departments', 'manage-positions')
-                        <a href="{{ route('admin.hierarchy.index') }}" 
-                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
-                                  {{ request()->routeIs('admin.hierarchy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
-                            Hierarchy
-                        </a>
-                        @endhasAnyPermission
                     </div>
                 </div>
                 @endhasAnyPermission

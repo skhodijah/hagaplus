@@ -16,10 +16,43 @@ class ReimbursementController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $employee = $user->employee;
+
         $query = Reimbursement::with(['employee.user', 'employee.department', 'supervisor.user', 'manager.user', 'financeApprover'])
-            ->whereHas('employee', function($q) {
-                $q->where('instansi_id', Auth::user()->instansi_id);
+            ->whereHas('employee', function($q) use ($user) {
+                $q->where('instansi_id', $user->instansi_id);
             });
+
+        // Branch filtering for non-superadmin users
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $query->whereHas('employee', function($q) use ($user) {
+                $q->where('branch_id', $user->employee->branch_id);
+            });
+        }
+
+        // Role-based filtering
+        if ($user->system_role_id === 1) {
+            // Superadmin sees everything (within their branch if restricted)
+        } elseif ($user->system_role_id === 2) {
+            // Admin sees everything (within their branch if restricted)
+            // This includes both 'User' and 'HRD' roles
+        } elseif ($employee) {
+            $roleName = $employee->instansiRole->name ?? '';
+
+            if ($roleName === 'HRD') {
+                // HRD sees everything (within their branch if restricted)
+            } elseif ($roleName === 'User') {
+                // User (Kepala Divisi/Atasan) sees requests where they are the supervisor
+                $query->where('supervisor_id', $employee->id);
+            } else {
+                // Regular employees (Employee role) only see their own
+                $query->where('employee_id', $employee->id);
+            }
+        } else {
+            // No employee record and not admin - shouldn't happen but safe fallback
+            $query->where('id', 0);
+        }
 
         // Apply filters
         if ($request->filled('status')) {
@@ -67,7 +100,7 @@ class ReimbursementController extends Controller
 
     /**
      * Approve a reimbursement at a given level.
-     * The request should include a "level" parameter: supervisor, manager, finance.
+     * The request should include a "level" parameter: supervisor, hrd.
      */
     public function approve(Request $request, Reimbursement $reimbursement)
     {
@@ -84,12 +117,8 @@ class ReimbursementController extends Controller
                 $reimbursement->supervisor_approved_at = now();
                 $reimbursement->status = 'approved_supervisor';
                 break;
-            case 'manager':
-                $reimbursement->manager_id = $user->employee->id ?? null;
-                $reimbursement->manager_approved_at = now();
-                $reimbursement->status = 'approved_manager';
-                break;
-            case 'finance':
+            case 'hrd':
+                // We reuse finance_approver_id for HRD as it's the final approver
                 $reimbursement->finance_approver_id = $user->id;
                 $reimbursement->finance_verified_at = now();
                 $reimbursement->status = 'verified_finance';
@@ -102,10 +131,49 @@ class ReimbursementController extends Controller
         
         // Send notification
         if ($reimbursement->employee && $reimbursement->employee->user) {
-            Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
+            // Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
         }
 
         return back()->with('success', 'Reimbursement approved at ' . $level . ' level.');
+    }
+
+    /**
+     * Mark reimbursement as paid.
+     */
+    public function markAsPaid(Request $request, Reimbursement $reimbursement)
+    {
+        $user = Auth::user();
+        
+        // Check if user is HRD or Superadmin
+        $isHRD = ($user->employee && $user->employee->instansiRole && $user->employee->instansiRole->name === 'HRD');
+        $isSuperadmin = $user->system_role_id === 1;
+
+        if (!$isHRD && !$isSuperadmin) {
+            return back()->with('error', 'You are not authorized to mark this as paid.');
+        }
+
+        if ($reimbursement->status !== 'verified_finance') {
+            return back()->with('error', 'Reimbursement must be approved by HRD before payment.');
+        }
+
+        // Validate payment proof for Transfer method
+        if ($reimbursement->payment_method === 'Transfer') {
+            $request->validate([
+                'payment_proof_file' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            ]);
+        }
+
+        // Handle payment proof upload
+        if ($request->hasFile('payment_proof_file')) {
+            $paymentProofPath = $request->file('payment_proof_file')->store('reimbursement-proofs', 'public');
+            $reimbursement->payment_proof_file = $paymentProofPath;
+        }
+
+        $reimbursement->status = 'paid';
+        $reimbursement->paid_at = now();
+        $reimbursement->save();
+
+        return redirect()->route('admin.reimbursements.show', $reimbursement)->with('success', 'Reimbursement marked as paid.');
     }
 
     /**
@@ -113,12 +181,9 @@ class ReimbursementController extends Controller
      */
     public function reject(Request $request, Reimbursement $reimbursement)
     {
-        // Check if user has right to reject (similar to approval, usually anyone in the chain can reject)
-        // For simplicity, we allow any approver in the chain to reject
         $user = Auth::user();
         $canReject = $this->canApproveAtLevel($user, $reimbursement, 'supervisor') ||
-                     $this->canApproveAtLevel($user, $reimbursement, 'manager') ||
-                     $this->canApproveAtLevel($user, $reimbursement, 'finance');
+                     $this->canApproveAtLevel($user, $reimbursement, 'hrd');
 
         if (!$canReject) {
              return back()->with('error', 'You are not authorized to reject this request.');
@@ -130,7 +195,7 @@ class ReimbursementController extends Controller
 
         // Send notification
         if ($reimbursement->employee && $reimbursement->employee->user) {
-            Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
+            // Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
         }
 
         return back()->with('success', 'Reimbursement rejected.');
@@ -194,8 +259,7 @@ class ReimbursementController extends Controller
                 'Status',
                 'Submitted Date',
                 'Supervisor Approved',
-                'Manager Approved',
-                'Finance Verified',
+                'HRD Approved',
                 'Paid Date',
                 'Rejection Reason'
             ]);
@@ -220,8 +284,7 @@ class ReimbursementController extends Controller
                     $reimb->status,
                     $reimb->created_at->format('Y-m-d H:i:s'),
                     $reimb->supervisor_approved_at ? $reimb->supervisor_approved_at->format('Y-m-d H:i:s') : '-',
-                    $reimb->manager_approved_at ? $reimb->manager_approved_at->format('Y-m-d H:i:s') : '-',
-                    $reimb->finance_verified_at ? $reimb->finance_verified_at->format('Y-m-d H:i:s') : '-',
+                    $reimb->finance_verified_at ? $reimb->finance_verified_at->format('Y-m-d H:i:s') : '-', // Mapped to HRD
                     $reimb->paid_at ? $reimb->paid_at->format('Y-m-d H:i:s') : '-',
                     $reimb->rejection_reason ?? '-'
                 ]);
@@ -265,35 +328,23 @@ class ReimbursementController extends Controller
                         $reimbursement->status = 'approved_supervisor';
                         $reimbursement->save();
                         
-                        if ($reimbursement->employee && $reimbursement->employee->user) {
-                            Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
-                        }
+                        // if ($reimbursement->employee && $reimbursement->employee->user) {
+                        //     Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
+                        // }
                         $updated++;
                     }
                     break;
-                case 'manager':
-                    if ($reimbursement->status === 'approved_supervisor') {
-                        $reimbursement->manager_id = $user->employee->id ?? null;
-                        $reimbursement->manager_approved_at = now();
-                        $reimbursement->status = 'approved_manager';
-                        $reimbursement->save();
-                        
-                        if ($reimbursement->employee && $reimbursement->employee->user) {
-                            Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
-                        }
-                        $updated++;
-                    }
-                    break;
-                case 'finance':
-                    if ($reimbursement->status === 'approved_manager') {
+                case 'hrd':
+                    // Allow approval if approved by supervisor OR if no supervisor assigned (pending)
+                    if ($reimbursement->status === 'approved_supervisor' || ($reimbursement->status === 'pending' && !$reimbursement->supervisor_id)) {
                         $reimbursement->finance_approver_id = $user->id;
                         $reimbursement->finance_verified_at = now();
                         $reimbursement->status = 'verified_finance';
                         $reimbursement->save();
                         
-                        if ($reimbursement->employee && $reimbursement->employee->user) {
-                            Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
-                        }
+                        // if ($reimbursement->employee && $reimbursement->employee->user) {
+                        //     Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
+                        // }
                         $updated++;
                     }
                     break;
@@ -328,8 +379,7 @@ class ReimbursementController extends Controller
         foreach ($reimbursements as $reimbursement) {
             // Check if user can reject (has any approval right)
             $canReject = $this->canApproveAtLevel($user, $reimbursement, 'supervisor') ||
-                         $this->canApproveAtLevel($user, $reimbursement, 'manager') ||
-                         $this->canApproveAtLevel($user, $reimbursement, 'finance');
+                         $this->canApproveAtLevel($user, $reimbursement, 'hrd');
 
             if (!$canReject) {
                 $failed++;
@@ -340,9 +390,9 @@ class ReimbursementController extends Controller
             $reimbursement->rejection_reason = $reason;
             $reimbursement->save();
 
-            if ($reimbursement->employee && $reimbursement->employee->user) {
-                Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
-            }
+            // if ($reimbursement->employee && $reimbursement->employee->user) {
+            //     Mail::to($reimbursement->employee->user->email)->queue(new ReimbursementStatusChanged($reimbursement));
+            // }
             $updated++;
         }
 
@@ -359,31 +409,30 @@ class ReimbursementController extends Controller
      */
     private function canApproveAtLevel($user, $reimbursement, $level)
     {
-        // Admin override
-        if ($user->hasRole('Admin')) {
+        // Superadmin override (system_role_id = 1)
+        if ($user->system_role_id === 1) {
             return true;
         }
 
-        // Ensure user has employee record for supervisor/manager checks
-        if (!$user->employee && $level !== 'finance') {
+        // Ensure user has employee record
+        if (!$user->employee) {
             return false;
         }
 
+        $roleName = $user->employee->instansiRole->name ?? '';
+
         switch ($level) {
             case 'supervisor':
-                // Check if user is the assigned supervisor
-                return $reimbursement->employee->supervisor_id === $user->employee->id;
+                // Check if user is the assigned supervisor for this reimbursement
+                // OR if user has 'User' role (Kepala Divisi/Atasan)
+                $isSupervisor = $reimbursement->supervisor_id === $user->employee->id;
+                $isUserRole = $roleName === 'User';
+                
+                return $isSupervisor || $isUserRole;
             
-            case 'manager':
-                // Check if user is the assigned manager
-                return $reimbursement->employee->manager_id === $user->employee->id;
-            
-            case 'finance':
-                // Check if user is in Finance division OR has Finance role
-                // Assuming 'Finance' division name or 'Finance' role
-                $isFinanceDivision = $user->employee && $user->employee->division && $user->employee->division->name === 'Finance';
-                // Also check for 'Approver' role if that's what is used for finance, but 'Finance' division is safer
-                return $isFinanceDivision || $user->hasRole('Finance'); // Assuming 'Finance' role might exist or be added
+            case 'hrd':
+                // Only HRD role can approve at HRD level
+                return $roleName === 'HRD';
             
             default:
                 return false;

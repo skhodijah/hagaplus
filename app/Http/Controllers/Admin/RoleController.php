@@ -13,26 +13,7 @@ class RoleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = InstansiRole::where('instansi_id', Auth::user()->instansi_id)
-            ->with('systemRole');
-
-        // Search functionality
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Status filter
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('is_active', $request->status);
-        }
-
-        $roles = $query->orderBy('name')->paginate(15);
-
-        return view('admin.roles.index', compact('roles'));
+        return redirect()->route('admin.organization.index', ['tab' => 'roles']);
     }
 
     public function create()
@@ -65,7 +46,7 @@ class RoleController extends Controller
             'is_active' => $request->has('is_active') ? true : false,
         ]);
 
-        return redirect()->route('admin.roles.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'roles'])
             ->with('success', 'Role created successfully.');
     }
 
@@ -78,7 +59,7 @@ class RoleController extends Controller
 
         // Prevent editing default roles
         if ($role->is_default) {
-            return redirect()->route('admin.roles.index')
+            return redirect()->route('admin.organization.index', ['tab' => 'roles'])
                 ->with('error', 'Cannot edit default system roles. You can only view their permissions.');
         }
 
@@ -95,7 +76,7 @@ class RoleController extends Controller
 
         // Prevent updating default roles
         if ($role->is_default) {
-            return redirect()->route('admin.roles.index')
+            return redirect()->route('admin.organization.index', ['tab' => 'roles'])
                 ->with('error', 'Cannot update default system roles.');
         }
 
@@ -120,7 +101,7 @@ class RoleController extends Controller
             'is_active' => $request->has('is_active') ? true : false,
         ]);
 
-        return redirect()->route('admin.roles.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'roles'])
             ->with('success', 'Role updated successfully.');
     }
 
@@ -133,19 +114,19 @@ class RoleController extends Controller
 
         // Prevent deleting default roles
         if ($role->is_default) {
-            return redirect()->route('admin.roles.index')
+            return redirect()->route('admin.organization.index', ['tab' => 'roles'])
                 ->with('error', 'Cannot delete default system roles.');
         }
 
         // Check if role is being used by employees
         if ($role->employees()->count() > 0) {
-            return redirect()->route('admin.roles.index')
+            return redirect()->route('admin.organization.index', ['tab' => 'roles'])
                 ->with('error', 'Cannot delete role that is assigned to employees.');
         }
 
         $role->delete();
 
-        return redirect()->route('admin.roles.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'roles'])
             ->with('success', 'Role deleted successfully.');
     }
 }

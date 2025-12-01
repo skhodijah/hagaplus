@@ -94,13 +94,32 @@
                     </div>
 
                     <div>
-                        <label for="reimburse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reimburse</label>
-                        <input type="number" id="reimburse" name="reimburse" value="{{ old('reimburse', 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                        <label for="reimburse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Reimburse
+                            <span id="reimburse_count" class="text-xs text-gray-500"></span>
+                        </label>
+                        <input type="number" id="reimburse" name="reimburse" value="{{ old('reimburse', 0) }}" step="0.01" min="0" readonly class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <i class="fa-solid fa-info-circle mr-1"></i>Otomatis dihitung dari reimbursement yang sudah dibayar
+                        </p>
                     </div>
 
                     <div>
                         <label for="thr" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">THR</label>
                         <input type="number" id="thr" name="thr" value="{{ old('thr', 0) }}" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                    </div>
+                </div>
+
+                <!-- Reimbursement Details -->
+                <div id="reimbursement_details" class="mt-4 hidden">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                        <i class="fa-solid fa-receipt text-green-600 mr-2"></i>
+                        Detail Reimbursement
+                    </h3>
+                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                        <div id="reimbursement_list" class="space-y-2">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
 
@@ -346,10 +365,45 @@
                 document.getElementById('tunjangan_makan').value = data.tunjangan_makan;
                 document.getElementById('tunjangan_transport').value = data.tunjangan_transport;
                 document.getElementById('lembur').value = data.lembur;
+                document.getElementById('reimburse').value = data.reimburse || 0;
                 document.getElementById('bpjs_kesehatan').value = data.bpjs_kesehatan;
                 document.getElementById('bpjs_tk').value = data.bpjs_tk;
                 document.getElementById('potongan_absensi').value = data.potongan_absensi;
                 document.getElementById('pph21').value = data.pph21;
+
+                // Update Reimbursement Details
+                if (data.reimbursement_details && data.reimbursement_details.length > 0) {
+                    document.getElementById('reimbursement_details').classList.remove('hidden');
+                    document.getElementById('reimburse_count').textContent = `(${data.reimbursement_details.length} item)`;
+                    
+                    const reimbursementList = document.getElementById('reimbursement_list');
+                    reimbursementList.innerHTML = '';
+                    
+                    data.reimbursement_details.forEach(reimb => {
+                        const item = document.createElement('div');
+                        item.className = 'flex justify-between items-start p-3 bg-white dark:bg-gray-800 rounded border border-green-200 dark:border-green-700';
+                        item.innerHTML = `
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-mono text-gray-500 dark:text-gray-400">${reimb.reference_number}</span>
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">${reimb.category}</span>
+                                </div>
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">${reimb.description}</p>
+                                <div class="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                    <span><i class="fa-solid fa-calendar mr-1"></i>Tanggal: ${reimb.date_of_expense}</span>
+                                    <span><i class="fa-solid fa-check-circle mr-1"></i>Dibayar: ${reimb.paid_at}</span>
+                                </div>
+                            </div>
+                            <div class="text-right ml-4">
+                                <p class="text-sm font-bold text-green-600 dark:text-green-400">${formatRupiah(reimb.amount)}</p>
+                            </div>
+                        `;
+                        reimbursementList.appendChild(item);
+                    });
+                } else {
+                    document.getElementById('reimbursement_details').classList.add('hidden');
+                    document.getElementById('reimburse_count').textContent = '';
+                }
 
                 // Update Details Section
                 if (data.details) {

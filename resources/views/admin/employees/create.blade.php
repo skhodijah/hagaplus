@@ -184,12 +184,92 @@
                             <label for="branch_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
                             <select id="branch_id" name="branch_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                                 <option value="">Select Branch</option>
-                                @foreach(\App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)->get() as $branch)
+                                @foreach($branches as $branch)
                                     <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
                                         {{ $branch->name }}
                                     </option>
                                 @endforeach
                             </select>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <h4 class="text-md font-semibold text-gray-800 dark:text-gray-200 mb-3 border-l-4 border-blue-500 pl-3">
+                                Approval Hierarchy
+                            </h4>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                                Tentukan hierarki approval untuk karyawan ini. Approval flow: <strong>Employee → User (Atasan) → HRD</strong>
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="supervisor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                User (Kepala Divisi) <span class="text-blue-500">(Approver)</span>
+                            </label>
+                            <select id="supervisor_id" name="supervisor_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select User (Kepala Divisi) (Optional)</option>
+                                @foreach($potentialSupervisors as $supervisor)
+                                    <option value="{{ $supervisor->id }}" 
+                                        data-department-id="{{ $supervisor->department_id }}"
+                                        {{ old('supervisor_id') == $supervisor->id ? 'selected' : '' }}>
+                                        {{ $supervisor->user->name }} 
+                                        - {{ $supervisor->division ? $supervisor->division->name : 'No Div' }}
+                                        - {{ $supervisor->department ? $supervisor->department->name : 'No Dept' }}
+                                        - {{ $supervisor->instansiRole ? $supervisor->instansiRole->name : 'No Role' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                User (Kepala Divisi) - akan approve cuti/izin/lembur/absen manual/reimbursement
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="manager_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Backup Approver <span class="text-purple-500">(Optional)</span>
+                            </label>
+                            <select id="manager_id" name="manager_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                <option value="">Select Backup Approver (Optional)</option>
+                                @foreach($potentialManagers as $manager)
+                                    <option value="{{ $manager->id }}" 
+                                        data-department-id="{{ $manager->department_id }}"
+                                        {{ old('manager_id') == $manager->id ? 'selected' : '' }}>
+                                        {{ $manager->user->name }} 
+                                        - {{ $manager->division ? $manager->division->name : 'No Div' }}
+                                        - {{ $manager->department ? $manager->department->name : 'No Dept' }}
+                                        - {{ $manager->instansiRole ? $manager->instansiRole->name : 'No Role' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Backup approver jika User (Kepala Divisi) tidak tersedia
+                            </p>
+                        </div>
+
+                        <div class="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i class="fa-solid fa-circle-info text-blue-500 mt-1 mr-3"></i>
+                                <div class="text-sm text-gray-700 dark:text-gray-300">
+                                    <p class="font-semibold mb-2">📋 Approval Flow Sederhana (3 Level):</p>
+                                    <div class="space-y-2 ml-4">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-20 font-medium text-blue-600">Employee</span>
+                                            <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                            <span class="w-20 font-medium text-purple-600">User (Kepala Divisi)</span>
+                                            <i class="fa-solid fa-arrow-right text-gray-400"></i>
+                                            <span class="w-20 font-medium text-green-600">HRD</span>
+                                        </div>
+                                        <ul class="space-y-1 text-xs">
+                                            <li>• <strong>Cuti/Izin/Sakit:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Lembur:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Absen Manual:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Reimbursement:</strong> Employee → User (Kepala Divisi) → HRD (final) ✓</li>
+                                        </ul>
+                                    </div>
+                                    <p class="mt-3 text-xs text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 p-2 rounded">
+                                        💡 <strong>Catatan:</strong> Jika User (Kepala Divisi) tidak ditentukan, approval langsung ke HRD.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         <div>

@@ -17,15 +17,33 @@ class AttendanceController extends Controller
         $startOfMonth = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $endOfMonth = Carbon::createFromFormat('Y-m', $month)->endOfMonth();
 
-        // Get all employees with their branch information
-        // Get all employees with their branch information
-        $employees = User::where('instansi_id', $instansiId)
-            ->has('employee')
-            ->with(['employee.branch', 'employee.position', 'systemRole'])
-            ->get();
+        // Get current user and check for branch restriction
+        $user = auth()->user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
 
-        $attendances = Attendance::whereHas('user', function ($query) use ($instansiId) {
+        // Get all employees with their branch information
+        $employeesQuery = User::where('instansi_id', $instansiId)
+            ->has('employee')
+            ->with(['employee.branch', 'employee.position', 'systemRole']);
+
+        if ($branchId) {
+            $employeesQuery->whereHas('employee', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+
+        $employees = $employeesQuery->get();
+
+        $attendances = Attendance::whereHas('user', function ($query) use ($instansiId, $branchId) {
             $query->where('instansi_id', $instansiId);
+            if ($branchId) {
+                $query->whereHas('employee', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
         })
             ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->get()
@@ -46,14 +64,24 @@ class AttendanceController extends Controller
         });
 
         // Get all branches for this instansi
-        $branches = \App\Models\Admin\Branch::where('company_id', $instansiId)
+        $branchesQuery = \App\Models\Admin\Branch::where('company_id', $instansiId)
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        if ($branchId) {
+            $branchesQuery->where('id', $branchId);
+        }
+
+        $branches = $branchesQuery->get();
 
         // Get attendances with photos for the selfie gallery
-        $attendancesWithPhotos = Attendance::whereHas('user', function ($query) use ($instansiId) {
+        $attendancesWithPhotos = Attendance::whereHas('user', function ($query) use ($instansiId, $branchId) {
             $query->where('instansi_id', $instansiId);
+            if ($branchId) {
+                $query->whereHas('employee', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
         })
             ->whereBetween('attendance_date', [$startOfMonth, $endOfMonth])
             ->where(function ($query) {
@@ -66,8 +94,13 @@ class AttendanceController extends Controller
             ->get();
 
         // Get approved leaves for the month
-        $leaves = \App\Models\Admin\Leave::whereHas('user', function ($query) use ($instansiId) {
+        $leaves = \App\Models\Admin\Leave::whereHas('user', function ($query) use ($instansiId, $branchId) {
             $query->where('instansi_id', $instansiId);
+            if ($branchId) {
+                $query->whereHas('employee', function($q) use ($branchId) {
+                    $q->where('branch_id', $branchId);
+                });
+            }
         })
             ->where('status', 'approved')
             ->where(function ($query) use ($startOfMonth, $endOfMonth) {
@@ -118,26 +151,51 @@ class AttendanceController extends Controller
     public function create()
     {
         $instansiId = auth()->user()->instansi_id;
-        $employees = User::whereHas('systemRole', function($q) {
+        
+        // Check for branch restriction
+        $user = auth()->user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
+
+        $employeesQuery = User::whereHas('systemRole', function($q) {
                 $q->where('slug', 'employee');
             })
-            ->where('instansi_id', $instansiId)
-            ->get();
+            ->where('instansi_id', $instansiId);
+            
+        if ($branchId) {
+            $employeesQuery->whereHas('employee', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        $employees = $employeesQuery->get();
         return view('admin.attendance.create', compact('employees'));
     }
 
     public function store(Request $request)
     {
         $instansiId = auth()->user()->instansi_id;
+        
+        // Check for branch restriction
+        $user = auth()->user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
 
         $request->validate([
             'user_id' => [
                 'required',
                 'exists:users,id',
-                function ($attribute, $value, $fail) use ($instansiId) {
+                function ($attribute, $value, $fail) use ($instansiId, $branchId) {
                     $user = User::find($value);
                     if (!$user || $user->instansi_id !== $instansiId) {
                         $fail('The selected employee does not belong to your institution.');
+                    }
+                    if ($branchId && $user->employee && $user->employee->branch_id !== $branchId) {
+                         $fail('The selected employee does not belong to your branch.');
                     }
                 },
             ],
@@ -169,11 +227,25 @@ class AttendanceController extends Controller
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
-        $employees = User::whereHas('systemRole', function($q) {
+        // Check for branch restriction
+        $user = auth()->user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
+
+        $employeesQuery = User::whereHas('systemRole', function($q) {
                 $q->where('slug', 'employee');
             })
-            ->where('instansi_id', $instansiId)
-            ->get();
+            ->where('instansi_id', $instansiId);
+
+        if ($branchId) {
+            $employeesQuery->whereHas('employee', function($q) use ($branchId) {
+                $q->where('branch_id', $branchId);
+            });
+        }
+        
+        $employees = $employeesQuery->get();
 
         return view('admin.attendance.edit', compact('attendance', 'employees'));
     }
@@ -185,14 +257,24 @@ class AttendanceController extends Controller
             $query->where('instansi_id', $instansiId);
         })->findOrFail($id);
 
+        // Check for branch restriction
+        $user = auth()->user();
+        $branchId = null;
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $branchId = $user->employee->branch_id;
+        }
+
         $request->validate([
             'user_id' => [
                 'required',
                 'exists:users,id',
-                function ($attribute, $value, $fail) use ($instansiId) {
+                function ($attribute, $value, $fail) use ($instansiId, $branchId) {
                     $user = User::find($value);
                     if (!$user || $user->instansi_id !== $instansiId) {
                         $fail('The selected employee does not belong to your institution.');
+                    }
+                    if ($branchId && $user->employee && $user->employee->branch_id !== $branchId) {
+                         $fail('The selected employee does not belong to your branch.');
                     }
                 },
             ],

@@ -1,3 +1,4 @@
+
 <x-employee-layout>
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,36 +44,39 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                             {{ $reimbursement->category }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white font-semibold">
-                                            {{ $reimbursement->currency }} {{ number_format($reimbursement->amount, 2) }}
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                            {{ $reimbursement->currency }} {{ number_format($reimbursement->amount, 0, ',', '.') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @php
                                                 $statusClasses = [
                                                     'pending' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
                                                     'approved_supervisor' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                                                    'approved_manager' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
                                                     'verified_finance' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
                                                     'paid' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
                                                     'rejected' => 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
                                                 ];
                                                 $statusLabels = [
-                                                    'pending' => 'Pending Supervisor',
-                                                    'approved_supervisor' => 'Approved by Supervisor',
-                                                    'approved_manager' => 'Approved by Manager',
-                                                    'verified_finance' => 'Verified by Finance',
+                                                    'pending' => 'Pending User (Kepala Divisi)',
+                                                    'approved_supervisor' => 'Approved by User (Kepala Divisi)',
+                                                    'verified_finance' => 'Approved by HRD',
                                                     'paid' => 'Paid',
                                                     'rejected' => 'Rejected',
                                                 ];
                                             @endphp
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClasses[$reimbursement->status] ?? 'bg-gray-100 text-gray-800' }}">
-                                                {{ $statusLabels[$reimbursement->status] ?? ucfirst(str_replace('_', ' ', $reimbursement->status)) }}
-                                            </span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClasses[$reimbursement->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                                    {{ $statusLabels[$reimbursement->status] ?? ucfirst(str_replace('_', ' ', $reimbursement->status)) }}
+                                                </span>
+                                                @if($reimbursement->status === 'paid' && $reimbursement->payment_proof_file && $reimbursement->payment_method === 'Transfer')
+                                                    <i class="fa-solid fa-receipt text-green-600 dark:text-green-400" title="Bukti transfer tersedia"></i>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <a href="{{ route('employee.reimbursements.show', $reimbursement) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">View</a>
                                             @if($reimbursement->status === 'pending')
-                                                <form action="{{ route('employee.reimbursements.destroy', $reimbursement) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this request?');">
+                                                <form action="{{ route('employee.reimbursements.destroy', $reimbursement) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>

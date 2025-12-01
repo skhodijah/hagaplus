@@ -73,4 +73,27 @@ trait HasRole
     {
         return $this->systemRole ? $this->systemRole->name : 'Unknown';
     }
+
+    /**
+     * Check if user has a specific permission
+     */
+    public function hasPermission($permission)
+    {
+        // Superadmin has all permissions
+        if ($this->systemRole && $this->systemRole->slug === 'superadmin') {
+            return true;
+        }
+
+        // Instansi owner (system role id 2) has full access when not linked to an employee record
+        if ($this->system_role_id === 2 && !$this->employee) {
+            return true;
+        }
+
+        // Check if user has employee record with instansi role
+        if ($this->employee && $this->employee->instansiRole) {
+            return $this->employee->instansiRole->hasPermission($permission);
+        }
+
+        return false;
+    }
 }

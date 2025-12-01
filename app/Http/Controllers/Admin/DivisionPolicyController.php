@@ -16,15 +16,7 @@ class DivisionPolicyController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        $instansi = $user->instansi;
-
-        $policies = DivisionPolicy::where('instansi_id', $instansi->id)
-            ->with('division')
-            ->orderBy('name')
-            ->get();
-
-        return view('admin.division-policies.index', compact('policies'));
+        return redirect()->route('admin.policies.index', ['tab' => 'division_policies']);
     }
 
     /**
@@ -87,7 +79,7 @@ class DivisionPolicyController extends Controller
 
         DivisionPolicy::create($validated);
 
-        return redirect()->route('admin.division-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'division_policies'])
             ->with('success', 'Division Policy created successfully.');
     }
 
@@ -151,7 +143,7 @@ class DivisionPolicyController extends Controller
 
         $divisionPolicy->update($validated);
 
-        return redirect()->route('admin.division-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'division_policies'])
             ->with('success', 'Division Policy updated successfully.');
     }
 
@@ -164,7 +156,7 @@ class DivisionPolicyController extends Controller
 
         $divisionPolicy->delete();
 
-        return redirect()->route('admin.division-policies.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'division_policies'])
             ->with('success', 'Division Policy deleted successfully.');
     }
 

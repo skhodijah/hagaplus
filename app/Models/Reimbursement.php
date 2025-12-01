@@ -35,6 +35,8 @@ class Reimbursement extends BaseModel
         'manager_approved_at',
         'finance_verified_at',
         'paid_at',
+        'payment_proof_file',
+        'payroll_id',
     ];
 
     protected $casts = [
@@ -70,6 +72,11 @@ class Reimbursement extends BaseModel
     public function financeApprover()
     {
         return $this->belongsTo(User::class, 'finance_approver_id');
+    }
+
+    public function payroll()
+    {
+        return $this->belongsTo(\App\Models\Admin\Payroll::class);
     }
 
     public static function generateReferenceNumber()

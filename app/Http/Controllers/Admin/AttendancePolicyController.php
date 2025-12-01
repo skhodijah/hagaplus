@@ -11,14 +11,7 @@ class AttendancePolicyController extends Controller
 {
     public function index()
     {
-        $instansiId = Auth::user()->instansi_id;
-        
-        // Get the default attendance policy for this instansi
-        $policy = AttendancePolicy::where('company_id', $instansiId)
-            ->where('is_default', true)
-            ->first();
-        
-        return view('admin.attendance-policy.index', compact('policy'));
+        return redirect()->route('admin.policies.index', ['tab' => 'attendance_policies']);
     }
 
     public function store(Request $request)
@@ -67,7 +60,7 @@ class AttendancePolicyController extends Controller
         \App\Models\Admin\Employee::where('instansi_id', $instansiId)
             ->update(['attendance_policy_id' => $policy->id]);
 
-        return redirect()->route('admin.attendance-policy.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'attendance_policies'])
             ->with('success', 'Kebijakan absensi berhasil disimpan dan diterapkan ke semua karyawan.');
     }
 
@@ -111,7 +104,7 @@ class AttendancePolicyController extends Controller
             ->whereNull('attendance_policy_id')
             ->update(['attendance_policy_id' => $policy->id]);
 
-        return redirect()->route('admin.attendance-policy.index')
+        return redirect()->route('admin.policies.index', ['tab' => 'attendance_policies'])
             ->with('success', 'Kebijakan absensi berhasil diperbarui.');
     }
 }

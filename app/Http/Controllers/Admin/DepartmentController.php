@@ -32,7 +32,7 @@ class DepartmentController extends Controller
             'is_active' => true,
         ]);
 
-        return redirect()->back()->with('success', 'Department created successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Department created successfully.');
     }
 
     public function update(Request $request, Department $department)
@@ -51,7 +51,7 @@ class DepartmentController extends Controller
             'description' => $request->description,
         ]);
 
-        return redirect()->back()->with('success', 'Department updated successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Department updated successfully.');
     }
 
     public function destroy(Department $department)
@@ -62,11 +62,11 @@ class DepartmentController extends Controller
 
         // Check if has employees or positions
         if ($department->employees()->exists() || $department->positions()->exists()) {
-            return redirect()->back()->with('error', 'Cannot delete department that has employees or positions.');
+            return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('error', 'Cannot delete department that has employees or positions.');
         }
 
         $department->delete();
 
-        return redirect()->back()->with('success', 'Department deleted successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Department deleted successfully.');
     }
 }

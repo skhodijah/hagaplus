@@ -37,12 +37,12 @@
                                 <div class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $employee->position->name ?? '-' }}</div>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">Supervisor (Approver)</label>
+                                <label class="block text-sm font-medium text-gray-500 dark:text-gray-400">User (Kepala Divisi) (Approver)</label>
                                 <div class="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
                                     {{ $employee->supervisor ? $employee->supervisor->user->name : 'Not Assigned' }}
                                 </div>
                                 @if(!$employee->supervisor)
-                                    <p class="text-xs text-red-500 mt-1">Warning: You do not have a supervisor assigned. Approval may be routed directly to Manager or HR.</p>
+                                    <p class="text-xs text-red-500 mt-1">Warning: You do not have a User (Kepala Divisi) assigned. Approval may be routed directly to HR.</p>
                                 @endif
                             </div>
                         </div>

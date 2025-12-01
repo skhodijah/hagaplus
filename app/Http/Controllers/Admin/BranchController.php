@@ -14,6 +14,12 @@ class BranchController extends Controller
         $query = Branch::where('company_id', Auth::user()->instansi_id)
                       ->with('instansi');
 
+        // Check for branch restriction
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            $query->where('id', $user->employee->branch_id);
+        }
+
         // Filter by status if provided
         if ($request->filled('status')) {
             $query->where('is_active', $request->status === 'active');
@@ -34,6 +40,10 @@ class BranchController extends Controller
 
     public function create()
     {
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+            abort(403, 'You are not authorized to create new branches.');
+        }
         return view('admin.branches.create');
     }
 
@@ -68,6 +78,12 @@ class BranchController extends Controller
         $branch = Branch::where('company_id', Auth::user()->instansi_id)
                        ->with(['instansi', 'employees', 'attendances'])
                        ->findOrFail($id);
+
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id && $user->employee->branch_id !== $branch->id) {
+            abort(403);
+        }
+
         return view('admin.branches.show', compact('branch'));
     }
 
@@ -75,6 +91,12 @@ class BranchController extends Controller
     {
         $branch = Branch::where('company_id', Auth::user()->instansi_id)
                        ->findOrFail($id);
+
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id && $user->employee->branch_id !== $branch->id) {
+            abort(403);
+        }
+
         return view('admin.branches.edit', compact('branch'));
     }
 
@@ -82,6 +104,11 @@ class BranchController extends Controller
     {
         $branch = Branch::where('company_id', Auth::user()->instansi_id)
                        ->findOrFail($id);
+
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id && $user->employee->branch_id !== $branch->id) {
+            abort(403);
+        }
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -108,6 +135,11 @@ class BranchController extends Controller
 
     public function destroy($id)
     {
+        $user = Auth::user();
+        if ($user->system_role_id !== 1 && $user->employee && $user->employee->branch_id) {
+             abort(403, 'You are not authorized to delete branches.');
+        }
+
         $branch = Branch::where('company_id', Auth::user()->instansi_id)
                        ->findOrFail($id);
 

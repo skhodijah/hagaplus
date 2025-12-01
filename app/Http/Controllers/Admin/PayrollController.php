@@ -151,6 +151,30 @@ class PayrollController extends Controller
         $data['bank_account_number'] = $employee->bank_account_number;
         $data['bank_account_holder'] = $employee->bank_account_holder;
 
+        // Get reimbursements for this period with payment_method = 'Payroll' and status = 'paid'
+        $reimbursements = \App\Models\Reimbursement::where('user_id', $user->id)
+            ->where('payment_method', 'Payroll')
+            ->where('status', 'paid')
+            ->whereYear('paid_at', $request->year)
+            ->whereMonth('paid_at', $request->month)
+            ->get();
+
+        $totalReimbursement = $reimbursements->sum('amount');
+        $data['reimburse'] = $totalReimbursement;
+        
+        // Add reimbursement details
+        $data['reimbursement_details'] = $reimbursements->map(function($reimb) {
+            return [
+                'id' => $reimb->id,
+                'reference_number' => $reimb->reference_number,
+                'category' => $reimb->category,
+                'description' => $reimb->description,
+                'date_of_expense' => $reimb->date_of_expense->format('d M Y'),
+                'amount' => $reimb->amount,
+                'paid_at' => $reimb->paid_at->format('d M Y'),
+            ];
+        });
+
         return response()->json($data);
     }
 

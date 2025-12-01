@@ -39,6 +39,11 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
         Route::delete('employees/{employee}', [EmployeeController::class, 'destroy'])->name('employees.destroy');
     });
 
+    // Organization Consolidated View
+    Route::middleware('permission:manage-roles,manage-divisions,manage-departments,manage-positions')->group(function () {
+        Route::get('organization', [App\Http\Controllers\Admin\OrganizationController::class, 'index'])->name('organization.index');
+    });
+
     // Role management
     Route::middleware('permission:manage-roles')->group(function () {
         Route::resource('roles', RoleController::class);
@@ -57,7 +62,7 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
         ->middleware('permission:create-employees,manage-divisions');
 
     // Organization Hierarchy
-    Route::middleware('permission:manage-departments|manage-positions')->group(function () {
+    Route::middleware('permission:manage-departments,manage-positions')->group(function () {
         Route::get('hierarchy', [HierarchyController::class, 'index'])->name('hierarchy.index');
         Route::resource('departments', \App\Http\Controllers\Admin\DepartmentController::class)->only(['store', 'update', 'destroy']);
         Route::resource('positions', \App\Http\Controllers\Admin\PositionController::class)->only(['store', 'update', 'destroy']);
@@ -77,9 +82,11 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
     });
 
     // Attendance Policy
-    Route::get('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'index'])->name('attendance-policy.index');
-    Route::post('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'store'])->name('attendance-policy.store');
-    Route::put('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'update'])->name('attendance-policy.update');
+    Route::middleware('permission:manage-attendance-policy')->group(function () {
+        Route::get('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'index'])->name('attendance-policy.index');
+        Route::post('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'store'])->name('attendance-policy.store');
+        Route::put('attendance-policy', [App\Http\Controllers\Admin\AttendancePolicyController::class, 'update'])->name('attendance-policy.update');
+    });
 
     // Payroll management
     Route::middleware('permission:view-payroll')->group(function () {
@@ -127,6 +134,9 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
         Route::resource('employee-policies', App\Http\Controllers\Admin\EmployeePolicyController::class);
     });
 
+    // Unified Policy Management
+    Route::get('policies', [App\Http\Controllers\Admin\PolicyController::class, 'index'])->name('policies.index');
+
     // Leave management
     Route::middleware('permission:view-leaves')->group(function () {
         Route::resource('leaves', LeaveController::class)->parameters(['leaves' => 'leave']);
@@ -146,6 +156,8 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
             ->name('reimbursements.approve');
         Route::post('reimbursements/{reimbursement}/reject', [App\Http\Controllers\Admin\ReimbursementController::class, 'reject'])
             ->name('reimbursements.reject');
+        Route::post('reimbursements/{reimbursement}/mark-as-paid', [App\Http\Controllers\Admin\ReimbursementController::class, 'markAsPaid'])
+            ->name('reimbursements.mark-as-paid');
         Route::post('reimbursements/bulk-approve', [App\Http\Controllers\Admin\ReimbursementController::class, 'bulkApprove'])
             ->name('reimbursements.bulk-approve');
         Route::post('reimbursements/bulk-reject', [App\Http\Controllers\Admin\ReimbursementController::class, 'bulkReject'])

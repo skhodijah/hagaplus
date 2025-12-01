@@ -35,7 +35,7 @@ class PositionController extends Controller
             'is_active' => true,
         ]);
 
-        return redirect()->back()->with('success', 'Position created successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Position created successfully.');
     }
 
     public function update(Request $request, Position $position)
@@ -56,7 +56,7 @@ class PositionController extends Controller
             'description' => $request->description,
         ]);
 
-        return redirect()->back()->with('success', 'Position updated successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Position updated successfully.');
     }
 
     public function destroy(Position $position)
@@ -67,11 +67,11 @@ class PositionController extends Controller
 
         // Check if has employees
         if ($position->employees()->exists()) {
-            return redirect()->back()->with('error', 'Cannot delete position that is assigned to employees.');
+            return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('error', 'Cannot delete position that is assigned to employees.');
         }
 
         $position->delete();
 
-        return redirect()->back()->with('success', 'Position deleted successfully.');
+        return redirect()->route('admin.organization.index', ['tab' => 'hierarchy'])->with('success', 'Position deleted successfully.');
     }
 }

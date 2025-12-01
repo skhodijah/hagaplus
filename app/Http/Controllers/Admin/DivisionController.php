@@ -12,26 +12,7 @@ class DivisionController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Division::where('instansi_id', Auth::user()->instansi_id);
-
-        // Search functionality
-        if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('code', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Status filter
-        if ($request->has('status') && $request->status !== '') {
-            $query->where('is_active', $request->status);
-        }
-
-        $divisions = $query->orderBy('name')->paginate(15);
-
-        return view('admin.divisions.index', compact('divisions'));
+        return redirect()->route('admin.organization.index', ['tab' => 'divisions']);
     }
 
     public function create()
@@ -73,7 +54,7 @@ class DivisionController extends Controller
             'is_active' => $request->has('is_active') ? true : false,
         ]);
 
-        return redirect()->route('admin.divisions.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
             ->with('success', 'Division created successfully.');
     }
 
@@ -125,7 +106,7 @@ class DivisionController extends Controller
             'is_active' => $request->has('is_active') ? true : false,
         ]);
 
-        return redirect()->route('admin.divisions.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
             ->with('success', 'Division updated successfully.');
     }
 
@@ -138,13 +119,13 @@ class DivisionController extends Controller
 
         // Check if division is being used by employees
         if ($division->employees()->count() > 0) {
-            return redirect()->route('admin.divisions.index')
+            return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
                 ->with('error', 'Cannot delete division that is assigned to employees.');
         }
 
         $division->delete();
 
-        return redirect()->route('admin.divisions.index')
+        return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
             ->with('success', 'Division deleted successfully.');
     }
 

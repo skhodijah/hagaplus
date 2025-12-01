@@ -185,7 +185,7 @@
                             <label for="branch_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
                             <select id="branch_id" name="branch_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
                                 <option value="">Select Branch</option>
-                                @foreach(\App\Models\Admin\Branch::where('company_id', Auth::user()->instansi_id)->get() as $branch)
+                                @foreach($branches as $branch)
                                     <option value="{{ $branch->id }}" {{ old('branch_id', $employee->branch_id) == $branch->id ? 'selected' : '' }}>
                                         {{ $branch->name }}
                                     </option>
@@ -204,10 +204,10 @@
 
                         <div>
                             <label for="supervisor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                Atasan Langsung <span class="text-blue-500">(Approver - Role: User)</span>
+                                User (Kepala Divisi) <span class="text-blue-500">(Approver)</span>
                             </label>
                             <select id="supervisor_id" name="supervisor_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">Select Atasan (Optional)</option>
+                                <option value="">Select User (Kepala Divisi) (Optional)</option>
                                 @foreach($potentialSupervisors as $supervisor)
                                     <option value="{{ $supervisor->id }}" 
                                         data-department-id="{{ $supervisor->department_id }}"
@@ -220,7 +220,7 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Atasan langsung dengan role "User" - akan approve cuti/izin/lembur/absen manual
+                                User (Kepala Divisi) - akan approve cuti/izin/lembur/absen manual/reimbursement
                             </p>
                         </div>
 
@@ -242,7 +242,7 @@
                                 @endforeach
                             </select>
                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Backup approver jika atasan langsung tidak tersedia
+                                Backup approver jika User (Kepala Divisi) tidak tersedia
                             </p>
                         </div>
 
@@ -255,19 +255,19 @@
                                         <div class="flex items-center gap-2">
                                             <span class="w-20 font-medium text-blue-600">Employee</span>
                                             <i class="fa-solid fa-arrow-right text-gray-400"></i>
-                                            <span class="w-20 font-medium text-purple-600">User</span>
+                                            <span class="w-20 font-medium text-purple-600">User (Kepala Divisi)</span>
                                             <i class="fa-solid fa-arrow-right text-gray-400"></i>
                                             <span class="w-20 font-medium text-green-600">HRD</span>
                                         </div>
                                         <ul class="space-y-1 text-xs">
-                                            <li>• <strong>Cuti/Izin/Sakit:</strong> Employee → User (approve) ✓</li>
-                                            <li>• <strong>Lembur:</strong> Employee → User (approve) ✓</li>
-                                            <li>• <strong>Absen Manual:</strong> Employee → User (approve) ✓</li>
-                                            <li>• <strong>Reimbursement:</strong> Employee → User → HRD (final) ✓</li>
+                                            <li>• <strong>Cuti/Izin/Sakit:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Lembur:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Absen Manual:</strong> Employee → User (Kepala Divisi) (approve) ✓</li>
+                                            <li>• <strong>Reimbursement:</strong> Employee → User (Kepala Divisi) → HRD (final) ✓</li>
                                         </ul>
                                     </div>
                                     <p class="mt-3 text-xs text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 p-2 rounded">
-                                        💡 <strong>Catatan:</strong> Jika atasan tidak ditentukan, approval langsung ke HRD. Role "User" = Kepala Divisi/Dept/Supervisor.
+                                        💡 <strong>Catatan:</strong> Jika User (Kepala Divisi) tidak ditentukan, approval langsung ke HRD.
                                     </p>
                                 </div>
                             </div>
