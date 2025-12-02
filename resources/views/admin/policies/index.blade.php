@@ -97,57 +97,108 @@
                     @else
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             @foreach($divisionPolicies as $policy)
-                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200">
-                                    <div class="flex items-start justify-between mb-4">
-                                        <div class="flex-1">
-                                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                                                {{ $policy->name }}
-                                            </h3>
-                                            <div class="mb-2">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
+                                <div class="group bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+                                    <!-- Decorative top border -->
+                                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-600 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
+                                    
+                                    <div class="p-6">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div>
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                        {{ $policy->name }}
+                                                    </h3>
+                                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $policy->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
+                                                        {{ $policy->is_active ? 'Active' : 'Inactive' }}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                                    <i class="fa-solid fa-layer-group mr-1.5 text-indigo-500"></i>
                                                     {{ $policy->division->name ?? 'Unknown Division' }}
+                                                </div>
+                                            </div>
+                                            <div class="flex space-x-1">
+                                                <a href="{{ route('admin.division-policies.edit', $policy) }}" class="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </a>
+                                                <form action="{{ route('admin.division-policies.destroy', $policy) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this policy?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors rounded-full hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                        <i class="fa-solid fa-trash-can"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        @if($policy->description)
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 line-clamp-2">{{ $policy->description }}</p>
+                                        @endif
+
+                                        <div class="grid grid-cols-2 gap-4 mb-6">
+                                            <div class="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3">
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">Work Days</div>
+                                                <div class="flex items-center text-sm font-medium text-gray-900 dark:text-white">
+                                                    <i class="fa-solid fa-calendar-week text-blue-500 mr-2"></i>
+                                                    <span class="truncate" title="{{ $policy->formatted_work_days }}">{{ $policy->formatted_work_days }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-3">
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1 uppercase tracking-wider font-semibold">Schedule</div>
+                                                <div class="flex items-center text-sm font-medium text-gray-900 dark:text-white">
+                                                    <i class="fa-regular fa-clock text-purple-500 mr-2"></i>
+                                                    {{ $policy->formatted_schedule }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Employees Section -->
+                                        <div class="border-t border-gray-100 dark:border-gray-700 pt-4">
+                                            <div class="flex items-center justify-between mb-3">
+                                                <h4 class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                                                    Assigned Employees
+                                                </h4>
+                                                <span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full">
+                                                    {{ $policy->division->employees->count() ?? 0 }}
                                                 </span>
                                             </div>
-                                            @if($policy->description)
-                                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ Str::limit($policy->description, 80) }}</p>
-                                            @endif
+                                            
+                                            <div class="flex -space-x-2 overflow-hidden py-1">
+                                                @if($policy->division && $policy->division->employees->count() > 0)
+                                                    @foreach($policy->division->employees->take(5) as $employee)
+                                                        @if($employee->user)
+                                                            @if($employee->user->avatar)
+                                                                <img class="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 object-cover" 
+                                                                     src="{{ asset('storage/' . $employee->user->avatar) }}" 
+                                                                     alt="{{ $employee->user->name }}"
+                                                                     title="{{ $employee->user->name }}">
+                                                            @else
+                                                                <div class="inline-flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gradient-to-br from-blue-400 to-indigo-500 text-white text-xs font-bold"
+                                                                     title="{{ $employee->user->name }}">
+                                                                    {{ substr($employee->user->name, 0, 1) }}
+                                                                </div>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                    @if($policy->division->employees->count() > 5)
+                                                        <div class="inline-flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-medium">
+                                                            +{{ $policy->division->employees->count() - 5 }}
+                                                        </div>
+                                                    @endif
+                                                @else
+                                                    <span class="text-sm text-gray-400 italic">No employees assigned</span>
+                                                @endif
+                                            </div>
                                         </div>
-                                        <span class="ml-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $policy->is_active ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
-                                            {{ $policy->is_active ? 'Active' : 'Inactive' }}
-                                        </span>
                                     </div>
-
-                                    <div class="space-y-2 mb-4">
-                                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                            <i class="fa-solid fa-calendar-days w-5"></i>
-                                            <span class="ml-2">{{ $policy->formatted_work_days }}</span>
+                                    
+                                    <div class="bg-gray-50 dark:bg-gray-700/50 px-6 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                            Updated {{ $policy->updated_at->diffForHumans() }}
                                         </div>
-                                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                            <i class="fa-solid fa-clock w-5"></i>
-                                            <span class="ml-2">{{ $policy->formatted_schedule }}</span>
-                                        </div>
-                                        <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                                            <i class="fa-solid fa-hourglass-half w-5"></i>
-                                            <span class="ml-2">{{ $policy->work_hours_per_day ?? 'N/A' }} hours/day</span>
-                                        </div>
-                                    </div>
-
-                                    <div class="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                                        <a href="{{ route('admin.division-policies.show', $policy) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium">
-                                            <i class="fa-solid fa-eye mr-1"></i>View
+                                        <a href="{{ route('admin.division-policies.show', $policy) }}" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center group-hover:translate-x-1 transition-transform">
+                                            View Details <i class="fa-solid fa-arrow-right ml-1.5 text-xs"></i>
                                         </a>
-                                        <div class="flex items-center space-x-3">
-                                            <a href="{{ route('admin.division-policies.edit', $policy) }}" class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-                                                <i class="fa-solid fa-edit"></i>
-                                            </a>
-                                            <form action="{{ route('admin.division-policies.destroy', $policy) }}" method="POST" class="inline" onsubmit="return confirm('Are you sure you want to delete this policy?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
                                     </div>
                                 </div>
                             @endforeach

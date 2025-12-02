@@ -90,6 +90,8 @@ class DivisionPolicyController extends Controller
     {
         $this->authorizeAccess($divisionPolicy);
 
+        $divisionPolicy->load(['division.employees.user', 'division.employees.department', 'division.employees.position']);
+
         return view('admin.division-policies.show', compact('divisionPolicy'));
     }
 

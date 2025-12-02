@@ -20,6 +20,12 @@ class Leave extends BaseModel
         'status',
         'approved_by',
         'approved_at',
+        'supervisor_id',
+        'supervisor_approved_at',
+        'supervisor_note',
+        'hrd_id',
+        'hrd_approved_at',
+        'hrd_note',
         'rejected_reason',
     ];
 
@@ -27,6 +33,8 @@ class Leave extends BaseModel
         'start_date' => 'date',
         'end_date' => 'date',
         'approved_at' => 'datetime',
+        'supervisor_approved_at' => 'datetime',
+        'hrd_approved_at' => 'datetime',
         'days_count' => 'integer',
     ];
 
@@ -38,6 +46,16 @@ class Leave extends BaseModel
     public function approver()
     {
         return $this->belongsTo(\App\Models\Core\User::class, 'approved_by');
+    }
+
+    public function supervisor()
+    {
+        return $this->belongsTo(\App\Models\Admin\Employee::class, 'supervisor_id');
+    }
+
+    public function hrd()
+    {
+        return $this->belongsTo(\App\Models\Core\User::class, 'hrd_id');
     }
 
     /**

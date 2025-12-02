@@ -144,11 +144,12 @@ class ReimbursementController extends Controller
     {
         $user = Auth::user();
         
-        // Check if user is HRD or Superadmin
+        // Check if user is HRD or Superadmin or Admin
         $isHRD = ($user->employee && $user->employee->instansiRole && $user->employee->instansiRole->name === 'HRD');
         $isSuperadmin = $user->system_role_id === 1;
+        $isAdmin = $user->system_role_id === 2;
 
-        if (!$isHRD && !$isSuperadmin) {
+        if (!$isHRD && !$isSuperadmin && !$isAdmin) {
             return back()->with('error', 'You are not authorized to mark this as paid.');
         }
 
@@ -414,7 +415,19 @@ class ReimbursementController extends Controller
             return true;
         }
 
-        // Ensure user has employee record
+        // Admin override (system_role_id = 2) - Acts as HRD/Boss
+        if ($user->system_role_id === 2) {
+             // Can always approve as HRD
+             if ($level === 'hrd') {
+                 return true;
+             }
+             // Can approve as supervisor
+             if ($level === 'supervisor') {
+                 return true;
+             }
+        }
+
+        // Ensure user has employee record for other roles
         if (!$user->employee) {
             return false;
         }

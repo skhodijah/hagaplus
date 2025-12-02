@@ -90,6 +90,12 @@ class AttendanceController extends Controller
         // Sort by date desc and take 10
         $recentAttendance = $recentAttendance->sortByDesc('attendance_date')->take(10);
 
+        // Get attendance revisions
+        $revisions = \App\Models\Admin\AttendanceRevision::where('user_id', $user->id)
+            ->latest()
+            ->take(5)
+            ->get();
+
         $isProfileComplete = $employee ? $employee->isProfileComplete() : false;
 
         return view('employee.attendance.index', compact(
@@ -99,7 +105,8 @@ class AttendanceController extends Controller
             'employee',
             'attendancePolicy',
             'todayLeave',
-            'isProfileComplete'
+            'isProfileComplete',
+            'revisions'
         ));
     }
 
@@ -509,12 +516,13 @@ class AttendanceController extends Controller
             }
 
             // Create revision request
+            // Create revision request
             $revision = \App\Models\Admin\AttendanceRevision::create([
                 'attendance_id' => $attendance->id,
                 'user_id' => $user->id,
                 'revision_type' => $request->revision_type,
                 'original_time' => $originalTime,
-                'revised_time' => $request->revised_time,
+                'revised_time' => Carbon::parse($request->revised_time),
                 'reason' => $request->reason,
                 'proof_photo' => $proofPhotoPath,
                 'status' => 'pending',

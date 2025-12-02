@@ -201,25 +201,27 @@
                     
                     // Can approve as supervisor if:
                     // - User has 'User' role OR is the assigned supervisor
+                    // - OR User is Admin (system_role_id 2)
                     // - Status is still 'pending' (not yet approved by supervisor)
                     $canApproveSupervisor = (
-                        ($userRole === 'User' || ($user->employee && $reimbursement->supervisor_id === $user->employee->id))
+                        ($userRole === 'User' || ($user->employee && $reimbursement->supervisor_id === $user->employee->id) || $user->system_role_id === 2)
                         && $reimbursement->status === 'pending'
                     );
                     
                     // Can approve as HRD if:
                     // - User has 'HRD' role
+                    // - OR User is Admin (system_role_id 2)
                     // - Status is 'approved_supervisor' OR (status is 'pending' AND no supervisor assigned)
                     $canApproveHRD = (
-                        $userRole === 'HRD'
+                        ($userRole === 'HRD' || $user->system_role_id === 2)
                         && ($reimbursement->status === 'approved_supervisor' || ($reimbursement->status === 'pending' && !$reimbursement->supervisor_id))
                     );
                     
                     // Can mark as paid if:
-                    // - User has 'HRD' role OR is Superadmin
+                    // - User has 'HRD' role OR is Superadmin OR Admin (system_role_id 2)
                     // - Status is 'verified_finance'
                     $canMarkAsPaid = (
-                        ($userRole === 'HRD' || $user->system_role_id === 1)
+                        ($userRole === 'HRD' || $user->system_role_id === 1 || $user->system_role_id === 2)
                         && $reimbursement->status === 'verified_finance'
                     );
                     
@@ -402,75 +404,121 @@
     </div>
 
     <!-- Reject Modal -->
-    <div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3 text-center">
-                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Reject Reimbursement</h3>
-                <form action="{{ route('admin.reimbursements.reject', $reimbursement) }}" method="POST" class="mt-2 text-left">
-                    @csrf
-                    <div class="mt-2">
-                        <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Reason for Rejection</label>
-                        <textarea id="reason" name="reason" rows="3" required
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white sm:text-sm"
-                                  placeholder="Please provide a reason for rejection..."></textarea>
+    <div id="rejectModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('rejectModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100 dark:border-gray-700">
+                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fa-solid fa-triangle-exclamation text-red-600 dark:text-red-400"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">Reject Reimbursement</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                                    Are you sure you want to reject this reimbursement request? This action cannot be undone.
+                                </p>
+                                <form action="{{ route('admin.reimbursements.reject', $reimbursement) }}" method="POST" id="rejectForm">
+                                    @csrf
+                                    <div>
+                                        <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason for Rejection <span class="text-red-500">*</span></label>
+                                        <textarea id="reason" name="reason" rows="3" required
+                                                  class="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"
+                                                  placeholder="Please provide a reason..."></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-4 flex justify-end space-x-3">
-                        <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')"
-                                class="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-md transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors">
-                            Reject Request
-                        </button>
-                    </div>
-                </form>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" form="rejectForm" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        Reject Request
+                    </button>
+                    <button type="button" onclick="document.getElementById('rejectModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Mark as Paid Modal -->
-    <div id="markAsPaidModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900">
-                    <i class="fa-solid fa-money-bill-wave text-green-600 dark:text-green-400 text-lg"></i>
-                </div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mt-4 text-center">Confirm Payment</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
-                        Are you sure you want to mark this reimbursement as <strong>PAID</strong>?
-                    </p>
-                    @if($reimbursement->payment_method === 'Transfer')
-                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center">
-                            Please upload payment proof.
-                        </p>
-                    @endif
-                </div>
-                <form action="{{ route('admin.reimbursements.mark-as-paid', $reimbursement) }}" method="POST" enctype="multipart/form-data" class="mt-2">
-                    @csrf
-                    
-                    @if($reimbursement->payment_method === 'Transfer')
-                        <div class="px-7 py-3">
-                            <label for="payment_proof_file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Payment Proof <span class="text-red-500">*</span>
-                            </label>
-                            <input type="file" 
-                                   id="payment_proof_file" 
-                                   name="payment_proof_file" 
-                                   accept=".jpg,.jpeg,.png,.pdf"
-                                   required
-                                   class="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none">
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">JPG, PNG or PDF (MAX. 2MB)</p>
+    <div id="markAsPaidModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('markAsPaidModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100 dark:border-gray-700">
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-green-100 dark:border-green-800/30">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/50 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fa-solid fa-money-bill-wave text-green-600 dark:text-green-400"></i>
                         </div>
-                    @endif
-                    
-                    <div class="mt-4 flex justify-end space-x-3 px-7">
-                        <button type="button" onclick="document.getElementById('markAsPaidModal').classList.add('hidden')"
-                                class="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-md transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-bold text-gray-900 dark:text-white" id="modal-title">Confirm Payment</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    Are you sure you want to mark this reimbursement as <strong>PAID</strong>?
+                                </p>
+                                @if($reimbursement->payment_method === 'Transfer')
+                                    <div class="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800/30 rounded-lg p-3">
+                                        <div class="flex">
+                                            <div class="flex-shrink-0">
+                                                <i class="fa-solid fa-circle-info text-yellow-400"></i>
+                                            </div>
+                                            <div class="ml-3">
+                                                <p class="text-xs text-yellow-700 dark:text-yellow-300">
+                                                    Since the payment method is <strong>Transfer</strong>, you are required to upload a proof of payment.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form action="{{ route('admin.reimbursements.mark-as-paid', $reimbursement) }}" method="POST" enctype="multipart/form-data" id="markAsPaidForm">
+                    @csrf
+                    <div class="px-4 py-5 sm:p-6 bg-white dark:bg-gray-800">
+                        @if($reimbursement->payment_method === 'Transfer')
+                            <div>
+                                <label for="payment_proof_file" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Upload Payment Proof <span class="text-red-500">*</span>
+                                </label>
+                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer" onclick="document.getElementById('payment_proof_file').click()">
+                                    <div class="space-y-1 text-center">
+                                        <i class="fa-solid fa-cloud-arrow-up text-gray-400 text-3xl mb-2"></i>
+                                        <div class="flex text-sm text-gray-600 dark:text-gray-400 justify-center">
+                                            <span class="relative cursor-pointer bg-white dark:bg-transparent rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-green-500">
+                                                <span>Upload a file</span>
+                                                <input id="payment_proof_file" name="payment_proof_file" type="file" class="sr-only" accept=".jpg,.jpeg,.png,.pdf" required onchange="document.getElementById('file-name-display').innerText = this.files[0].name">
+                                            </span>
+                                            <p class="pl-1">or drag and drop</p>
+                                        </div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                                            PNG, JPG, PDF up to 2MB
+                                        </p>
+                                        <p id="file-name-display" class="text-sm text-green-600 font-medium mt-2"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="text-center py-4">
+                                <i class="fa-solid fa-check-circle text-green-500 text-4xl mb-3"></i>
+                                <p class="text-gray-600 dark:text-gray-400">Ready to complete payment via <strong>{{ $reimbursement->payment_method }}</strong>.</p>
+                            </div>
+                        @endif
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse border-t border-gray-100 dark:border-gray-700">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-base font-medium text-white hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm transition-all transform hover:scale-105">
                             Confirm Payment
+                        </button>
+                        <button type="button" onclick="document.getElementById('markAsPaidModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                            Cancel
                         </button>
                     </div>
                 </form>
@@ -479,31 +527,38 @@
     </div>
 
     <!-- Approve Override Modal -->
-    <div id="approveOverrideModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900">
-                    <i class="fa-solid fa-shield-halved text-blue-600 dark:text-blue-400 text-lg"></i>
+    <div id="approveOverrideModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" aria-hidden="true" onclick="document.getElementById('approveOverrideModal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100 dark:border-gray-700">
+                <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="fa-solid fa-shield-halved text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">Confirm Admin Override</h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">
+                                    Are you sure you want to override approval as <strong>User (Kepala Divisi)</strong>? This action will be logged.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mt-4">Confirm Admin Override</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Are you sure you want to override approval as <strong>User (Kepala Divisi)</strong>?
-                    </p>
-                </div>
-                <form action="{{ route('admin.reimbursements.approve', $reimbursement) }}" method="POST" class="mt-2">
-                    @csrf
-                    <input type="hidden" name="level" value="supervisor">
-                    <div class="mt-4 flex justify-end space-x-3">
-                        <button type="button" onclick="document.getElementById('approveOverrideModal').classList.add('hidden')"
-                                class="px-4 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-white rounded-md transition-colors">
-                            Cancel
-                        </button>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors">
+                <div class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <form action="{{ route('admin.reimbursements.approve', $reimbursement) }}" method="POST" class="w-full sm:w-auto">
+                        @csrf
+                        <input type="hidden" name="level" value="supervisor">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
                             Confirm Override
                         </button>
-                    </div>
-                </form>
+                    </form>
+                    <button type="button" onclick="document.getElementById('approveOverrideModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
     </div>

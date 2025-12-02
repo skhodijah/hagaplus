@@ -53,6 +53,7 @@
             display: none;  /* Chrome, Safari and Opera */
         }
     </style>
+    @stack('styles')
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -115,6 +116,13 @@
                         icon="fa-solid fa-wallet" 
                         label="Gaji" 
                         :active="request()->routeIs('employee.payroll.*')" 
+                    />
+
+                    <x-layout.sidebar-link 
+                        :href="route('employee.tax-forms.index')" 
+                        icon="fa-solid fa-file-invoice-dollar" 
+                        label="SPT Tahunan" 
+                        :active="request()->routeIs('employee.tax-forms.*')" 
                     />
                 </div>
 

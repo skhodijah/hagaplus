@@ -48,10 +48,7 @@ class SettingsController extends Controller
         'date_format' => ['type' => 'select', 'label' => 'Date Format', 'default' => 'd/m/Y', 'options' => ['d/m/Y' => 'DD/MM/YYYY', 'm/d/Y' => 'MM/DD/YYYY', 'Y-m-d' => 'YYYY-MM-DD'], 'category' => 'system'],
         'time_format' => ['type' => 'select', 'label' => 'Time Format', 'default' => 'H:i', 'options' => ['H:i' => '24-hour (14:30)', 'h:i A' => '12-hour (2:30 PM)'], 'category' => 'system'],
 
-        // Notification Settings
-        'email_notifications' => ['type' => 'boolean', 'label' => 'Email Notifications', 'default' => '1', 'category' => 'notifications'],
-        'sms_notifications' => ['type' => 'boolean', 'label' => 'SMS Notifications', 'default' => '0', 'category' => 'notifications'],
-        'push_notifications' => ['type' => 'boolean', 'label' => 'Push Notifications', 'default' => '1', 'category' => 'notifications'],
+
 
         // Security Settings
         'password_min_length' => ['type' => 'number', 'label' => 'Minimum Password Length', 'default' => '8', 'category' => 'security'],
@@ -89,7 +86,7 @@ class SettingsController extends Controller
         $categories = [
             'attendance' => 'Attendance Settings',
             'system' => 'System Settings',
-            'notifications' => 'Notifications',
+
             'security' => 'Security Settings',
             'payroll' => 'Payroll Settings',
             'appearance' => 'Appearance & Branding',
@@ -194,7 +191,7 @@ class SettingsController extends Controller
                 'company' => 'Company Information',
                 'attendance' => 'Attendance Settings',
                 'system' => 'System Settings',
-                'notifications' => 'Notifications',
+
                 'security' => 'Security Settings',
                 'payroll' => 'Payroll Settings',
                 'appearance' => 'Appearance & Branding',

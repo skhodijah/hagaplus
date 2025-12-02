@@ -58,16 +58,7 @@ class SendExpirationWarnings extends Command
         foreach ($expiringInstansi as $instansi) {
             $daysUntilExpiry = now()->diffInDays($instansi->subscription_end, false);
 
-            // Create notification for superadmin
-            DB::table('notifications')->insert([
-                'user_id' => $superAdmin->id,
-                'title' => 'Peringatan Kadaluarsa Langganan',
-                'message' => "Langganan {$instansi->nama_instansi} akan berakhir dalam {$daysUntilExpiry} hari ({$instansi->subscription_end->format('d M Y')}).",
-                'type' => 'warning',
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+
 
             $warningsSent++;
             $this->line("Sent warning for: {$instansi->nama_instansi} (expires: {$instansi->subscription_end->format('Y-m-d')})");

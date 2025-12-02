@@ -252,19 +252,51 @@ class DashboardController extends Controller
                 return $item->attendance_date->format('Y-m-d');
             });
 
+        // Fetch holidays for the month
+        $holidays = \App\Models\Admin\Holiday::where(function($query) use ($startOfMonth, $endOfMonth) {
+            $query->whereBetween('start_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                  ->orWhere(function($q) use ($startOfMonth, $endOfMonth) {
+                      $q->where('start_date', '<=', $startOfMonth->format('Y-m-d'))
+                        ->where('end_date', '>=', $endOfMonth->format('Y-m-d'));
+                  });
+        })->get();
+
+        // Create a map of holiday dates
+        $holidayMap = [];
+        foreach ($holidays as $holiday) {
+            $period = \Carbon\CarbonPeriod::create($holiday->start_date, $holiday->end_date);
+            foreach ($period as $date) {
+                if ($date->month == $month && $date->year == $year) {
+                    $holidayMap[$date->format('Y-m-d')] = $holiday->name;
+                }
+            }
+        }
+
         $calendarData = [];
         $currentDate = $startOfMonth->copy();
 
         while ($currentDate <= $endOfMonth) {
             $dateKey = $currentDate->format('Y-m-d');
             $attendance = $attendanceRecords->get($dateKey);
+            $isHoliday = isset($holidayMap[$dateKey]);
+            $holidayName = $isHoliday ? $holidayMap[$dateKey] : null;
+
+            $status = $this->getCalendarStatus($attendance);
+            
+            // If it's a holiday and no attendance record (or absent), mark as holiday
+            if ($isHoliday && ($status === 'absent' || !$attendance)) {
+                $status = 'holiday';
+            }
 
             $calendarData[] = [
                 'date' => $currentDate->format('Y-m-d'),
                 'day' => $currentDate->day,
-                'status' => $this->getCalendarStatus($attendance),
+                'status' => $status,
                 'is_today' => $currentDate->isToday(),
                 'is_weekend' => $currentDate->isWeekend(),
+                'is_holiday' => $isHoliday,
+                'holiday_name' => $holidayName,
             ];
 
             $currentDate->addDay();

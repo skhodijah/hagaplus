@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 class SubscriptionController extends Controller
 {
@@ -157,16 +158,8 @@ class SubscriptionController extends Controller
                 'updated_at' => now()
             ]);
             
-            // Create notification for superadmin
-            DB::table('notifications')->insert([
-                'user_id' => null, // null means for all superadmins
-                'type' => 'subscription_request',
-                'title' => 'Permintaan Subscription Baru',
-                'message' => "Instansi {$instansi->nama_instansi} mengajukan pembelian paket baru {$targetPackage->name}. Klik untuk melihat detail.",
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            return redirect()->route('admin.subscription.transaction', $paymentId)
+                ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');
 
             return redirect()->route('admin.subscription.transaction', $paymentId)
                 ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');
@@ -258,25 +251,6 @@ class SubscriptionController extends Controller
         // Create the subscription request
         $paymentId = DB::table('subscription_requests')->insertGetId($paymentData);
 
-        // Create notification for superadmin
-        $notificationMessage = !empty($whatsappDetails) 
-            ? "Instansi {$instansi->name} mengajukan " . implode(' dan ', $whatsappDetails) . ". Total biaya: Rp " . number_format($totalAmount, 0, ',', '.')
-            : "Instansi {$instansi->name} mengajukan perubahan subscription";
-            
-        DB::table('notifications')->insert([
-            'type' => 'subscription.request',
-            'notifiable_type' => 'App\\Models\\User',
-            'notifiable_id' => 1, // Superadmin ID
-            'data' => json_encode([
-                'title' => 'Permintaan Subscription Baru',
-                'message' => $notificationMessage,
-                'url' => route('superadmin.subscriptions.process-transaction', $paymentId)
-            ]),
-            'created_at' => now(),
-            'updated_at' => now(),
-            'read_at' => null
-        ]);
-
         // Redirect to payment page
         return redirect()->route('admin.subscription.transaction', $paymentId)
             ->with('success', 'Permintaan subscription berhasil dibuat. Silakan lakukan pembayaran.');
@@ -353,17 +327,6 @@ class SubscriptionController extends Controller
             'updated_at' => now()
         ]);
 
-        // Create notification for superadmin
-        DB::table('notifications')->insert([
-            'user_id' => null, // null means for all superadmins
-            'type' => 'subscription_request',
-            'title' => 'Permintaan Perpanjangan Subscription',
-            'message' => "Instansi {$instansi->nama_instansi} mengajukan perpanjangan subscription {$request->extension_months} bulan. Klik untuk melihat detail.",
-            'is_read' => false,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
         // Redirect to transaction page instead of showing success message
         return redirect()->route('admin.subscription.transaction', $paymentId)->with('success', 'Permintaan perpanjangan subscription telah dibuat. Silakan lengkapi pembayaran.');
     }
@@ -429,16 +392,8 @@ class SubscriptionController extends Controller
                 'updated_at' => now()
             ]);
             
-            // Create notification for superadmin
-            DB::table('notifications')->insert([
-                'user_id' => null, // null means for all superadmins
-                'type' => 'subscription_request',
-                'title' => 'Permintaan Subscription Baru',
-                'message' => "Instansi {$instansi->nama_instansi} mengajukan pembelian paket baru {$targetPackage->name}. Klik untuk melihat detail.",
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            return redirect()->route('admin.subscription.transaction', $paymentId)
+                ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');
 
             return redirect()->route('admin.subscription.transaction', $paymentId)
                 ->with('success', 'Permintaan subscription baru berhasil dibuat. Silakan lakukan pembayaran.');

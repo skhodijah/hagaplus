@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Add a new leave request for an employee.</p>
         </div>
 
-        <form method="POST" action="{{ route('admin.leaves.store') }}">
+        <form method="POST" action="{{ route('admin.leaves.store') }}" enctype="multipart/form-data">
             @csrf
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -71,6 +71,17 @@
                           class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                           placeholder="Please provide a detailed reason for the leave request...">{{ old('reason') }}</textarea>
                 @error('reason')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Attachment -->
+            <div class="mt-6">
+                <label for="attachment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Supporting Document (Optional)</label>
+                <input type="file" name="attachment" id="attachment"
+                       class="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Upload a supporting document (e.g., medical certificate). Max 2MB.</p>
+                @error('attachment')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>

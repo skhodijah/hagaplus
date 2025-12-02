@@ -5,7 +5,7 @@
             <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Update leave request details.</p>
         </div>
 
-        <form method="POST" action="{{ route('admin.leaves.update', $leave) }}">
+        <form method="POST" action="{{ route('admin.leaves.update', $leave) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -97,6 +97,22 @@
                           class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
                           placeholder="Please provide a detailed reason for the leave request...">{{ old('reason', $leave->reason) }}</textarea>
                 @error('reason')
+                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <!-- Attachment -->
+            <div class="mt-6">
+                <label for="attachment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Supporting Document (Optional)</label>
+                @if($leave->attachment)
+                    <div class="mb-2 flex items-center gap-2">
+                        <a href="{{ asset('storage/' . $leave->attachment) }}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm underline">View Current Document</a>
+                    </div>
+                @endif
+                <input type="file" name="attachment" id="attachment"
+                       class="block w-full text-sm text-gray-900 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer bg-gray-50 dark:bg-gray-700 focus:outline-none">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Upload a new document to replace the current one. Max 2MB.</p>
+                @error('attachment')
                     <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                 @enderror
             </div>

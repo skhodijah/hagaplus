@@ -53,15 +53,20 @@ class EmployeeController extends Controller
             $query->where('status', $request->status);
         }
 
-        // Department filter
-        if ($request->has('department_id') && !empty($request->department_id)) {
-            $query->where('department_id', $request->department_id);
+        // Role filter
+        if ($request->has('role_id') && !empty($request->role_id)) {
+            $query->where('instansi_role_id', $request->role_id);
         }
 
         $employees = $query->orderBy('created_at', 'desc')->paginate(15);
 
         // Get unique departments for filter dropdown
         $departments = \App\Models\Admin\Department::where('instansi_id', $instansiId)
+            ->orderBy('name')
+            ->get();
+
+        // Get roles for filter dropdown
+        $roles = \App\Models\Admin\InstansiRole::where('instansi_id', $instansiId)
             ->orderBy('name')
             ->get();
 
@@ -80,7 +85,7 @@ class EmployeeController extends Controller
                             $setupChecks['has_departments'] && 
                             $setupChecks['has_positions'];
 
-        return view('admin.employees.index', compact('employees', 'departments', 'setupChecks', 'canCreateEmployee'));
+        return view('admin.employees.index', compact('employees', 'departments', 'roles', 'setupChecks', 'canCreateEmployee'));
     }
 
     public function create()
@@ -110,6 +115,9 @@ class EmployeeController extends Controller
 
         // Fetch potential supervisors/managers (all employees in the same instansi)
         $supervisorsQuery = Employee::where('instansi_id', Auth::user()->instansi_id)
+            ->whereHas('user', function($q) {
+                $q->where('system_role_id', 2);
+            })
             ->with(['user', 'division', 'department', 'instansiRole']);
             
         if ($branchId) {
@@ -344,6 +352,9 @@ class EmployeeController extends Controller
         // Fetch all potential supervisors (all employees in instansi except self)
         $supervisorsQuery = Employee::where('instansi_id', Auth::user()->instansi_id)
             ->where('id', '!=', $employee->id)
+            ->whereHas('user', function($q) {
+                $q->where('system_role_id', 2);
+            })
             ->with(['user', 'division', 'department', 'instansiRole']);
 
         if ($branchId) {

@@ -99,6 +99,15 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
         Route::resource('payroll', PayrollController::class);
     });
 
+    // Tax Forms (SPT 1721-A1)
+    Route::middleware('permission:view-payroll')->group(function () {
+        Route::post('tax-forms/calculate', [App\Http\Controllers\Admin\TaxFormController::class, 'calculate'])->name('tax-forms.calculate');
+        Route::resource('tax-forms', App\Http\Controllers\Admin\TaxFormController::class);
+        Route::post('tax-forms/bulk-publish', [App\Http\Controllers\Admin\TaxFormController::class, 'bulkPublish'])->name('tax-forms.bulk-publish');
+        Route::post('tax-forms/{tax_form}/publish', [App\Http\Controllers\Admin\TaxFormController::class, 'publish'])->name('tax-forms.publish');
+        Route::get('tax-forms/{tax_form}/print', [App\Http\Controllers\Admin\TaxFormController::class, 'print'])->name('tax-forms.print');
+    });
+
     // Branch management
     Route::middleware('permission:manage-branches')->group(function () {
         Route::resource('branches', BranchController::class);
@@ -137,11 +146,14 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
     // Unified Policy Management
     Route::get('policies', [App\Http\Controllers\Admin\PolicyController::class, 'index'])->name('policies.index');
 
+    // Holiday Management
+    Route::resource('holidays', App\Http\Controllers\Admin\HolidayController::class);
+
     // Leave management
     Route::middleware('permission:view-leaves')->group(function () {
         Route::resource('leaves', LeaveController::class)->parameters(['leaves' => 'leave']);
-        Route::patch('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve')->middleware('permission:approve-leaves');
-        Route::patch('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject')->middleware('permission:approve-leaves');
+        Route::post('leaves/{leave}/approve', [LeaveController::class, 'approve'])->name('leaves.approve')->middleware('permission:approve-leaves');
+        Route::post('leaves/{leave}/reject', [LeaveController::class, 'reject'])->name('leaves.reject')->middleware('permission:approve-leaves');
     });
 
     // Reimbursement management

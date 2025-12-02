@@ -130,14 +130,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function sendEmailVerificationNotification()
     {
-        // Check setting
-        $setting = \App\Models\SystemSetting::where('key', 'email_verification_enabled')->first();
-        
-        // If setting exists and is explicitly 'false', do not send
-        if ($setting && $setting->value === 'false') {
-            return;
-        }
-
         $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }

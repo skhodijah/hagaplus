@@ -76,14 +76,35 @@ class LeaveController extends Controller
         
         $validated = $request->validate($rules);
         
-        // Calculate days count (excluding weekends)
+        // Calculate days count (excluding weekends and holidays)
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
+        
+        // Fetch holidays that overlap with the requested range
+        $holidayRanges = \App\Models\Admin\Holiday::where(function($query) use ($startDate, $endDate) {
+            $query->whereBetween('start_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhereBetween('end_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                  ->orWhere(function($q) use ($startDate, $endDate) {
+                      $q->where('start_date', '<=', $startDate->format('Y-m-d'))
+                        ->where('end_date', '>=', $endDate->format('Y-m-d'));
+                  });
+        })->get();
+
+        // Expand holiday ranges into a set of blocked dates
+        $blockedDates = [];
+        foreach ($holidayRanges as $holiday) {
+            $period = \Carbon\CarbonPeriod::create($holiday->start_date, $holiday->end_date);
+            foreach ($period as $date) {
+                $blockedDates[] = $date->format('Y-m-d');
+            }
+        }
+        $blockedDates = array_unique($blockedDates);
+
         $daysCount = 0;
         
         for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
-            // Only count weekdays (Monday to Friday)
-            if ($date->isWeekday()) {
+            // Only count weekdays (Monday to Friday) AND non-holidays
+            if ($date->isWeekday() && !in_array($date->format('Y-m-d'), $blockedDates)) {
                 $daysCount++;
             }
         }
@@ -107,10 +128,10 @@ class LeaveController extends Controller
         ]);
 
         // Create approval request using the ApprovalService
-        $approvalService = new \App\Services\ApprovalService();
-        $approvalRequest = $approvalService->createApprovalRequest($leave, 'leave', Auth::id());
+        // $approvalService = new \App\Services\ApprovalService();
+        // $approvalRequest = $approvalService->createApprovalRequest($leave, 'leave', Auth::id());
         // Link the approval request to the leave
-        $leave->update(['approval_request_id' => $approvalRequest->id]);
+        // $leave->update(['approval_request_id' => $approvalRequest->id]);
         
         return redirect()->route('employee.leaves.index')
             ->with('success', 'Pengajuan cuti berhasil disubmit. Menunggu persetujuan.');

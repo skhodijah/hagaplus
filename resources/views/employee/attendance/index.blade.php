@@ -7,1543 +7,805 @@
         'longitude' => $employee->branch->longitude ? (float) $employee->branch->longitude : null,
         'radius' => $employee->branch->radius ? (float) $employee->branch->radius : null,
     ] : null;
-@endphp
-    <div class="py-6 md:py-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
+    // Determine current state
+    $state = 'check_in'; // default
+    if (isset($todayLeave) && $todayLeave) {
+        $state = 'leave';
+    } elseif ($todayAttendance && $todayAttendance->check_in_time && !$todayAttendance->check_out_time) {
+        $state = 'check_out';
+    } elseif ($todayAttendance && $todayAttendance->check_out_time) {
+        $state = 'completed';
+    }
+@endphp
+
+    @push('styles')
+    <!-- Fancybox CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css" />
+    @endpush
+
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
             <!-- Header -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">Absensi Karyawan</h1>
-                        <p class="text-gray-600 dark:text-gray-300">Lakukan check in dan check out dengan foto selfie</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0">
-                        <button type="button" id="show-policy" class="inline-flex items-center px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Lihat Kebijakan Absensi
-                        </button>
-                        <div class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-white bg-[#049460] dark:bg-[#10C874]">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {{ now()->translatedFormat('l, d F Y') }}
-                        </div>
-                    </div>
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Absensi</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">{{ now()->translatedFormat('l, d F Y') }}</p>
                 </div>
             </div>
 
-            <!-- Today's Status -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                @include('employee.partials.status')
-            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column: Main Action -->
+                <div class="lg:col-span-2 space-y-6">
+                    
+                    <!-- Main Attendance Card -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden relative">
+                        <!-- Decorative Header -->
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                        
+                        <div class="p-6 md:p-8">
+                            <!-- State: Leave -->
+                            @if($state === 'leave')
+                                <div class="text-center py-8">
+                                    <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fa-solid fa-umbrella-beach text-3xl text-blue-500"></i>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Anda Sedang Cuti</h2>
+                                    <p class="text-gray-600 dark:text-gray-300 mb-4">{{ $todayLeave->leave_type }}</p>
+                                    <div class="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
+                                        {{ $todayLeave->start_date->format('d M Y') }} - {{ $todayLeave->end_date->format('d M Y') }}
+                                    </div>
+                                </div>
 
-            <!-- Location Information -->
-            @if($employee && $employee->branch)
-            <div class="bg-[#049460]/5 dark:bg-[#049460]/10 border border-[#049460]/20 dark:border-[#049460]/30 rounded-xl p-5">
-                <h3 class="text-lg font-semibold text-[#049460] dark:text-[#10C874] mb-3 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Lokasi Cabang
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Nama Cabang</p>
-                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $employee->branch->name }}</p>
+                            <!-- State: Completed -->
+                            @elseif($state === 'completed')
+                                <div class="text-center py-8">
+                                    <div class="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                                        <i class="fa-solid fa-check-double text-3xl text-emerald-500"></i>
+                                    </div>
+                                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Absensi Hari Ini Selesai</h2>
+                                    <p class="text-gray-600 dark:text-gray-300 mb-6">Terima kasih atas kerja keras Anda hari ini!</p>
+                                    
+                                    <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                                        <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Masuk</div>
+                                            <div class="text-lg font-bold text-gray-900 dark:text-white">
+                                                {{ $todayAttendance->check_in_time->format('H:i') }}
+                                            </div>
+                                            <button onclick="openEditModal('check_in', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_in_time->format('Y-m-d\\TH:i') }}')" 
+                                                class="text-xs text-blue-600 hover:text-blue-700 mt-1 font-medium">
+                                                Edit
+                                            </button>
+                                        </div>
+                                        <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Pulang</div>
+                                            <div class="text-lg font-bold text-gray-900 dark:text-white">
+                                                {{ $todayAttendance->check_out_time->format('H:i') }}
+                                            </div>
+                                            <button onclick="openEditModal('check_out', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_out_time->format('Y-m-d\\TH:i') }}')"
+                                                class="text-xs text-blue-600 hover:text-blue-700 mt-1 font-medium">
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    @if($todayAttendance->work_duration)
+                                    <div class="mt-6 inline-flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                        <i class="fa-regular fa-clock mr-2"></i>
+                                        Total Durasi: {{ floor($todayAttendance->work_duration / 60) }}j {{ $todayAttendance->work_duration % 60 }}m
+                                    </div>
+                                    @endif
+                                </div>
+
+                            <!-- State: Check In or Check Out -->
+                            @else
+                                <div class="flex flex-col h-full">
+                                    <div class="mb-6 flex items-center justify-between">
+                                        <div>
+                                            <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                                                {{ $state === 'check_in' ? 'Check In' : 'Check Out' }}
+                                            </h2>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                {{ $state === 'check_in' ? 'Silakan absen masuk untuk memulai hari.' : 'Silakan absen pulang untuk mengakhiri hari.' }}
+                                            </p>
+                                        </div>
+                                        @if($state === 'check_out')
+                                            <div class="text-right">
+                                                <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider">Masuk Pukul</div>
+                                                <div class="text-lg font-bold text-gray-900 dark:text-white">
+                                                    {{ $todayAttendance->check_in_time->format('H:i') }}
+                                                </div>
+                                                <button onclick="openEditModal('check_in', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_in_time->format('Y-m-d\\TH:i') }}')" 
+                                                    class="text-xs text-blue-600 hover:text-blue-700 mt-1 font-medium">
+                                                    Edit
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <!-- Camera Section -->
+                                    <div class="relative w-full aspect-square rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-900 shadow-inner ring-1 ring-black/5 dark:ring-white/10 mb-6 group">
+                                        <!-- Placeholder / Initial State -->
+                                        <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                                            <i class="fa-solid fa-camera text-4xl mb-3"></i>
+                                            <p class="text-sm">Kamera belum aktif</p>
+                                        </div>
+
+                                        <!-- Video Element -->
+                                        <video id="attendance-video" class="w-full h-full object-cover hidden" autoplay playsinline muted style="transform: scaleX(-1)"></video>
+                                        <canvas id="attendance-canvas" class="hidden"></canvas>
+                                        
+                                        <!-- Captured Image Preview -->
+                                        <img id="captured-image" class="w-full h-full object-cover hidden" alt="Captured Selfie">
+
+                                        <!-- Live Overlay -->
+                                        <div id="live-overlay" class="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-2 rounded-lg space-y-1 hidden">
+                                            <div id="overlay-distance" class="font-medium">Jarak: -</div>
+                                            <div id="overlay-status" class="font-bold uppercase">Menunggu Lokasi</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Location Status Bar -->
+                                    <div id="location-status-bar" class="mb-6 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/30 border border-gray-100 dark:border-gray-700 flex items-start gap-3 transition-colors duration-300">
+                                        <div id="location-icon" class="mt-0.5 text-gray-400">
+                                            <i class="fa-solid fa-location-dot animate-pulse"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h4 id="location-title" class="text-sm font-semibold text-gray-900 dark:text-white">Mencari Lokasi...</h4>
+                                            <p id="location-desc" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                Mohon tunggu sebentar, sistem sedang mendeteksi lokasi Anda.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="mt-auto grid grid-cols-1 gap-3">
+                                        <button type="button" id="btn-start-camera" class="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm shadow-blue-200 dark:shadow-none transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                                            <i class="fa-solid fa-camera"></i>
+                                            Aktifkan Kamera
+                                        </button>
+                                        
+                                        <button type="button" id="btn-capture" class="hidden w-full py-3.5 px-4 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-bold rounded-xl transition-all flex items-center justify-center gap-2">
+                                            <div class="w-4 h-4 rounded-full bg-blue-600"></div>
+                                            Ambil Foto
+                                        </button>
+
+                                        <button type="button" id="btn-retake" class="hidden w-full py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all">
+                                            <i class="fa-solid fa-rotate-left mr-2"></i>
+                                            Foto Ulang
+                                        </button>
+
+                                        <form id="attendance-form" method="POST" action="{{ $state === 'check_in' ? route('employee.attendance.check-in') : route('employee.attendance.check-out') }}" class="hidden w-full" enctype="multipart/form-data">
+                                            @csrf
+                                            <input type="hidden" name="latitude" id="input-lat">
+                                            <input type="hidden" name="longitude" id="input-lng">
+                                            <!-- File input will be populated by JS -->
+                                            <input type="file" name="selfie" id="input-selfie" class="hidden">
+                                            
+                                            <button type="submit" id="btn-submit" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
+                                                <i class="fa-solid fa-paper-plane"></i>
+                                                {{ $state === 'check_in' ? 'Kirim Absen Masuk' : 'Kirim Absen Pulang' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
                     </div>
-                    @if($employee->branch->latitude && $employee->branch->longitude)
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Koordinat</p>
-                        <p class="text-sm font-semibold text-gray-900 dark:text-white">
-                            {{ number_format($employee->branch->latitude, 6) }}, {{ number_format($employee->branch->longitude, 6) }}
-                        </p>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Radius Absensi</p>
-                        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ $employee->branch->radius }} meter</p>
+
+                </div>
+
+                <!-- Right Column: Info & History -->
+                <div class="space-y-6">
+                    
+                    <!-- Policy Info Card -->
+                    @if($attendancePolicy)
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4 flex items-center">
+                            <i class="fa-solid fa-circle-info text-blue-500 mr-2"></i> Kebijakan Absensi
+                        </h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between border-b border-gray-50 dark:border-gray-700 pb-2">
+                                <span class="text-gray-500 dark:text-gray-400">Jam Kerja</span>
+                                <span class="font-medium text-gray-900 dark:text-white">
+                                    {{ \Carbon\Carbon::parse($attendancePolicy->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($attendancePolicy->end_time)->format('H:i') }}
+                                </span>
+                            </div>
+                            <div class="flex justify-between border-b border-gray-50 dark:border-gray-700 pb-2">
+                                <span class="text-gray-500 dark:text-gray-400">Toleransi Telat</span>
+                                <span class="font-medium text-gray-900 dark:text-white">{{ $attendancePolicy->late_tolerance }} Menit</span>
+                            </div>
+                            <div class="flex justify-between border-b border-gray-50 dark:border-gray-700 pb-2">
+                                <span class="text-gray-500 dark:text-gray-400">Hari Kerja</span>
+                                <span class="font-medium text-gray-900 dark:text-white text-right">
+                                    @php
+                                        $daysMap = [1=>'Sen', 2=>'Sel', 3=>'Rab', 4=>'Kam', 5=>'Jum', 6=>'Sab', 7=>'Min'];
+                                        $days = collect($attendancePolicy->work_days)->map(fn($d) => $daysMap[$d] ?? $d)->implode(', ');
+                                    @endphp
+                                    {{ $days }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                     @endif
-                </div>
-                <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                        <strong>Penting:</strong> Anda harus berada dalam radius {{ $employee->branch->radius }} meter dari lokasi cabang untuk dapat melakukan absensi.
-                    </p>
-                </div>
-            </div>
-            @endif
 
-
-            <!-- Attendance Actions -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                <!-- Check In Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check In</h3>
-                            @if(isset($todayLeave) && $todayLeave)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Sedang Cuti
-                                </span>
-                            @elseif($todayAttendance && $todayAttendance->check_in_time)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    Sudah Check In
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Belum Check In
-                                </span>
-                            @endif
+                    <!-- Location Info Card -->
+                    @if($employee && $employee->branch)
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider mb-4 flex items-center">
+                            <i class="fa-solid fa-map-pin text-red-500 mr-2"></i> Lokasi Kantor
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Nama Cabang</div>
+                                <div class="font-medium text-gray-900 dark:text-white">{{ $employee->branch->name }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">Radius Absensi</div>
+                                <div class="font-medium text-gray-900 dark:text-white">{{ $employee->branch->radius }} Meter</div>
+                            </div>
                         </div>
-
-                        @if(isset($isProfileComplete) && !$isProfileComplete)
-                            <div class="text-center py-8">
-                                <div class="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Profil Belum Lengkap</h4>
-                                <p class="text-gray-600 dark:text-gray-300 mb-4">
-                                    Anda harus melengkapi data profil Anda sebelum dapat melakukan absensi.
-                                </p>
-                                <a href="{{ route('employee.profile') }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors">
-                                    Lengkapi Profil Sekarang
-                                </a>
-                            </div>
-                        @elseif(isset($todayLeave) && $todayLeave)
-                            <!-- On Leave -->
-                            <div class="text-center py-4">
-                                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Anda Sedang Cuti</h4>
-                                <p class="text-gray-600 dark:text-gray-300 mb-2">
-                                    {{ $todayLeave->leave_type }}
-                                </p>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $todayLeave->start_date->format('d M Y') }} - {{ $todayLeave->end_date->format('d M Y') }}
-                                </p>
-                            </div>
-                        @elseif($todayAttendance && $todayAttendance->check_in_time)
-                            <!-- Already checked in -->
-                            <div class="space-y-4">
-                                <div class="text-center py-4">
-                                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                    </div>
-                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check In Berhasil!</h4>
-                                    <p class="text-gray-600 dark:text-gray-300 mb-2">
-                                        Waktu: {{ $todayAttendance->check_in_time->format('H:i:s') }}
-                                    </p>
-                                    <button type="button" onclick="openEditModal('check_in', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_in_time->format('Y-m-d\\TH:i') }}')"
-                                        class="text-sm text-[#049460] hover:text-[#10C874] font-medium">
-                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit Waktu Check In
-                                    </button>
-                                </div>
-                                @if($todayAttendance->check_in_photo)
-                                    <div class="-mx-6 -mb-6">
-                                        <img src="{{ asset('storage/' . $todayAttendance->check_in_photo) }}"
-                                             alt="Check In Photo"
-                                             class="w-full h-auto object-cover rounded-b-xl">
-                                    </div>
-                                @endif
-                            </div>
-                        @else
-                            <!-- Check In Form -->
-                            <form id="checkin-form" enctype="multipart/form-data">
-                                @csrf
-                                <div class="space-y-4">
-                                    <div id="checkin-location-status" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-                                        <div class="flex flex-wrap items-center gap-4 text-sm">
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Koordinat Anda:</span>
-                                                <span id="checkin-coordinates">Menunggu lokasi...</span>
-                                            </div>
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Jarak ke kantor:</span>
-                                                <span id="checkin-distance">-</span>
-                                            </div>
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Status:</span>
-                                                <span id="checkin-radius-status" class="font-semibold">Menunggu lokasi...</span>
-                                            </div>
-                                        </div>
-                                        <p id="checkin-location-message" class="text-xs text-gray-600 dark:text-gray-300">
-                                            Pastikan Anda berada dalam radius lokasi cabang sebelum melakukan absensi.
-                                        </p>
-                                    </div>
-                                    <div id="checkin-location-alert" class="hidden bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-200">
-                                        Lokasi Anda berada di luar radius absensi yang diizinkan.
-                                    </div>
-
-                                    <!-- Camera Preview -->
-                                    <div class="relative">
-                                        <div id="camera-preview" class="w-full aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                            <div class="text-center">
-                                                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                </svg>
-                                                <p class="text-gray-500 dark:text-gray-400 text-sm">Klik tombol di bawah untuk mengaktifkan kamera</p>
-                                            </div>
-                                        </div>
-                                        <div id="checkin-live-overlay" class="hidden absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-2 rounded-lg space-y-1">
-                                            <div id="checkin-overlay-coordinates">Lat: -, Lng: -</div>
-                                            <div id="checkin-overlay-distance">Jarak: -</div>
-                                            <div id="checkin-overlay-status">Status: -</div>
-                                        </div>
-                                        <video id="checkin-video" class="hidden w-full rounded-lg"></video>
-                                        <canvas id="checkin-canvas" class="hidden"></canvas>
-                                    </div>
-
-                                    <!-- Camera Controls -->
-                                    <div class="space-y-3">
-                                        <div class="flex space-x-3">
-                                            <button type="button" id="start-camera-checkin"
-                                                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                </svg>
-                                                Aktifkan Kamera
-                                            </button>
-                                            <button type="button" id="capture-checkin"
-                                                    class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                </svg>
-                                                Ambil Foto
-                                            </button>
-                                        </div>
-
-                                        <!-- Alternative: Upload Photo -->
-                                        <div class="text-center">
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Atau</p>
-                                            <label for="upload-checkin-photo" id="upload-checkin-label" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                                </svg>
-                                                Upload Foto dari Galeri
-                                            </label>
-                                            <input type="file" id="upload-checkin-photo" accept="image/*" class="hidden">
-                                        </div>
-                                    </div>
-
-                                    <!-- Hidden inputs -->
-                                    <input type="file" id="checkin-selfie" name="selfie" class="hidden" accept="image/*">
-                                    <input type="hidden" id="checkin-latitude" name="latitude">
-                                    <input type="hidden" id="checkin-longitude" name="longitude">
-
-                                    <!-- Submit Button -->
-                                    <button type="submit" id="submit-checkin"
-                                            class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Check In Sekarang
-                                    </button>
-                                </div>
-                            </form>
-                        @endif
                     </div>
-                </div>
+                    @endif
 
-                <!-- Check Out Section -->
-                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                    <div class="p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Check Out</h3>
-                            @if(isset($todayLeave) && $todayLeave)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Sedang Cuti
-                                </span>
-                            @elseif($todayAttendance && $todayAttendance->check_out_time)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                    </svg>
-                                    Sudah Check Out
-                                </span>
-                            @elseif($todayAttendance && $todayAttendance->check_in_time)
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Sedang Bekerja
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
-                                    <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                    </svg>
-                                    Belum Check In
-                                </span>
-                            @endif
+                    <!-- Recent History -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-5 border-b border-gray-100 dark:border-gray-700">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Riwayat Terbaru
+                            </h3>
                         </div>
-
-                        @if(isset($todayLeave) && $todayLeave)
-                            <!-- Cannot check out because on leave -->
-                            <div class="text-center py-8">
-                                <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Anda Sedang Cuti</h4>
-                                <p class="text-gray-600 dark:text-gray-300">Tidak perlu melakukan check out.</p>
-                            </div>
-                        @elseif($todayAttendance && $todayAttendance->check_out_time)
-                            <!-- Already checked out -->
-                            <div class="space-y-4">
-                                <div class="text-center py-4">
-                                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
+                        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @forelse($recentAttendance->take(5) as $history)
+                                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $history->attendance_date->format('d M') }}
+                                        </span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full {{ $history->status === 'present' ? 'bg-green-100 text-green-700' : ($history->status === 'late' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700') }}">
+                                            {{ ucfirst($history->status) }}
+                                        </span>
                                     </div>
-                                    <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Check Out Berhasil!</h4>
-                                    <p class="text-gray-600 dark:text-gray-300 mb-2">
-                                        Waktu: {{ $todayAttendance->check_out_time->format('H:i:s') }}
-                                    </p>
-                                    @if($todayAttendance->work_duration)
-                                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                                            Durasi kerja: {{ floor($todayAttendance->work_duration / 60) }}j {{ $todayAttendance->work_duration % 60 }}m
-                                        </p>
-                                    @endif
-                                    <button type="button" onclick="openEditModal('check_out', '{{ $todayAttendance->id }}', '{{ $todayAttendance->check_out_time->format('Y-m-d\\TH:i') }}')"
-                                        class="text-sm text-[#049460] hover:text-[#10C874] font-medium">
-                                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Edit Waktu Check Out
-                                    </button>
-                                </div>
-                                @if($todayAttendance->check_out_photo)
-                                    <div class="-mx-6 -mb-6">
-                                        <img src="{{ asset('storage/' . $todayAttendance->check_out_photo) }}"
-                                             alt="Check Out Photo"
-                                             class="w-full h-auto object-cover rounded-b-xl">
-                                    </div>
-                                @endif
-                            </div>
-                        @elseif($todayAttendance && $todayAttendance->check_in_time)
-                            <!-- Check Out Form -->
-                            <form id="checkout-form" enctype="multipart/form-data">
-                                @csrf
-                                <div class="space-y-4">
-                                    <div id="checkout-location-status" class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
-                                        <div class="flex flex-wrap items-center gap-4 text-sm">
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Koordinat Anda:</span>
-                                                <span id="checkout-coordinates">Menunggu lokasi...</span>
-                                            </div>
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Jarak ke kantor:</span>
-                                                <span id="checkout-distance">-</span>
-                                            </div>
-                                            <div class="text-gray-700 dark:text-gray-200">
-                                                <span class="font-semibold">Status:</span>
-                                                <span id="checkout-radius-status" class="font-semibold">Menunggu lokasi...</span>
-                                            </div>
-                                        </div>
-                                        <p id="checkout-location-message" class="text-xs text-gray-600 dark:text-gray-300">
-                                            Pastikan Anda berada dalam radius lokasi cabang sebelum melakukan absensi.
-                                        </p>
-                                    </div>
-                                    <div id="checkout-location-alert" class="hidden bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-3 text-sm text-red-700 dark:text-red-200">
-                                        Lokasi Anda berada di luar radius absensi yang diizinkan.
-                                    </div>
-
-                                    <!-- Camera Preview -->
-                                    <div class="relative">
-                                        <div id="camera-preview-checkout" class="w-full aspect-video bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                                            <div class="text-center">
-                                                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                </svg>
-                                                <p class="text-gray-500 dark:text-gray-400 text-sm">Klik tombol di bawah untuk mengaktifkan kamera</p>
-                                            </div>
-                                        </div>
-                                        <div id="checkout-live-overlay" class="hidden absolute top-3 left-3 bg-black/60 text-white text-xs px-3 py-2 rounded-lg space-y-1">
-                                            <div id="checkout-overlay-coordinates">Lat: -, Lng: -</div>
-                                            <div id="checkout-overlay-distance">Jarak: -</div>
-                                            <div id="checkout-overlay-status">Status: -</div>
-                                        </div>
-                                        <video id="checkout-video" class="hidden w-full rounded-lg"></video>
-                                        <canvas id="checkout-canvas" class="hidden"></canvas>
-                                    </div>
-
-                                    <!-- Camera Controls -->
-                                    <div class="space-y-3">
-                                        <div class="flex space-x-3">
-                                            <button type="button" id="start-camera-checkout"
-                                                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                                </svg>
-                                                Aktifkan Kamera
+                                    <div class="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span>
+                                                <i class="fa-solid fa-arrow-right-to-bracket text-emerald-500 mr-1"></i>
+                                                {{ $history->check_in_time ? $history->check_in_time->format('H:i') : '-' }}
+                                            </span>
+                                            @if($history->check_in_photo)
+                                            <a href="{{ asset('storage/' . $history->check_in_photo) }}" data-fancybox="gallery-{{ $history->id }}" data-caption="Check In: {{ $history->attendance_date->format('d M Y') }} - {{ $history->check_in_time->format('H:i') }}" class="text-blue-500 hover:text-blue-600">
+                                                <i class="fa-regular fa-image"></i>
+                                            </a>
+                                            @endif
+                                            @if($history->check_in_time)
+                                            <button onclick="openEditModal('check_in', '{{ $history->id }}', '{{ $history->check_in_time->format('Y-m-d\\TH:i') }}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Edit Check In">
+                                                <i class="fa-solid fa-pen"></i>
                                             </button>
-                                            <button type="button" id="capture-checkout"
-                                                    class="flex-1 bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                </svg>
-                                                Ambil Foto
-                                            </button>
+                                            @endif
                                         </div>
-
-                                        <!-- Alternative: Upload Photo -->
-                                        <div class="text-center">
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Atau</p>
-                                            <label for="upload-checkout-photo" id="upload-checkout-label" class="inline-flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg cursor-pointer transition-colors duration-200">
-                                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                                                </svg>
-                                                Upload Foto dari Galeri
-                                            </label>
-                                            <input type="file" id="upload-checkout-photo" accept="image/*" class="hidden">
+                                        <div class="flex items-center gap-2">
+                                            <span>
+                                                <i class="fa-solid fa-arrow-right-from-bracket text-red-500 mr-1"></i>
+                                                {{ $history->check_out_time ? $history->check_out_time->format('H:i') : '-' }}
+                                            </span>
+                                            @if($history->check_out_photo)
+                                            <a href="{{ asset('storage/' . $history->check_out_photo) }}" data-fancybox="gallery-{{ $history->id }}" data-caption="Check Out: {{ $history->attendance_date->format('d M Y') }} - {{ $history->check_out_time->format('H:i') }}" class="text-blue-500 hover:text-blue-600">
+                                                <i class="fa-regular fa-image"></i>
+                                            </a>
+                                            @endif
+                                            @if($history->check_out_time)
+                                            <button onclick="openEditModal('check_out', '{{ $history->id }}', '{{ $history->check_out_time->format('Y-m-d\\TH:i') }}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Edit Check Out">
+                                                <i class="fa-solid fa-pen"></i>
+                                            </button>
+                                            @endif
                                         </div>
                                     </div>
-
-                                    <!-- Hidden inputs -->
-                                    <input type="file" id="checkout-selfie" name="selfie" class="hidden" accept="image/*">
-                                    <input type="hidden" id="checkout-latitude" name="latitude">
-                                    <input type="hidden" id="checkout-longitude" name="longitude">
-
-                                    <!-- Submit Button -->
-                                    <button type="submit" id="submit-checkout"
-                                            class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 hidden items-center justify-center gap-2">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                        </svg>
-                                        Check Out Sekarang
-                                    </button>
                                 </div>
-                            </form>
-                        @else
-                            <!-- Cannot check out yet -->
-                            <div class="text-center py-8">
-                                <div class="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                    </svg>
-                                </div>
-                                <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Belum Bisa Check Out</h4>
-                                <p class="text-gray-600 dark:text-gray-300">Anda harus check in terlebih dahulu</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Attendance History -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-6">Riwayat Absensi Terbaru</h3>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tanggal</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Check In</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Check Out</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Durasi</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            @forelse($recentAttendance as $attendance)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $attendance->attendance_date->format('d M Y') }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $attendance->check_in_time ? $attendance->check_in_time->format('H:i') : '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    {{ $attendance->check_out_time ? $attendance->check_out_time->format('H:i') : '-' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                    @if($attendance->work_duration)
-                                        {{ floor($attendance->work_duration / 60) }}j {{ $attendance->work_duration % 60 }}m
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                        {{ $attendance->status === 'present' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                                           ($attendance->status === 'late' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                                           ($attendance->status === 'leave' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
-                                           'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400')) }}">
-                                        {{ $attendance->status === 'leave' ? 'Cuti' : ucfirst($attendance->status ?? 'absent') }}
-                                    </span>
-                                </td>
-                            </tr>
                             @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                                    Belum ada data absensi
-                                </td>
-                            </tr>
+                                <div class="p-6 text-center text-sm text-gray-500">
+                                    Belum ada riwayat.
+                                </div>
                             @endforelse
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+
+                    <!-- Revision History -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-5 border-b border-gray-100 dark:border-gray-700">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">
+                                Riwayat Pengajuan Revisi
+                            </h3>
+                        </div>
+                        <div class="divide-y divide-gray-100 dark:divide-gray-700">
+                            @forelse($revisions as $revision)
+                                <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div>
+                                            <span class="text-sm font-medium text-gray-900 dark:text-white">
+                                                {{ $revision->revised_time->format('d M Y') }}
+                                            </span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400 block">
+                                                {{ $revision->revision_type === 'check_in' ? 'Check In' : 'Check Out' }}
+                                            </span>
+                                        </div>
+                                        @php
+                                            $statusClasses = [
+                                                'pending' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+                                                'approved_supervisor' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                                                'approved' => 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                                                'rejected' => 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+                                            ];
+                                            $statusLabels = [
+                                                'pending' => 'Menunggu',
+                                                'approved_supervisor' => 'Disetujui SPV',
+                                                'approved' => 'Disetujui HRD',
+                                                'rejected' => 'Ditolak',
+                                            ];
+                                        @endphp
+                                        <span class="text-xs px-2 py-0.5 rounded-full {{ $statusClasses[$revision->status] ?? 'bg-gray-100 text-gray-700' }}">
+                                            {{ $statusLabels[$revision->status] ?? ucfirst($revision->status) }}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                        <p class="truncate" title="{{ $revision->reason }}">
+                                            <i class="fa-regular fa-comment-dots mr-1"></i> {{ $revision->reason }}
+                                        </p>
+                                    </div>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="text-gray-400">
+                                            {{ $revision->created_at->diffForHumans() }}
+                                        </span>
+                                        @if($revision->proof_photo)
+                                            <a href="{{ asset('storage/' . $revision->proof_photo) }}" data-fancybox="revision-proof-{{ $revision->id }}" class="text-blue-500 hover:text-blue-600 flex items-center gap-1">
+                                                <i class="fa-regular fa-image"></i> Bukti
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="p-6 text-center text-sm text-gray-500">
+                                    Belum ada pengajuan revisi.
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Policy Modal -->
-    <div id="policy-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-xl bg-white dark:bg-gray-800">
-            <div class="flex justify-between items-center pb-3">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Kebijakan Absensi</h3>
-                <button id="close-policy-modal" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="mt-4">
-                <div id="policy-loading" class="text-center py-8">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-haga-500 mx-auto"></div>
-                    <p class="mt-2 text-gray-600 dark:text-gray-300">Memuat kebijakan absensi...</p>
-                </div>
-                <div id="policy-content" class="hidden space-y-4">
-                    <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                        <h4 class="font-medium text-gray-900 dark:text-white mb-2" id="policy-name"></h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Hari Kerja:</p>
-                                <p class="font-medium" id="policy-work-days"></p>
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30 sm:mx-0 sm:h-10 sm:w-10">
+                                <i class="fa-solid fa-pen-to-square text-blue-600 dark:text-blue-400"></i>
                             </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Jam Masuk:</p>
-                                <p class="font-medium" id="policy-start-time"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Jam Pulang:</p>
-                                <p class="font-medium" id="policy-end-time"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Toleransi Keterlambatan:</p>
-                                <p class="font-medium" id="policy-late-tolerance"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Durasi Istirahat:</p>
-                                <p class="font-medium" id="policy-break-duration"></p>
-                            </div>
-                            <div>
-                                <p class="text-sm text-gray-500 dark:text-gray-400">Metode Absensi:</p>
-                                <p class="font-medium" id="policy-methods"></p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border-l-4 border-yellow-400 dark:border-yellow-500">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Perhatian</h4>
-                                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
-                                    <p>Pastikan untuk mematuhi jadwal dan aturan absensi yang telah ditetapkan. Keterlambatan atau pelanggaran lainnya akan dicatat dalam sistem.</p>
+                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white" id="modal-title">Edit Absensi</h3>
+                                <div class="mt-4">
+                                    <form id="edit-attendance-form" class="space-y-4" enctype="multipart/form-data">
+                                        @csrf
+                                        <input type="hidden" id="edit-attendance-id" name="attendance_id">
+                                        <input type="hidden" id="edit-revision-type" name="revision_type">
+                                        
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waktu Tercatat</label>
+                                            <input type="text" id="edit-original-time" readonly class="w-full rounded-lg border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 text-sm">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Waktu Baru <span class="text-red-500">*</span></label>
+                                            <input type="datetime-local" id="edit-revised-time" name="revised_time" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alasan <span class="text-red-500">*</span></label>
+                                            <textarea id="edit-reason" name="reason" rows="3" required class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500" placeholder="Jelaskan alasan perubahan..."></textarea>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bukti Foto <span class="text-red-500">*</span></label>
+                                            <input type="file" name="proof_photo" accept="image/*" required class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300">
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Unggah foto bukti (misal: jam tangan, suasana sekitar, dll)</p>
+                                        </div>
+                                        
+                                        <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg text-xs text-blue-700 dark:text-blue-300">
+                                            Permohonan edit akan ditinjau oleh atasan atau admin sebelum disetujui.
+                                        </div>
+
+                                        <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                            <button type="submit" class="inline-flex w-full justify-center rounded-lg border border-transparent bg-blue-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm">
+                                                Kirim Permohonan
+                                            </button>
+                                            <button type="button" onclick="closeEditModal()" class="mt-3 inline-flex w-full justify-center rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-base font-medium text-gray-700 dark:text-gray-200 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm">
+                                                Batal
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="policy-error" class="hidden text-center py-8">
-                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30">
-                        <svg class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                    </div>
-                    <h3 class="mt-3 text-lg font-medium text-gray-900 dark:text-white">Gagal memuat kebijakan</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Terjadi kesalahan saat memuat kebijakan absensi. Silakan coba lagi nanti.</p>
-                    <div class="mt-6">
-                        <button type="button" id="retry-policy" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-haga-600 hover:bg-haga-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-haga-500">
-                            <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            Coba Lagi
-                        </button>
-                    </div>
-                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Edit Attendance Modal -->
-    <div id="edit-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-        <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-xl bg-white dark:bg-gray-800">
-            <div class="flex justify-between items-center pb-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Waktu Absensi</h3>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-500">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <form id="edit-attendance-form" class="mt-4 space-y-4" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" id="edit-attendance-id" name="attendance_id">
-                <input type="hidden" id="edit-revision-type" name="revision_type">
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Waktu Asli
-                    </label>
-                    <input type="text" id="edit-original-time" readonly
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Waktu Baru <span class="text-red-500">*</span>
-                    </label>
-                    <input type="datetime-local" id="edit-revised-time" name="revised_time" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#049460] focus:border-transparent">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Alasan Perubahan <span class="text-red-500">*</span>
-                    </label>
-                    <textarea id="edit-reason" name="reason" rows="3" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#049460] focus:border-transparent"
-                        placeholder="Jelaskan alasan perubahan waktu absensi..."></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Foto Bukti (Opsional)
-                    </label>
-                    <input type="file" id="edit-proof-photo" name="proof_photo" accept="image/*"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#049460] file:text-white hover:file:bg-[#10C874]">
-                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Upload foto bukti jika diperlukan (max 5MB)</p>
-                </div>
-
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                    <p class="text-sm text-yellow-800 dark:text-yellow-200">
-                        <strong>Catatan:</strong> Perubahan akan menunggu persetujuan admin sebelum diterapkan.
-                    </p>
-                </div>
-
-                <div class="flex gap-3 pt-3">
-                    <button type="button" onclick="closeEditModal()"
-                        class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit"
-                        class="flex-1 px-4 py-2 bg-[#049460] hover:bg-[#10C874] text-white rounded-lg transition-colors">
-                        Kirim Permohonan
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
     @push('scripts')
+    <!-- Fancybox JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
-        window.branchInfo = window.branchInfo || @json($branchData);
-        window.branchName = window.branchName || @json($branchData['name'] ?? null);
+        // Initialize Fancybox
+        Fancybox.bind("[data-fancybox]", {
+            // Your custom options
+        });
 
-        if (!window.calculateDistanceMeters) {
-            window.calculateDistanceMeters = function(lat1, lon1, lat2, lon2) {
-                if ([lat1, lon1, lat2, lon2].some(function(value) { return value === null || value === undefined || isNaN(parseFloat(value)); })) {
-                    return null;
-                }
-                const toRad = function(value) { return (value * Math.PI) / 180; };
-                const earthRadius = 6371000; // meters
-                const dLat = toRad(lat2 - lat1);
-                const dLon = toRad(lon2 - lon1);
-                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                          Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                return earthRadius * c;
-            };
-        }
-
-        if (!window.AttendanceLocationManager) {
-            window.AttendanceLocationManager = (function() {
-                let branchInfo = null;
-                let watchStarted = false;
-                let watchId = null;
-                let data = { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: null };
-                const listeners = [];
-
-                function normalizeBranchInfo(info) {
-                    if (!info) {
-                        return null;
-                    }
-                    const latitude = info.latitude !== undefined && info.latitude !== null ? parseFloat(info.latitude) : null;
-                    const longitude = info.longitude !== undefined && info.longitude !== null ? parseFloat(info.longitude) : null;
-                    const radius = info.radius !== undefined && info.radius !== null ? parseFloat(info.radius) : null;
-                    if ([latitude, longitude, radius].some(function(value) { return value === null || Number.isNaN(value); })) {
-                        return null;
-                    }
-                    return {
-                        ...info,
-                        latitude,
-                        longitude,
-                        radius,
-                    };
-                }
-
-                function notify() {
-                    listeners.forEach(function(listener) {
-                        listener({ ...data });
-                    });
-                }
-
-                function ensureWatcher() {
-                    if (watchStarted) {
-                        return;
-                    }
-                    watchStarted = true;
-
-                    if (!('geolocation' in navigator)) {
-                        data.error = 'Perangkat tidak mendukung geolokasi.';
-                        data.available = false;
-                        data.distance = null;
-                        data.insideRadius = false;
-                        notify();
-                        return;
-                    }
-
-                    // Check permission status
-                    if ('permissions' in navigator) {
-                        navigator.permissions.query({name:'geolocation'}).then(function(result) {
-                            if (result.state === 'denied') {
-                                data.error = 'Izin lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
-                                data.available = false;
-                                data.distance = null;
-                                data.insideRadius = false;
-                                notify();
-                                return;
-                            }
-                            // If granted or prompt, proceed with location acquisition
-                            getInitialLocation();
-                        }).catch(function() {
-                            // Fallback if permissions API not supported
-                            getInitialLocation();
-                        });
-                    } else {
-                        getInitialLocation();
-                    }
-
-                    function getInitialLocation() {
-                        // First, try to get current position quickly
-                        navigator.geolocation.getCurrentPosition(function(position) {
-                            handleSuccess(position);
-                            // Then start watching for updates
-                            startWatching();
-                        }, function(error) {
-                            // If getCurrentPosition fails, try watchPosition
-                            startWatching();
-                        }, {
-                            enableHighAccuracy: true,
-                            maximumAge: 10000,
-                            timeout: 5000,
-                        });
-                    }
-
-                    function startWatching() {
-                        watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
-                            enableHighAccuracy: true,
-                            maximumAge: 3000,
-                            timeout: 5000,
-                        });
-
-                        // Set shorter timeout for location acquisition
-                        setTimeout(function() {
-                            if (!data.available && !data.error) {
-                                data.error = 'Tidak dapat memperoleh lokasi. Pastikan GPS aktif dan izinkan akses lokasi di browser.';
-                                notify();
-                            }
-                        }, 5000);
-                    }
-                }
-
-                function handleSuccess(position) {
-                    data.lat = position.coords.latitude;
-                    data.lng = position.coords.longitude;
-                    data.available = true;
-                    data.error = null;
-
-                    if (branchInfo && branchInfo.latitude !== null && branchInfo.longitude !== null && branchInfo.radius !== null) {
-                        data.distance = window.calculateDistanceMeters(data.lat, data.lng, branchInfo.latitude, branchInfo.longitude);
-                        data.insideRadius = data.distance !== null ? data.distance <= branchInfo.radius : false;
-                    } else {
-                        data.distance = null;
-                        data.insideRadius = true;
-                    }
-
-                    notify();
-                }
-
-                function handleError(error) {
-                    let errorMessage = 'Tidak dapat memperoleh lokasi.';
-                    if (error) {
-                        switch(error.code) {
-                            case error.PERMISSION_DENIED:
-                                errorMessage = 'Akses lokasi ditolak. Silakan izinkan lokasi di pengaturan browser Anda.';
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                errorMessage = 'Informasi lokasi tidak tersedia. Pastikan GPS aktif dan sinyal kuat.';
-                                break;
-                            case error.TIMEOUT:
-                                errorMessage = 'Waktu permintaan lokasi habis. Coba lagi.';
-                                break;
-                            default:
-                                errorMessage = error.message || 'Terjadi kesalahan saat memperoleh lokasi.';
-                                break;
-                        }
-                    }
-                    data.error = errorMessage;
-                    data.available = false;
-                    data.distance = null;
-                    data.insideRadius = false;
-                    notify();
-                }
-
-                return {
-                    setBranchInfo(info) {
-                        branchInfo = normalizeBranchInfo(info);
-                        ensureWatcher();
-                        notify();
-                    },
-                    subscribe(listener) {
-                        if (typeof listener === 'function') {
-                            listeners.push(listener);
-                            listener({ ...data });
-                        }
-                        ensureWatcher();
-                    },
-                    getData() {
-                        return { ...data };
-                    },
-                    hasBranchInfo() {
-                        return !!branchInfo;
-                    }
-                };
-            })();
-        }
-
-        if (window.branchInfo) {
-            window.AttendanceLocationManager.setBranchInfo(window.branchInfo);
-        } else {
-            window.AttendanceLocationManager.subscribe(function() {});
-        }
-
-        if (!window.drawAttendanceOverlay) {
-            window.drawAttendanceOverlay = function(ctx, width, height, options = {}) {
-                if (!ctx) {
-                    return;
-                }
-
-                const now = options.timestamp ? new Date(options.timestamp) : new Date();
-                const timestampText = now.toLocaleString();
-                const hasCoords = typeof options.latitude === 'number' && typeof options.longitude === 'number';
-                const coordsText = hasCoords ? `Lat: ${options.latitude.toFixed(6)}, Lng: ${options.longitude.toFixed(6)}` : 'Koordinat tidak tersedia';
-                const distanceText = typeof options.distance === 'number' ? `Jarak: ${options.distance.toFixed(1)} m` : null;
-                const statusText = typeof options.insideRadius === 'boolean'
-                    ? (options.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius')
-                    : null;
-                const labelText = options.label ? String(options.label) : null;
-
-                const lines = [labelText, timestampText, coordsText, distanceText, statusText].filter(Boolean);
-                if (!lines.length) {
-                    return;
-                }
-
-                const padding = 16;
-                const lineHeight = 18;
-                const boxHeight = padding + lineHeight * lines.length;
-
-                ctx.save();
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-                ctx.fillRect(0, height - boxHeight, width, boxHeight);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = '16px sans-serif';
-                lines.forEach(function(line, index) {
-                    ctx.fillText(line, padding, height - boxHeight + padding + lineHeight * (index + 0.5));
-                });
-                ctx.restore();
-            };
-        }
-    </script>
-    <script src="{{ asset('js/attendance.js') }}"></script>
-    <script>
+        // Pass PHP data to JS
+        window.branchInfo = @json($branchData);
+        window.attendanceState = '{{ $state }}';
+        
+        // --- Location & Camera Logic ---
         document.addEventListener('DOMContentLoaded', function() {
-            const locationManager = window.AttendanceLocationManager;
-            const branchLabel = window.branchName || 'Lokasi Kantor';
-            let currentLocation = locationManager ? locationManager.getData() : { available: false, lat: null, lng: null, distance: null, insideRadius: false, error: 'Lokasi belum tersedia.' };
-
-            const checkInElements = {
-                form: document.getElementById('checkin-form'),
-                startBtn: document.getElementById('start-camera-checkin'),
-                captureBtn: document.getElementById('capture-checkin'),
-                submitBtn: document.getElementById('submit-checkin'),
-                video: document.getElementById('checkin-video'),
-                canvas: document.getElementById('checkin-canvas'),
-                preview: document.getElementById('camera-preview'),
-                overlay: document.getElementById('checkin-live-overlay'),
-                overlayCoords: document.getElementById('checkin-overlay-coordinates'),
-                overlayDistance: document.getElementById('checkin-overlay-distance'),
-                overlayStatus: document.getElementById('checkin-overlay-status'),
-                coordsText: document.getElementById('checkin-coordinates'),
-                distanceText: document.getElementById('checkin-distance'),
-                statusText: document.getElementById('checkin-radius-status'),
-                messageText: document.getElementById('checkin-location-message'),
-                alertBox: document.getElementById('checkin-location-alert'),
-                uploadInput: document.getElementById('upload-checkin-photo'),
-                uploadLabel: document.getElementById('upload-checkin-label'),
-                latInput: document.getElementById('checkin-latitude'),
-                lngInput: document.getElementById('checkin-longitude'),
-                selfieInput: document.getElementById('checkin-selfie')
+            const els = {
+                video: document.getElementById('attendance-video'),
+                canvas: document.getElementById('attendance-canvas'),
+                placeholder: document.getElementById('camera-placeholder'),
+                capturedImage: document.getElementById('captured-image'),
+                overlay: document.getElementById('live-overlay'),
+                // overlayCoords removed
+                overlayDistance: document.getElementById('overlay-distance'),
+                overlayStatus: document.getElementById('overlay-status'),
+                
+                locationBar: document.getElementById('location-status-bar'),
+                locationTitle: document.getElementById('location-title'),
+                locationDesc: document.getElementById('location-desc'),
+                locationIcon: document.getElementById('location-icon'),
+                
+                btnStart: document.getElementById('btn-start-camera'),
+                btnCapture: document.getElementById('btn-capture'),
+                btnRetake: document.getElementById('btn-retake'),
+                btnSubmit: document.getElementById('btn-submit'),
+                
+                form: document.getElementById('attendance-form'),
+                inputLat: document.getElementById('input-lat'),
+                inputLng: document.getElementById('input-lng'),
+                inputSelfie: document.getElementById('input-selfie'),
             };
 
-            const checkOutElements = {
-                form: document.getElementById('checkout-form'),
-                startBtn: document.getElementById('start-camera-checkout'),
-                captureBtn: document.getElementById('capture-checkout'),
-                submitBtn: document.getElementById('submit-checkout'),
-                video: document.getElementById('checkout-video'),
-                canvas: document.getElementById('checkout-canvas'),
-                preview: document.getElementById('camera-preview-checkout'),
-                overlay: document.getElementById('checkout-live-overlay'),
-                overlayCoords: document.getElementById('checkout-overlay-coordinates'),
-                overlayDistance: document.getElementById('checkout-overlay-distance'),
-                overlayStatus: document.getElementById('checkout-overlay-status'),
-                coordsText: document.getElementById('checkout-coordinates'),
-                distanceText: document.getElementById('checkout-distance'),
-                statusText: document.getElementById('checkout-radius-status'),
-                messageText: document.getElementById('checkout-location-message'),
-                alertBox: document.getElementById('checkout-location-alert'),
-                uploadInput: document.getElementById('upload-checkout-photo'),
-                uploadLabel: document.getElementById('upload-checkout-label'),
-                latInput: document.getElementById('checkout-latitude'),
-                lngInput: document.getElementById('checkout-longitude'),
-                selfieInput: document.getElementById('checkout-selfie')
-            };
+            let stream = null;
+            let currentLocation = null;
 
-            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
-            const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : null;
-            const checkInUrl = '{{ route("employee.attendance.check-in") }}';
-            const checkOutUrl = '{{ route("employee.attendance.check-out") }}';
-
-            let checkInStream = null;
-            let checkOutStream = null;
-
-            const videoConstraints = {
-                video: {
-                    width: { ideal: 640, min: 320 },
-                    height: { ideal: 480, min: 240 },
-                    facingMode: 'user'
-                },
-                audio: false
-            };
-
-            function setButtonState(button, enabled) {
-                if (!button) {
-                    return;
-                }
-                if (enabled) {
-                    button.removeAttribute('disabled');
-                    button.classList.remove('opacity-50', 'cursor-not-allowed');
+            // 1. Geolocation Logic
+            function updateLocationUI(loc) {
+                currentLocation = loc;
+                
+                if (loc.error) {
+                    els.locationTitle.textContent = "Lokasi Tidak Tersedia";
+                    els.locationDesc.textContent = loc.error;
+                    els.locationBar.className = "mb-6 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 flex items-start gap-3";
+                    els.locationIcon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-red-500"></i>';
+                    if(els.btnStart) els.btnStart.disabled = true;
+                } else if (!loc.available) {
+                    // Waiting
+                    if(els.btnStart) els.btnStart.disabled = true;
                 } else {
-                    button.setAttribute('disabled', 'disabled');
-                    button.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-            }
-
-            function setLabelState(label, input, enabled) {
-                if (!label) {
-                    return;
-                }
-                if (enabled) {
-                    label.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                    if (input) {
-                        input.removeAttribute('disabled');
-                    }
-                } else {
-                    label.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                    if (input) {
-                        input.setAttribute('disabled', 'disabled');
-                        input.value = '';
-                    }
-                }
-            }
-
-            function formatCoordinate(value, fallback) {
-                if (typeof value === 'number' && !Number.isNaN(value)) {
-                    return value.toFixed(6);
-                }
-                return fallback;
-            }
-
-            function formatDistance(value) {
-                if (typeof value === 'number' && !Number.isNaN(value)) {
-                    return value.toFixed(1) + ' m';
-                }
-                return '-';
-            }
-
-            function updateStatusBadge(element, location) {
-                if (!element) {
-                    return;
-                }
-                element.classList.remove('text-green-600', 'dark:text-green-300', 'text-red-600', 'dark:text-red-300', 'text-yellow-600', 'dark:text-yellow-300');
-                if (!location.available) {
-                    element.textContent = 'Menunggu lokasi';
-                    element.classList.add('text-yellow-600', 'dark:text-yellow-300');
-                } else if (location.insideRadius) {
-                    element.textContent = 'Dalam radius';
-                    element.classList.add('text-green-600', 'dark:text-green-300');
-                } else {
-                    element.textContent = 'Di luar radius';
-                    element.classList.add('text-red-600', 'dark:text-red-300');
-                }
-            }
-
-            function updateHiddenInputs(elements, location) {
-                if (elements.latInput) {
-                    elements.latInput.value = location.available ? location.lat : '';
-                }
-                if (elements.lngInput) {
-                    elements.lngInput.value = location.available ? location.lng : '';
-                }
-            }
-
-            function stopCamera(elements, type) {
-                if (type === 'checkin' && checkInStream) {
-                    checkInStream.getTracks().forEach(function(track) { track.stop(); });
-                    checkInStream = null;
-                }
-                if (type === 'checkout' && checkOutStream) {
-                    checkOutStream.getTracks().forEach(function(track) { track.stop(); });
-                    checkOutStream = null;
-                }
-                if (elements.video) {
-                    elements.video.pause();
-                    elements.video.srcObject = null;
-                    elements.video.classList.add('hidden');
-                }
-                if (elements.preview) {
-                    elements.preview.classList.remove('hidden');
-                }
-                if (elements.captureBtn) {
-                    elements.captureBtn.classList.add('hidden');
-                }
-                if (elements.submitBtn) {
-                    elements.submitBtn.classList.add('hidden');
-                }
-                if (elements.overlay) {
-                    elements.overlay.classList.add('hidden');
-                }
-            }
-
-            function updateOverlay(elements, location) {
-                if (!elements.overlay) {
-                    return;
-                }
-                if (location.available && elements.video && !elements.video.classList.contains('hidden')) {
-                    elements.overlay.classList.remove('hidden');
-                    if (elements.overlayCoords) {
-                        elements.overlayCoords.textContent = `Lat: ${formatCoordinate(location.lat, '-')} | Lng: ${formatCoordinate(location.lng, '-')}`;
-                    }
-                    if (elements.overlayDistance) {
-                        elements.overlayDistance.textContent = location.distance !== null ? `Jarak: ${formatDistance(location.distance)}` : 'Jarak: -';
-                    }
-                    if (elements.overlayStatus) {
-                        elements.overlayStatus.textContent = location.insideRadius ? 'Status: Dalam radius' : 'Status: Di luar radius';
-                        elements.overlayStatus.classList.toggle('text-green-300', location.insideRadius);
-                        elements.overlayStatus.classList.toggle('text-red-300', !location.insideRadius);
-                    }
-                } else {
-                    elements.overlay.classList.add('hidden');
-                }
-            }
-
-            function updateLocationPanel(elements, location, type) {
-                if (!elements.form) {
-                    return;
-                }
-
-                const enabled = location.available && location.insideRadius;
-
-                if (elements.coordsText) {
-                    elements.coordsText.textContent = location.available
-                        ? `${formatCoordinate(location.lat, '-')} , ${formatCoordinate(location.lng, '-')}`
-                        : 'Menunggu lokasi...';
-                }
-
-                if (elements.distanceText) {
-                    elements.distanceText.textContent = location.distance !== null ? formatDistance(location.distance) : '-';
-                }
-
-                if (elements.messageText) {
-                    if (location.error) {
-                        elements.messageText.textContent = location.error;
-                    } else if (!location.available) {
-                        elements.messageText.textContent = 'Aktifkan layanan lokasi pada perangkat dan pastikan browser memiliki izin lokasi.';
-                    } else if (!location.insideRadius) {
-                        elements.messageText.textContent = 'Anda berada di luar radius absensi. Silakan mendekati lokasi cabang.';
+                    // Location available
+                    const dist = loc.distance !== null ? Math.round(loc.distance) + 'm' : '-';
+                    
+                    if (loc.insideRadius) {
+                        els.locationTitle.textContent = "Anda berada di lokasi kantor";
+                        els.locationDesc.textContent = `Jarak: ${dist}. Anda dapat melakukan absensi.`;
+                        els.locationBar.className = "mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 flex items-start gap-3";
+                        els.locationIcon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+                        if(els.btnStart) els.btnStart.disabled = false;
                     } else {
-                        elements.messageText.textContent = 'Anda berada dalam radius absensi. Silakan lanjutkan proses check in/out.';
+                        els.locationTitle.textContent = "Anda berada di luar jangkauan";
+                        els.locationDesc.textContent = `Jarak: ${dist}. Maksimal radius: ${window.branchInfo.radius}m.`;
+                        els.locationBar.className = "mb-6 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 flex items-start gap-3";
+                        els.locationIcon.innerHTML = '<i class="fa-solid fa-location-crosshairs text-amber-500"></i>';
+                        if(els.btnStart) els.btnStart.disabled = true;
                     }
+
+                    // Update Overlay
+                    // els.overlayCoords.textContent = `Lat: ${loc.lat.toFixed(6)}, Lng: ${loc.lng.toFixed(6)}`; // Removed
+                    els.overlayDistance.textContent = `Jarak: ${dist}`;
+                    els.overlayStatus.textContent = loc.insideRadius ? 'DALAM RADIUS' : 'LUAR RADIUS';
+                    els.overlayStatus.className = loc.insideRadius ? 'font-bold uppercase text-emerald-400' : 'font-bold uppercase text-red-400';
                 }
 
-                if (elements.alertBox) {
-                    elements.alertBox.classList.toggle('hidden', !location.available || location.insideRadius);
-                }
-
-                updateStatusBadge(elements.statusText, location);
-                updateHiddenInputs(elements, location);
-                setButtonState(elements.startBtn, enabled);
-                setLabelState(elements.uploadLabel, elements.uploadInput, enabled);
-                updateOverlay(elements, location);
-
-                if (!enabled) {
-                    stopCamera(elements, type);
+                // Update Form Inputs
+                if (loc.available) {
+                    els.inputLat.value = loc.lat;
+                    els.inputLng.value = loc.lng;
                 }
             }
 
-            if (locationManager) {
-                locationManager.subscribe(function(location) {
-                    currentLocation = location;
-                    updateLocationPanel(checkInElements, location, 'checkin');
-                    updateLocationPanel(checkOutElements, location, 'checkout');
-                });
+            // Simple Geolocation Watcher
+            if ("geolocation" in navigator) {
+                navigator.geolocation.watchPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        let dist = null;
+                        let inside = true; // Default true if no branch info
+
+                        if (window.branchInfo && window.branchInfo.latitude) {
+                            dist = calculateDistance(lat, lng, window.branchInfo.latitude, window.branchInfo.longitude);
+                            inside = dist <= window.branchInfo.radius;
+                        }
+
+                        updateLocationUI({
+                            available: true,
+                            lat: lat,
+                            lng: lng,
+                            distance: dist,
+                            insideRadius: inside,
+                            error: null
+                        });
+                    },
+                    (err) => {
+                        let msg = "Gagal mengambil lokasi.";
+                        if (err.code === 1) msg = "Izin lokasi ditolak.";
+                        else if (err.code === 2) msg = "Lokasi tidak tersedia.";
+                        else if (err.code === 3) msg = "Waktu habis saat mencari lokasi.";
+                        
+                        updateLocationUI({ available: false, error: msg });
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
             } else {
-                updateLocationPanel(checkInElements, currentLocation, 'checkin');
-                updateLocationPanel(checkOutElements, currentLocation, 'checkout');
+                updateLocationUI({ available: false, error: "Browser tidak mendukung geolokasi." });
             }
 
-            function ensureSecureContext() {
-                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                if (!isSecure) {
-                    alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                }
-                return isSecure;
-            }
-
-            function handleCameraError(error) {
-                console.error('Camera error:', error);
-                if (error.name === 'NotAllowedError') {
-                    alert('Akses kamera ditolak. Silakan izinkan akses kamera di browser Anda.');
-                } else if (error.name === 'NotFoundError') {
-                    alert('Tidak ada kamera yang ditemukan. Pastikan perangkat Anda memiliki kamera.');
-                } else if (error.name === 'NotReadableError') {
-                    alert('Kamera sedang digunakan oleh aplikasi lain. Tutup aplikasi lain yang menggunakan kamera.');
-                } else if (error.name === 'OverconstrainedError') {
-                    alert('Kamera tidak mendukung resolusi yang diminta. Coba gunakan kamera lain.');
-                } else if (error.name === 'SecurityError') {
-                    alert('Kamera memerlukan HTTPS. Gunakan HTTPS atau localhost untuk mengakses kamera.');
-                } else {
-                    alert('Tidak dapat mengakses kamera. Error: ' + error.name + ' - ' + error.message);
-                }
-            }
-
-            async function startCamera(elements, type) {
-                if (!elements.startBtn) {
-                    return;
-                }
-
-                if (!currentLocation.available) {
-                    alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
-                    return;
-                }
-                if (!currentLocation.insideRadius) {
-                    alert('Anda berada di luar radius absensi yang diizinkan.');
-                    return;
-                }
-                if (!ensureSecureContext()) {
-                    return;
-                }
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia(videoConstraints);
-                    if (type === 'checkin') {
-                        if (checkInStream) {
-                            checkInStream.getTracks().forEach(function(track) { track.stop(); });
-                        }
-                        checkInStream = stream;
-                    } else {
-                        if (checkOutStream) {
-                            checkOutStream.getTracks().forEach(function(track) { track.stop(); });
-                        }
-                        checkOutStream = stream;
-                    }
-
-                    if (elements.video) {
-                        elements.video.srcObject = stream;
-                        elements.video.classList.remove('hidden');
-                        elements.video.onloadedmetadata = function() {
-                            elements.video.play();
-                            updateOverlay(elements, currentLocation);
-                        };
-                    }
-                    if (elements.preview) {
-                        elements.preview.classList.add('hidden');
-                    }
-                    if (elements.startBtn) {
-                        elements.startBtn.classList.add('hidden');
-                    }
-                    if (elements.captureBtn) {
-                        elements.captureBtn.classList.remove('hidden');
-                    }
-
-                } catch (error) {
-                    handleCameraError(error);
-                }
-            }
-
-            function assignCanvasToInput(canvas, input, filename, callback) {
-                if (!canvas || !input) {
-                    if (typeof callback === 'function') {
-                        callback(false);
-                    }
-                    return;
-                }
-                canvas.toBlob(function(blob) {
-                    if (!blob) {
-                        if (typeof callback === 'function') {
-                            callback(false);
-                        }
-                        return;
-                    }
-                    const file = new File([blob], filename, { type: 'image/jpeg' });
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    input.files = dataTransfer.files;
-                    if (typeof callback === 'function') {
-                        callback(true);
-                    }
-                }, 'image/jpeg', 0.9);
-            }
-
-            function capturePhoto(elements, type) {
-                if (!elements.video || elements.video.classList.contains('hidden') || !elements.canvas) {
-                    return;
-                }
-                const canvas = elements.canvas;
-                const context = canvas.getContext('2d');
-                const width = elements.video.videoWidth || 640;
-                const height = elements.video.videoHeight || 480;
-                canvas.width = width;
-                canvas.height = height;
-                context.drawImage(elements.video, 0, 0, width, height);
-
-                window.drawAttendanceOverlay(context, width, height, {
-                    timestamp: Date.now(),
-                    latitude: currentLocation.lat,
-                    longitude: currentLocation.lng,
-                    distance: currentLocation.distance,
-                    insideRadius: currentLocation.insideRadius,
-                    label: branchLabel
-                });
-
-                assignCanvasToInput(canvas, elements.selfieInput, `${type}-selfie.jpg`, function(success) {
-                    if (success) {
-                        if (elements.video) {
-                            elements.video.pause();
-                            elements.video.srcObject = null;
-                            elements.video.classList.add('hidden');
-                        }
-                        if (elements.overlay) {
-                            elements.overlay.classList.add('hidden');
-                        }
-                        if (elements.captureBtn) {
-                            elements.captureBtn.classList.add('hidden');
-                        }
-                        if (elements.submitBtn) {
-                            elements.submitBtn.classList.remove('hidden');
-                        }
-                        canvas.classList.remove('hidden');
+            // 2. Camera Logic
+            if(els.btnStart) {
+                els.btnStart.addEventListener('click', async () => {
+                    try {
+                        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+                        els.video.srcObject = stream;
+                        els.video.classList.remove('hidden');
+                        els.placeholder.classList.add('hidden');
+                        els.overlay.classList.remove('hidden');
+                        
+                        els.btnStart.classList.add('hidden');
+                        els.btnCapture.classList.remove('hidden');
+                    } catch (err) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Akses Kamera Ditolak',
+                            text: 'Gagal mengakses kamera: ' + err.message
+                        });
                     }
                 });
-
-                stopCamera(elements, type);
             }
 
-            function handleUpload(elements, file, type) {
-                if (!file || !elements.canvas) {
-                    return;
-                }
-                if (!currentLocation.available || !currentLocation.insideRadius) {
-                    alert('Anda berada di luar radius absensi yang diizinkan.');
-                    elements.uploadInput.value = '';
-                    return;
-                }
+            if(els.btnCapture) {
+                els.btnCapture.addEventListener('click', () => {
+                    if (!stream) return;
+                    
+                    // Draw to canvas
+                    const w = els.video.videoWidth;
+                    const h = els.video.videoHeight;
+                    els.canvas.width = w;
+                    els.canvas.height = h;
+                    const ctx = els.canvas.getContext('2d');
+                    
+                    // FLIP CONTEXT HORIZONTALLY to match the mirrored video preview
+                    ctx.translate(w, 0);
+                    ctx.scale(-1, 1);
+                    
+                    ctx.drawImage(els.video, 0, 0, w, h);
+                    
+                    // Reset transform for text overlay (so text is readable)
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    
+                    // Add Overlay Text to Image (Improved)
+                    const fontSize = Math.max(16, Math.floor(w * 0.03)); // Dynamic font size
+                    const padding = Math.floor(fontSize * 0.8);
+                    // Increase background height to accommodate 3 lines of text
+                    const bgHeight = fontSize * 4.5;
 
-                if (!file.type.startsWith('image/')) {
-                    alert('Silakan pilih file gambar yang valid.');
-                    elements.uploadInput.value = '';
-                    return;
-                }
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Ukuran file maksimal 5MB.');
-                    elements.uploadInput.value = '';
-                    return;
-                }
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                    ctx.fillRect(0, h - bgHeight, w, bgHeight);
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.textBaseline = 'bottom';
+                    
+                    // Line 1: Branch Name
+                    ctx.font = `bold ${fontSize}px sans-serif`;
+                    const branchName = (window.branchInfo && window.branchInfo.name) ? window.branchInfo.name : 'Kantor';
+                    ctx.fillText(branchName, padding, h - (fontSize * 2.8));
 
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        const canvas = elements.canvas;
-                        const ctx = canvas.getContext('2d');
-                        canvas.width = 640;
-                        canvas.height = 480;
-                        const aspectRatio = img.width / img.height;
-                        let drawWidth = canvas.width;
-                        let drawHeight = canvas.height;
-                        if (aspectRatio > 1) {
-                            drawHeight = drawWidth / aspectRatio;
+                    // Line 2: Timestamp
+                    ctx.font = `${fontSize * 0.9}px sans-serif`;
+                    const dateStr = new Date().toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'medium' });
+                    ctx.fillText(dateStr, padding, h - (fontSize * 1.6));
+                    
+                    // Line 3: Coordinates
+                    if (currentLocation && currentLocation.available) {
+                        const locStr = `Lat: ${currentLocation.lat.toFixed(6)}, Lng: ${currentLocation.lng.toFixed(6)}`;
+                        ctx.font = `${fontSize * 0.75}px monospace`;
+                        ctx.fillText(locStr, padding, h - (fontSize * 0.5));
+                    }
+
+                    // Convert to file
+                    els.canvas.toBlob((blob) => {
+                        const file = new File([blob], "attendance_selfie.jpg", { type: "image/jpeg" });
+                        const container = new DataTransfer();
+                        container.items.add(file);
+                        els.inputSelfie.files = container.files;
+                        
+                        // Show preview
+                        els.capturedImage.src = URL.createObjectURL(blob);
+                        els.capturedImage.classList.remove('hidden');
+                        els.video.classList.add('hidden');
+                        els.overlay.classList.add('hidden');
+                        
+                        // Stop stream
+                        stream.getTracks().forEach(track => track.stop());
+                        
+                        // Switch buttons
+                        els.btnCapture.classList.add('hidden');
+                        els.btnRetake.classList.remove('hidden');
+                        els.form.classList.remove('hidden');
+                    }, 'image/jpeg', 0.85);
+                });
+            }
+
+            if(els.btnRetake) {
+                els.btnRetake.addEventListener('click', () => {
+                    els.capturedImage.classList.add('hidden');
+                    els.form.classList.add('hidden');
+                    els.btnRetake.classList.add('hidden');
+                    els.btnStart.click(); // Restart camera
+                });
+            }
+
+            // Helper: Haversine Distance
+            function calculateDistance(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; // metres
+                const φ1 = lat1 * Math.PI/180;
+                const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180;
+                const Δλ = (lon2-lon1) * Math.PI/180;
+
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                        Math.cos(φ1) * Math.cos(φ2) *
+                        Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+                return R * c;
+            }
+
+            // --- Main Attendance Form Submission (AJAX) ---
+            if(els.form) {
+                els.form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const btn = els.btnSubmit;
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim...';
+
+                    try {
+                        const formData = new FormData(this);
+                        const res = await fetch(this.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: formData
+                        });
+                        const data = await res.json();
+
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: data.message,
+                                confirmButtonColor: '#10B981',
+                            }).then(() => {
+                                location.reload();
+                            });
                         } else {
-                            drawWidth = drawHeight * aspectRatio;
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Gagal',
+                                text: data.message || 'Terjadi kesalahan.',
+                                confirmButtonColor: '#EF4444',
+                            });
                         }
-                        const x = (canvas.width - drawWidth) / 2;
-                        const y = (canvas.height - drawHeight) / 2;
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        ctx.drawImage(img, x, y, drawWidth, drawHeight);
-
-                        window.drawAttendanceOverlay(ctx, canvas.width, canvas.height, {
-                            timestamp: Date.now(),
-                            latitude: currentLocation.lat,
-                            longitude: currentLocation.lng,
-                            distance: currentLocation.distance,
-                            insideRadius: currentLocation.insideRadius,
-                            label: branchLabel
+                    } catch (err) {
+                        console.error(err);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Kesalahan',
+                            text: 'Terjadi kesalahan koneksi atau server.',
+                            confirmButtonColor: '#EF4444',
                         });
-
-                        assignCanvasToInput(canvas, elements.selfieInput, `${type}-selfie.jpg`, function(success) {
-                            if (success) {
-                                canvas.classList.remove('hidden');
-                                if (elements.preview) {
-                                    elements.preview.classList.add('hidden');
-                                }
-                                if (elements.video) {
-                                    elements.video.classList.add('hidden');
-                                }
-                                if (elements.captureBtn) {
-                                    elements.captureBtn.classList.add('hidden');
-                                }
-                                if (elements.submitBtn) {
-                                    elements.submitBtn.classList.remove('hidden');
-                                }
-                            }
-                        });
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-
-            function submitAttendance(elements, type, url) {
-                if (!elements.form || !elements.selfieInput) {
-                    return;
-                }
-
-                if (!currentLocation.available) {
-                    alert('Lokasi belum tersedia. Pastikan layanan lokasi aktif.');
-                    return;
-                }
-                if (!currentLocation.insideRadius) {
-                    alert('Anda berada di luar radius absensi yang diizinkan.');
-                    return;
-                }
-                if (!elements.selfieInput.files || !elements.selfieInput.files.length) {
-                    alert('Silakan ambil atau unggah foto selfie terlebih dahulu.');
-                    return;
-                }
-                if (!csrfToken) {
-                    alert('Token CSRF tidak ditemukan. Muat ulang halaman dan coba lagi.');
-                    return;
-                }
-
-                updateHiddenInputs(elements, currentLocation);
-
-                const formData = new FormData(elements.form);
-                if (currentLocation.available) {
-                    formData.set('latitude', currentLocation.lat);
-                    formData.set('longitude', currentLocation.lng);
-                }
-
-                if (elements.submitBtn) {
-                    elements.submitBtn.setAttribute('disabled', 'disabled');
-                    elements.submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-
-                fetch(url, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
                     }
-                })
-                .then(function(response) {
-                    if (!response.ok) {
-                        throw new Error('HTTP error! status: ' + response.status);
-                    }
-                    return response.json();
-                })
-                .then(function(data) {
-                    if (data.success) {
-                        alert(type === 'checkin' ? 'Check in berhasil!' : 'Check out berhasil!');
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + (data.message || 'Terjadi kesalahan tak dikenal.'));
-                    }
-                })
-                .catch(function(error) {
-                    console.error('Attendance submit error:', error);
-                    alert('Terjadi kesalahan saat mengirim data: ' + error.message);
-                })
-                .finally(function() {
-                    if (elements.submitBtn) {
-                        elements.submitBtn.removeAttribute('disabled');
-                        elements.submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    }
-                });
-            }
-
-            // Initialize panels once
-            updateLocationPanel(checkInElements, currentLocation, 'checkin');
-            updateLocationPanel(checkOutElements, currentLocation, 'checkout');
-
-            // Event bindings for check-in
-            if (checkInElements.startBtn) {
-                checkInElements.startBtn.addEventListener('click', function() {
-                    startCamera(checkInElements, 'checkin');
-                });
-            }
-            if (checkInElements.captureBtn) {
-                checkInElements.captureBtn.addEventListener('click', function() {
-                    capturePhoto(checkInElements, 'checkin');
-                });
-            }
-            if (checkInElements.uploadInput) {
-                checkInElements.uploadInput.addEventListener('change', function(event) {
-                    const file = event.target.files ? event.target.files[0] : null;
-                    handleUpload(checkInElements, file, 'checkin');
-                });
-            }
-            if (checkInElements.form) {
-                checkInElements.form.addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    submitAttendance(checkInElements, 'checkin', checkInUrl);
-                });
-            }
-
-            // Event bindings for check-out
-            if (checkOutElements.startBtn) {
-                checkOutElements.startBtn.addEventListener('click', function() {
-                    startCamera(checkOutElements, 'checkout');
-                });
-            }
-            if (checkOutElements.captureBtn) {
-                checkOutElements.captureBtn.addEventListener('click', function() {
-                    capturePhoto(checkOutElements, 'checkout');
-                });
-            }
-            if (checkOutElements.uploadInput) {
-                checkOutElements.uploadInput.addEventListener('change', function(event) {
-                    const file = event.target.files ? event.target.files[0] : null;
-                    handleUpload(checkOutElements, file, 'checkout');
-                });
-            }
-            if (checkOutElements.form) {
-                checkOutElements.form.addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    submitAttendance(checkOutElements, 'checkout', checkOutUrl);
                 });
             }
         });
 
-        // Edit Attendance Modal Functions
-        function openEditModal(type, attendanceId, originalTime) {
-            document.getElementById('edit-modal').classList.remove('hidden');
-            document.getElementById('edit-attendance-id').value = attendanceId;
+        // --- Edit Modal Logic ---
+        function openEditModal(type, id, time) {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.remove('hidden');
+            
+            document.getElementById('edit-attendance-id').value = id;
             document.getElementById('edit-revision-type').value = type;
-            document.getElementById('edit-original-time').value = new Date(originalTime).toLocaleString('id-ID');
-            document.getElementById('edit-revised-time').value = originalTime;
-            document.getElementById('edit-reason').value = '';
-            document.getElementById('edit-proof-photo').value = '';
+            document.getElementById('edit-original-time').value = new Date(time).toLocaleString('id-ID');
+            document.getElementById('edit-revised-time').value = time;
         }
 
         function closeEditModal() {
             document.getElementById('edit-modal').classList.add('hidden');
         }
 
-        // Handle edit form submission
         document.getElementById('edit-attendance-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Mengirim...';
-            
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Mengirim...';
+
             try {
-                const response = await fetch('{{ route("employee.attendance.revision.store") }}', {
+                const formData = new FormData(this);
+                const res = await fetch('{{ route("employee.attendance.revision.store") }}', {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
                     },
                     body: formData
                 });
-                
-                const data = await response.json();
+                const data = await res.json();
                 
                 if (data.success) {
-                    alert('Permohonan edit absensi berhasil dikirim dan menunggu persetujuan admin.');
-                    closeEditModal();
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: 'Permohonan edit absensi berhasil dikirim dan menunggu persetujuan.',
+                        confirmButtonColor: '#3085d6',
+                    }).then(() => {
+                        location.reload();
+                    });
                 } else {
-                    alert(data.message || 'Terjadi kesalahan saat mengirim permohonan.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal',
+                        text: data.message || 'Terjadi kesalahan saat mengirim permohonan.'
+                    });
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Terjadi kesalahan saat mengirim permohonan.');
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Kesalahan Koneksi',
+                    text: 'Tidak dapat menghubungi server.'
+                });
+                console.error(err);
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         });
+
     </script>
     @endpush
 </x-employee-layout>

@@ -380,6 +380,36 @@
                             foreach($recentAttendance as $att) {
                                 $attendanceLookup[$att->attendance_date->format('Y-m-d')] = $att;
                             }
+
+                            // Create holiday lookup array
+                            $holidayMap = [];
+                            // We need to fetch holidays again here or pass it from controller
+                            // Since we didn't pass $holidays variable, let's use the calendarData which has holiday info
+                            // Or better, let's fetch it directly here for simplicity in view logic
+                            // Actually, let's rely on what we have. 
+                            // Wait, I should have passed $holidays or $holidayMap from controller.
+                            // Let me fix the controller first to pass $holidayMap or similar.
+                            // But I can't go back to controller easily without another tool call.
+                            // Let's check if I can extract it from $calendarData if available
+                            
+                            // Alternative: Fetch holidays directly in view (not ideal but works for now)
+                            $viewHolidays = \App\Models\Admin\Holiday::where(function($query) use ($startOfMonth, $endOfMonth) {
+                                $query->whereBetween('start_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                                      ->orWhereBetween('end_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                                      ->orWhere(function($q) use ($startOfMonth, $endOfMonth) {
+                                          $q->where('start_date', '<=', $startOfMonth->format('Y-m-d'))
+                                            ->where('end_date', '>=', $endOfMonth->format('Y-m-d'));
+                                      });
+                            })->get();
+
+                            foreach ($viewHolidays as $holiday) {
+                                $period = \Carbon\CarbonPeriod::create($holiday->start_date, $holiday->end_date);
+                                foreach ($period as $date) {
+                                    if ($date->month == $currentMonth && $date->year == $currentYear) {
+                                        $holidayMap[$date->format('Y-m-d')] = $holiday->name;
+                                    }
+                                }
+                            }
                         @endphp
 
                             @for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay())
@@ -432,6 +462,13 @@
                                         $statusIcon = '●';
                                         $statusText = 'Sedang Cuti';
                                     }
+                                } else if (isset($holidayMap[$dateKey])) {
+                                    // Holiday
+                                    $status = 'holiday';
+                                    $statusClass = 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400';
+                                    $statusBorder = 'border-purple-200 dark:border-purple-800';
+                                    $statusIcon = '★';
+                                    $statusText = $holidayMap[$dateKey];
                                 } else if (!$isPolicyWorkDay) {
                                     // Non-working day (muted)
                                     $status = 'off-day';
@@ -523,6 +560,10 @@
                             <div class="w-3 h-3 rounded-full bg-orange-500"></div>
                             <span class="text-gray-700 dark:text-gray-300">Cuti</span>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <span class="text-gray-700 dark:text-gray-300">Hari Libur</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -530,6 +571,8 @@
     </div>
 
     @push('scripts')
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             // Attendance calendar navigation
             document.addEventListener('DOMContentLoaded', function() {

@@ -66,7 +66,7 @@
             <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" x-data="{ 
                 openMenu: '{{ 
                     request()->routeIs('admin.employees.*') ? 'people' : 
-                    (request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') ? 'attendance' : 
+                    (request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') || request()->routeIs('admin.holidays.*') ? 'attendance' : 
                     (request()->routeIs('admin.payroll.*') || request()->routeIs('admin.reimbursements.*') ? 'finance' : 
                     (request()->routeIs('admin.branches.*') || request()->routeIs('admin.organization.*') || request()->routeIs('admin.roles.*') || request()->routeIs('admin.admins.*') || request()->routeIs('admin.divisions.*') || request()->routeIs('admin.hierarchy.*') ? 'organization' : ''))) 
                 }}'
@@ -110,12 +110,12 @@
                 <div class="space-y-1 pt-2">
                     <button @click="openMenu = openMenu === 'attendance' ? '' : 'attendance'" 
                             class="w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                                   {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*')
+                                   {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') || request()->routeIs('admin.holidays.*')
                                       ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' 
                                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200' }}">
                         <div class="flex items-center">
                             <span class="flex items-center justify-center w-8 h-8 rounded-lg mr-2 transition-colors
-                                       {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*')
+                                       {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.leaves.*') || request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') || request()->routeIs('admin.holidays.*')
                                           ? 'bg-blue-100 text-blue-600 dark:bg-blue-800 dark:text-blue-300' 
                                           : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 group-hover:bg-white dark:group-hover:bg-gray-700 group-hover:shadow-sm' }}">
                                 <i class="fa-solid fa-calendar-check text-xs"></i>
@@ -165,6 +165,12 @@
                                   {{ request()->routeIs('admin.policies.*') || request()->routeIs('admin.division-policies.*') || request()->routeIs('admin.employee-policies.*') || request()->routeIs('admin.attendance-policy.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
                             Policies
                         </a>
+                        
+                        <a href="{{ route('admin.holidays.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.holidays.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            Holidays
+                        </a>
                     </div>
                 </div>
                 @endhasAnyPermission
@@ -209,6 +215,14 @@
                             @if($pendingReimbursementsCount > 0)
                                 <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold leading-none text-red-100 bg-red-500 rounded-full">{{ $pendingReimbursementsCount }}</span>
                             @endif
+                        </a>
+                        @endhasPermission
+                        
+                        @hasPermission('view-payroll')
+                        <a href="{{ route('admin.tax-forms.index') }}" 
+                           class="block px-3 py-2 text-sm rounded-md transition-colors duration-200
+                                  {{ request()->routeIs('admin.tax-forms.*') ? 'text-blue-600 font-medium bg-blue-50/50 dark:text-blue-400 dark:bg-blue-900/10' : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                            SPT 1721-A1
                         </a>
                         @endhasPermission
                     </div>

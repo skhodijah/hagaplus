@@ -113,6 +113,7 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Durasi</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Alasan</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Catatan Approval</th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
@@ -153,6 +154,11 @@
                                             <i class="fa-solid fa-circle-check mr-1"></i>
                                             Disetujui
                                         </span>
+                                    @elseif($leave->status === 'approved_supervisor')
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                            <i class="fa-solid fa-check mr-1"></i>
+                                            Disetujui User
+                                        </span>
                                     @elseif($leave->status === 'pending')
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                                             <i class="fa-solid fa-clock mr-1"></i>
@@ -163,6 +169,23 @@
                                             <i class="fa-solid fa-circle-xmark mr-1"></i>
                                             Ditolak
                                         </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs">
+                                    @if($leave->supervisor_note)
+                                        <div class="mb-1">
+                                            <span class="font-semibold text-xs text-blue-600 dark:text-blue-400">User:</span>
+                                            <span class="italic">"{{ $leave->supervisor_note }}"</span>
+                                        </div>
+                                    @endif
+                                    @if($leave->hrd_note)
+                                        <div>
+                                            <span class="font-semibold text-xs text-purple-600 dark:text-purple-400">HRD:</span>
+                                            <span class="italic">"{{ $leave->hrd_note }}"</span>
+                                        </div>
+                                    @endif
+                                    @if(!$leave->supervisor_note && !$leave->hrd_note)
+                                        <span class="text-gray-400">-</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

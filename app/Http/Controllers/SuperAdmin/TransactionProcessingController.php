@@ -200,16 +200,7 @@ class TransactionProcessingController extends Controller
                 throw new \Exception('Failed to update subscription request');
             }
 
-            // Create notification for the instansi admin
-            DB::table('notifications')->insert([
-                'user_id' => $subscriptionRequest->created_by,
-                'type' => 'subscription_approved',
-                'title' => 'Subscription Request Approved',
-                'message' => "Your subscription request has been approved and processed successfully.",
-                'is_read' => false,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+
 
             DB::commit();
 

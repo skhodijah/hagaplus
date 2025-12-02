@@ -22,7 +22,7 @@ class PolicyController extends Controller
 
         // 1. Division Policies
         $divisionPolicies = DivisionPolicy::where('instansi_id', $instansiId)
-            ->with('division')
+            ->with(['division.employees.user'])
             ->orderBy('name')
             ->get();
 

@@ -267,7 +267,7 @@
                                         </ul>
                                     </div>
                                     <p class="mt-3 text-xs text-gray-600 dark:text-gray-400 bg-white/50 dark:bg-gray-800/50 p-2 rounded">
-                                        💡 <strong>Catatan:</strong> Jika User (Kepala Divisi) tidak ditentukan, approval langsung ke HRD.
+                                        💡 <strong>Catatan:</strong> Jika User (Kepala Divisi) tidak ditentukan, approval akan ditangani oleh <strong>Admin/HRD</strong>.
                                     </p>
                                 </div>
                             </div>

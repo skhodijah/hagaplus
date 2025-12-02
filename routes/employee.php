@@ -23,6 +23,10 @@ Route::middleware(['auth', 'role:employee', 'verified'])->prefix('employee')->na
     Route::get('/payroll/{id}', [PayrollController::class, 'show'])->name('payroll.show');
     Route::get('/payroll/{id}/print', [PayrollController::class, 'print'])->name('payroll.print');
 
+    // Tax Forms (SPT 1721-A1)
+    Route::get('/tax-forms', [App\Http\Controllers\Employee\TaxFormController::class, 'index'])->name('tax-forms.index');
+    Route::get('/tax-forms/{tax_form}', [App\Http\Controllers\Employee\TaxFormController::class, 'show'])->name('tax-forms.show');
+
     // Employee's leave applications (Pengajuan Cuti)
     Route::get('/leaves', [LeaveController::class, 'index'])->name('leaves.index');
     Route::post('/leaves', [LeaveController::class, 'store'])->name('leaves.store');

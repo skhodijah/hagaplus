@@ -14,7 +14,8 @@ class AdminManagementController extends Controller
     {
         $user = auth()->user();
         $query = User::where('instansi_id', $user->instansi_id)
-            ->where('system_role_id', 2); // 2 is Admin
+            ->where('system_role_id', 2) // 2 is Admin
+            ->doesntHave('employee');
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
