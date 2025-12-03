@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
-            'subscription' => \App\Http\Middleware\CheckSubscription::class,
+            'subscription' => \App\Http\Middleware\CheckSubscriptionStatus::class,
             'branch.access' => \App\Http\Middleware\CheckBranchAccess::class,
             'permission' => \App\Http\Middleware\CheckPermission::class,
             'verified' => \App\Http\Middleware\EnsureEmailIsVerifiedCustom::class,

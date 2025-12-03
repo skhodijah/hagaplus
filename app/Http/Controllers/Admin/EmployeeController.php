@@ -144,6 +144,12 @@ class EmployeeController extends Controller
 
     public function store(Request $request)
     {
+        // Check subscription limits
+        $subscriptionService = new \App\Services\SubscriptionService(Auth::user()->instansi);
+        if (!$subscriptionService->canAddEmployee()) {
+            return back()->with('error', 'Anda telah mencapai batas maksimal jumlah karyawan untuk paket langganan Anda. Silakan upgrade paket untuk menambah karyawan.');
+        }
+
         $request->validate([
             // User info
             'name' => 'required|string|max:255',

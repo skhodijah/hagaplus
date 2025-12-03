@@ -293,23 +293,33 @@
             <!-- Subscription Status Footer -->
             <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
                 @php
-                    $subscription = \DB::table('subscriptions')
-                        ->leftJoin('packages', 'subscriptions.package_id', '=', 'packages.id')
-                        ->where('subscriptions.instansi_id', Auth::user()->instansi_id ?? 1)
-                        ->where('subscriptions.status', 'active')
-                        ->select('subscriptions.*', 'packages.name as package_name')
+                    // Get the latest subscription regardless of status to show correct state (Active/Expired)
+                    $sidebarSubscription = \App\Models\SuperAdmin\Subscription::with('package')
+                        ->where('instansi_id', Auth::user()->instansi_id ?? 1)
+                        ->latest('end_date')
                         ->first();
+
+                    $sidebarEndDate = $sidebarSubscription ? $sidebarSubscription->end_date : null;
+                    $sidebarPackageName = $sidebarSubscription ? $sidebarSubscription->package->name : null;
+                    
+                    // Calculate days left: Positive = Future, Negative = Past
+                    $sidebarDaysLeft = $sidebarEndDate ? now()->diffInDays(\Carbon\Carbon::parse($sidebarEndDate), false) : 0;
+                    
+                    // Check status
+                    $sidebarIsExpired = $sidebarSubscription && now()->gt($sidebarEndDate);
+                    $sidebarIsExpiringSoon = !$sidebarIsExpired && $sidebarDaysLeft <= 7;
+                    $sidebarIsActive = $sidebarSubscription && !$sidebarIsExpired;
                 @endphp
 
                 <a href="{{ route('admin.subscription.index') }}"
                    class="flex items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200
                           {{ request()->routeIs('admin.subscription.*') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700' }}">
                     <div class="flex items-center">
-                        <i class="fa-solid fa-crown mr-3 {{ $subscription ? 'text-yellow-500' : 'text-gray-400' }}"></i>
+                        <i class="fa-solid fa-crown mr-3 {{ $sidebarIsActive ? 'text-yellow-500' : 'text-gray-400' }}"></i>
                         <div class="flex flex-col">
                             <span class="font-medium">Subscription</span>
-                            @if($subscription)
-                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $subscription->package_name }}</span>
+                            @if($sidebarSubscription)
+                                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $sidebarPackageName }}</span>
                             @else
                                 <span class="text-xs text-gray-500 dark:text-gray-400">Tidak aktif</span>
                             @endif
@@ -327,10 +337,20 @@
                                 {{ $pendingPayments }} Pending
                             </span>
                         @endif
-                        @if($subscription)
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                                Active
-                            </span>
+                        @if($sidebarSubscription)
+                            @if($sidebarIsExpired)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                    Expired
+                                </span>
+                            @elseif($sidebarIsExpiringSoon)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                                    Expiring Soon
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                    Active
+                                </span>
+                            @endif
                         @else
                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
                                 Inactive
@@ -456,7 +476,28 @@
                 @csrf
             </form>
 
+
             @include('partials.breadcrumbs')
+
+            @php
+                $subscriptionService = new \App\Services\SubscriptionService(Auth::user()->instansi);
+                $subscriptionStatus = $subscriptionService->getSubscriptionStatus();
+                $daysRemaining = $subscriptionService->getRemainingDays();
+                $limits = $subscriptionService->getLimits();
+                $activeSubscription = $subscriptionService->getActiveSubscription();
+                $packageName = $activeSubscription ? $activeSubscription->package->name : null;
+                $endDate = $activeSubscription ? $activeSubscription->end_date : null;
+            @endphp
+
+            @if(in_array($subscriptionStatus, ['expired', 'expiring_soon', 'suspended']))
+                <x-subscription-alert 
+                    :status="$subscriptionStatus" 
+                    :daysRemaining="$daysRemaining"
+                    :limits="$limits"
+                    :packageName="$packageName"
+                    :endDate="$endDate"
+                />
+            @endif
 
             @if (isset($header))
                 <header class="bg-white dark:bg-gray-800 shadow">

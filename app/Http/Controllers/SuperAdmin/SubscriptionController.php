@@ -446,6 +446,7 @@ class SubscriptionController extends Controller
         $query = DB::table('subscription_requests')
             ->leftJoin('instansis', 'subscription_requests.instansi_id', '=', 'instansis.id')
             ->leftJoin('packages', 'subscription_requests.package_id', '=', 'packages.id')
+            ->leftJoin('packages as target_packages', 'subscription_requests.target_package_id', '=', 'target_packages.id')
             ->leftJoin('users', 'subscription_requests.created_by', '=', 'users.id')
             ->leftJoin('payment_methods', 'subscription_requests.payment_method_id', '=', 'payment_methods.id')
             ->whereNotNull('subscription_requests.payment_proof') // Only show requests with payment proof uploaded
@@ -453,6 +454,7 @@ class SubscriptionController extends Controller
                 'subscription_requests.*',
                 'instansis.nama_instansi',
                 'packages.name as package_name',
+                'target_packages.name as target_package_name',
                 'users.name as created_by_name',
                 'payment_methods.name as payment_method_name'
             );
@@ -527,5 +529,47 @@ class SubscriptionController extends Controller
     {
         // Redirect to the transaction processing page
         return redirect()->route('superadmin.subscriptions.process-transaction', $paymentId);
+    }
+
+    /**
+     * Show invoice preview for printing
+     */
+    public function invoicePreview(Request $request)
+    {
+        $instansiId = $request->get('instansi_id');
+        $packageId = $request->get('package_id');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $price = $request->get('price');
+
+        $instansi = \App\Models\SuperAdmin\Instansi::find($instansiId);
+        $package = \App\Models\SuperAdmin\Package::find($packageId);
+
+        if (!$instansi || !$package) {
+            abort(404, 'Data not found');
+        }
+
+        $startDate = \Carbon\Carbon::parse($startDate);
+        $endDate = \Carbon\Carbon::parse($endDate);
+        
+        // Generate invoice number
+        $random = str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        $invoiceNumber = 'INV-' . now()->format('Ymd') . '-' . $random;
+
+        // Get payment methods (bank transfer and QRIS)
+        $paymentMethods = DB::table('payment_methods')
+            ->where('is_active', true)
+            ->whereIn('type', ['bank_transfer', 'qris'])
+            ->get();
+
+        return view('superadmin.subscriptions.invoice-preview', compact(
+            'instansi',
+            'package',
+            'startDate',
+            'endDate',
+            'price',
+            'invoiceNumber',
+            'paymentMethods'
+        ));
     }
 }

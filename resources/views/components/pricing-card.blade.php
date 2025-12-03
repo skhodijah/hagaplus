@@ -6,7 +6,8 @@
     'popular' => false,
     'ctaText' => 'Get Started',
     'ctaLink' => '#',
-    'features' => []
+    'features' => [],
+    'limits' => []
 ])
 
 <div @class([
@@ -38,6 +39,23 @@
         <a href="{{ $ctaLink }}" class="block w-full bg-[#008159] hover:bg-[#0EC774] text-white text-sm font-semibold py-2 px-4 rounded-lg text-center transition-colors mb-4 shadow-md hover:shadow-[#0EC774]/30">
             {{ $ctaText }}
         </a>
+
+        @if(isset($limits) && !empty($limits))
+            <div class="mb-4 space-y-2 border-b border-gray-100 dark:border-gray-700 pb-4">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500 dark:text-gray-400">Employees</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ $limits['employees'] ?? 'Unlimited' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500 dark:text-gray-400">Admins</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ $limits['admins'] ?? 'Unlimited' }}</span>
+                </div>
+                <div class="flex items-center justify-between text-xs">
+                    <span class="text-gray-500 dark:text-gray-400">Branches</span>
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ $limits['branches'] ?? 'Unlimited' }}</span>
+                </div>
+            </div>
+        @endif
 
         <ul class="space-y-2">
             @foreach($features as $feature)

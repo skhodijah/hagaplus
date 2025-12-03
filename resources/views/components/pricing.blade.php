@@ -29,6 +29,11 @@
                     :features="$package->features ?? []"
                     :ctaLink="route('register', ['package' => $package->id])"
                     :ctaText="$package->price == 0 ? 'Start Free Trial' : 'Choose Plan'"
+                    :limits="[
+                        'employees' => $package->max_employees,
+                        'admins' => $package->max_admins,
+                        'branches' => $package->max_branches
+                    ]"
                 />
             @endforeach
         </div>

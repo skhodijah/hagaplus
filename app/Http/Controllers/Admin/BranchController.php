@@ -49,6 +49,12 @@ class BranchController extends Controller
 
     public function store(Request $request)
     {
+        // Check subscription limits
+        $subscriptionService = new \App\Services\SubscriptionService(Auth::user()->instansi);
+        if (!$subscriptionService->canAddBranch()) {
+            return back()->with('error', 'Anda telah mencapai batas maksimal jumlah cabang untuk paket langganan Anda. Silakan upgrade paket untuk menambah cabang.');
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:1000',

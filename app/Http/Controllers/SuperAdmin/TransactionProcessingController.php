@@ -84,17 +84,16 @@ class TransactionProcessingController extends Controller
                 'notes' => $subscriptionRequest->notes
             ]);
 
-            // Update subscription if subscription_id is provided
+            // Try to find subscription if ID is provided
+            $subscription = null;
             if ($subscriptionRequest->subscription_id) {
-                // Get the current subscription
                 $subscription = DB::table('subscriptions')
                     ->where('id', $subscriptionRequest->subscription_id)
                     ->first();
+            }
 
-                if (!$subscription) {
-                    throw new \Exception('Subscription not found');
-                }
-
+            // Update subscription if found
+            if ($subscription) {
                 // Update subscription based on the request
                 $subscriptionUpdate = [
                     'status' => 'active',
@@ -134,6 +133,26 @@ class TransactionProcessingController extends Controller
                     if ($targetPackage) {
                         $subscriptionUpdate['package_id'] = $targetPackage->id;
                         $subscriptionUpdate['price'] = $targetPackage->price;
+
+                        // Auto extend 1 month for upgrade
+                        $currentDate = now();
+                        $currentEndDate = \Carbon\Carbon::parse($subscription->end_date);
+                        
+                        // If subscription has already expired, extend from current date
+                        // Otherwise, extend from the current end date
+                        $startDate = $currentDate->gt($currentEndDate) ? $currentDate : $currentEndDate;
+                        
+                        $newEndDate = $startDate->copy()
+                            ->addMonth() // Add 1 month for upgrade
+                            ->format('Y-m-d');
+                            
+                        $subscriptionUpdate['end_date'] = $newEndDate;
+                        
+                        \Log::info('Upgrading subscription with 1 month extension', [
+                            'old_package_id' => $subscription->package_id,
+                            'new_package_id' => $targetPackage->id,
+                            'new_end_date' => $newEndDate
+                        ]);
                     }
                 }
 
@@ -152,21 +171,23 @@ class TransactionProcessingController extends Controller
                     throw new \Exception('Failed to update subscription');
                 }
             } else {
-                // Create New Subscription
-                $package = DB::table('packages')->find($subscriptionRequest->package_id);
+                // Create New Subscription (fallback if not found or new)
+                $packageId = $subscriptionRequest->target_package_id ?? $subscriptionRequest->package_id;
+                $package = DB::table('packages')->find($packageId);
 
                 if (!$package) {
                     throw new \Exception('Package not found');
                 }
 
+                $months = $subscriptionRequest->extension_months ?? 1;
+                $endDate = now()->addMonths($months);
+
                 $subscriptionId = DB::table('subscriptions')->insertGetId([
                     'instansi_id' => $subscriptionRequest->instansi_id,
                     'package_id' => $package->id,
-                    'package_name' => $package->name,
                     'price' => $subscriptionRequest->amount,
-                    'duration' => 1, // Default 1 month
                     'start_date' => now(),
-                    'end_date' => now()->addMonth(),
+                    'end_date' => $endDate,
                     'status' => 'active',
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -180,11 +201,11 @@ class TransactionProcessingController extends Controller
                     'status_langganan' => 'active',
                     'package_id' => $package->id,
                     'subscription_start' => now(),
-                    'subscription_end' => now()->addMonth(),
+                    'subscription_end' => $endDate,
                     'updated_at' => now()
                 ]);
 
-                \Log::info('Created new subscription', ['subscription_id' => $subscriptionId]);
+                \Log::info('Created new subscription (fallback)', ['subscription_id' => $subscriptionId]);
             }
 
             // Update payment status to paid

@@ -102,9 +102,40 @@
                         <div class="text-blue-100 text-sm font-medium mb-1 tracking-wider">CURRENT PLAN</div>
                         <h2 class="text-3xl font-bold mb-2">{{ $currentSubscription->package->name ?? $currentSubscription->package_name ?? 'Unknown Package' }}</h2>
                         <div class="flex flex-wrap items-center gap-4 text-blue-100 text-sm">
-                            <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full">
+                            <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full"
+                                  x-data="{
+                                      endDate: '{{ $currentSubscription->end_date }}',
+                                      countdown: '',
+                                      updateCountdown() {
+                                          if (!this.endDate) return;
+                                          
+                                          const end = new Date(this.endDate).getTime();
+                                          const now = new Date().getTime();
+                                          const distance = end - now;
+                                          
+                                          if (distance < 0) {
+                                              this.countdown = 'Expired';
+                                              return;
+                                          }
+                                          
+                                          const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                          const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                          const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                          const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                                          
+                                          let timeString = '';
+                                          if (days > 0) timeString += days + 'd ';
+                                          timeString += String(hours).padStart(2, '0') + ':' + 
+                                                      String(minutes).padStart(2, '0') + ':' + 
+                                                      String(seconds).padStart(2, '0');
+                                          
+                                          this.countdown = timeString;
+                                      }
+                                  }"
+                                  x-init="updateCountdown(); setInterval(() => updateCountdown(), 1000)">
                                 <i class="fa-solid fa-calendar-check"></i>
                                 Valid until {{ \Carbon\Carbon::parse($currentSubscription->end_date)->format('d M Y') }}
+                                <span x-show="countdown" class="ml-1 font-mono font-bold bg-white/20 px-1.5 rounded-full text-xs" x-text="countdown"></span>
                             </span>
                             <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full">
                                 <i class="fa-solid fa-tag"></i>

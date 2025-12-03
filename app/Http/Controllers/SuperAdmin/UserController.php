@@ -96,6 +96,16 @@ class UserController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
+        if ($request->role === 'admin') {
+            $instansi = Instansi::find($request->instansi_id);
+            if ($instansi) {
+                $subscriptionService = new \App\Services\SubscriptionService($instansi);
+                if (!$subscriptionService->canAddAdmin()) {
+                    return back()->with('error', 'Instansi ini telah mencapai batas maksimal jumlah admin untuk paket langganannya.');
+                }
+            }
+        }
+
         $data = $request->only(['name', 'email', 'phone', 'instansi_id']);
         $data['password'] = Hash::make($request->password);
 

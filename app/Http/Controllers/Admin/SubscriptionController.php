@@ -33,6 +33,10 @@ class SubscriptionController extends Controller
         $user = auth()->user();
         $instansi = $user->instansi;
 
+        if (!$instansi) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung dengan Instansi manapun. Silakan hubungi Super Admin.');
+        }
+
         // Update expired subscriptions
         DB::table('subscriptions')
             ->where('instansi_id', $instansi->id)
@@ -110,6 +114,10 @@ class SubscriptionController extends Controller
 
         $user = auth()->user();
         $instansi = $user->instansi;
+
+        if (!$instansi) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung dengan Instansi manapun.');
+        }
 
         // Check if there are already pending requests
         $existingPendingRequest = DB::table('subscription_requests')
@@ -268,6 +276,11 @@ class SubscriptionController extends Controller
         ]);
 
         $user = auth()->user();
+        
+        if (!$user->instansi) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung dengan Instansi manapun.');
+        }
+
         $instansi = $user->instansi->load('package');
 
         // Check if there are already pending requests
@@ -343,6 +356,11 @@ class SubscriptionController extends Controller
         ]);
 
         $user = auth()->user();
+        
+        if (!$user->instansi) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung dengan Instansi manapun.');
+        }
+
         $instansi = $user->instansi->load('package');
 
         // Check if there are already pending requests
@@ -469,6 +487,10 @@ class SubscriptionController extends Controller
     {
         $user = auth()->user();
         $instansi = $user->instansi;
+
+        if (!$instansi) {
+            return redirect()->route('dashboard')->with('error', 'Akun Anda tidak terhubung dengan Instansi manapun.');
+        }
 
         $updated = DB::table('subscription_requests')
             ->where('id', $paymentId)
@@ -600,5 +622,21 @@ class SubscriptionController extends Controller
 
         return redirect()->route('admin.subscription.index')
             ->with('success', 'Subscription berhasil diperbarui.');
+    }
+
+    /**
+     * Show upgrade page
+     */
+    public function showUpgrade()
+    {
+        return redirect()->route('admin.subscription.index')->with('info', 'Silakan pilih paket yang ingin Anda upgrade.');
+    }
+
+    /**
+     * Show extend page
+     */
+    public function showExtend()
+    {
+        return redirect()->route('admin.subscription.index')->with('info', 'Silakan pilih durasi perpanjangan paket Anda.');
     }
 }

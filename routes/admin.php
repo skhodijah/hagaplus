@@ -124,8 +124,14 @@ Route::middleware(['auth', 'role:admin', 'verified'])->prefix('admin')->name('ad
     Route::get('/subscription/{id}/edit', [SubscriptionController::class, 'edit'])->name('subscription.edit');
     Route::put('/subscription/{id}', [SubscriptionController::class, 'update'])->name('subscription.update');
     Route::post('/subscription/request', [SubscriptionController::class, 'handleRequest'])->name('subscription.request');
-    Route::post('/subscription/extend', [SubscriptionController::class, 'requestExtension'])->name('subscription.extend');
-    Route::post('/subscription/upgrade', [SubscriptionController::class, 'requestUpgrade'])->name('subscription.upgrade');
+    
+    // GET routes for upgrade/extend pages
+    Route::get('/subscription/upgrade', [SubscriptionController::class, 'showUpgrade'])->name('subscription.upgrade');
+    Route::get('/subscription/extend', [SubscriptionController::class, 'showExtend'])->name('subscription.extend');
+    
+    // POST routes for processing
+    Route::post('/subscription/extend', [SubscriptionController::class, 'requestExtension'])->name('subscription.extend.process');
+    Route::post('/subscription/upgrade', [SubscriptionController::class, 'requestUpgrade'])->name('subscription.upgrade.process');
     Route::post('/subscription/payment/{paymentId}/process', [SubscriptionController::class, 'processPayment'])->name('subscription.process-payment');
     Route::post('/subscription/payment/{paymentId}/cancel', [SubscriptionController::class, 'cancelPayment'])->name('subscription.cancel-payment');
 

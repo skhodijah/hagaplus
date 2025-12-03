@@ -45,8 +45,41 @@
                                 </div>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Package</label>
-                                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $subscriptionRequest->package_name }}</p>
+                                <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Package Details</label>
+                                <div class="mt-2">
+                                    @if($subscriptionRequest->target_package_name)
+                                        <div class="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                                            <div class="flex flex-col">
+                                                <span class="text-xs text-gray-500 dark:text-gray-400">From</span>
+                                                <span class="font-bold text-gray-700 dark:text-gray-300">{{ $currentSubscription->current_package_name ?? 'Tidak Berlangganan' }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-800 text-indigo-600 dark:text-indigo-300">
+                                                <i class="fa-solid fa-arrow-right"></i>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider">Upgrade To</span>
+                                                <span class="text-lg font-black text-indigo-700 dark:text-indigo-300">{{ $subscriptionRequest->target_package_name }}</span>
+                                            </div>
+                                        </div>
+                                    @elseif($subscriptionRequest->extension_months)
+                                        <div class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
+                                            <div class="p-2 bg-blue-100 dark:bg-blue-800 rounded-lg text-blue-600 dark:text-blue-300">
+                                                <i class="fa-solid fa-calendar-plus text-xl"></i>
+                                            </div>
+                                            <div>
+                                                <div class="text-lg font-bold text-gray-900 dark:text-white">{{ $subscriptionRequest->package_name }}</div>
+                                                <div class="text-sm font-medium text-blue-600 dark:text-blue-400">
+                                                    Extend for {{ $subscriptionRequest->extension_months }} Months
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-100 dark:border-gray-700">
+                                            <span class="block text-xs text-gray-500 dark:text-gray-400 mb-1">New Subscription</span>
+                                            <span class="text-lg font-bold text-gray-900 dark:text-white">{{ $subscriptionRequest->package_name }}</span>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Amount</label>

@@ -306,6 +306,24 @@
                     </div>
                 @endif
 
+                @php
+                    $subscriptionService = new \App\Services\SubscriptionService(Auth::user()->instansi);
+                    $subscriptionStatus = $subscriptionService->getSubscriptionStatus();
+                @endphp
+
+                @if(in_array($subscriptionStatus, ['expired', 'suspended']))
+                    <div class="bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 px-4 py-3">
+                        <div class="max-w-7xl mx-auto flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                                <p class="text-sm font-medium text-red-700 dark:text-red-400">
+                                    Layanan tidak tersedia. Paket berlangganan instansi telah berakhir. Silakan hubungi Admin untuk perpanjangan.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="mx-auto px-4 sm:px-6 py-6 sm:py-8 max-w-7xl">
                     {{ $slot }}
                 </div>
