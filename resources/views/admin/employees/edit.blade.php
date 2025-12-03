@@ -202,27 +202,7 @@
                             </p>
                         </div>
 
-                        <div>
-                            <label for="supervisor_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                User (Kepala Divisi) <span class="text-blue-500">(Approver)</span>
-                            </label>
-                            <select id="supervisor_id" name="supervisor_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="">Select User (Kepala Divisi) (Optional)</option>
-                                @foreach($potentialSupervisors as $supervisor)
-                                    <option value="{{ $supervisor->id }}" 
-                                        data-department-id="{{ $supervisor->department_id }}"
-                                        {{ old('supervisor_id', $employee->supervisor_id) == $supervisor->id ? 'selected' : '' }}>
-                                        {{ $supervisor->user->name }} 
-                                        - {{ $supervisor->division ? $supervisor->division->name : 'No Div' }}
-                                        - {{ $supervisor->department ? $supervisor->department->name : 'No Dept' }}
-                                        - {{ $supervisor->instansiRole ? $supervisor->instansiRole->name : 'No Role' }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                User (Kepala Divisi) - akan approve cuti/izin/lembur/absen manual/reimbursement
-                            </p>
-                        </div>
+
 
                         <div>
                             <label for="manager_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

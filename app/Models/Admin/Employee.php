@@ -18,7 +18,6 @@ class Employee extends BaseModel
         'department_id',
         'position_id',
         'manager_id',
-        'supervisor_id', // Direct supervisor
         'instansi_role_id',
         'employee_id',
         // Identitas
@@ -108,14 +107,6 @@ class Employee extends BaseModel
     }
 
     /**
-     * Supervisor relationship (direct supervisor/team lead)
-     */
-    public function supervisor()
-    {
-        return $this->belongsTo(self::class, 'supervisor_id');
-    }
-
-    /**
      * Subordinates relationship (employees managed by this employee)
      */
     public function subordinates()
@@ -124,37 +115,17 @@ class Employee extends BaseModel
     }
 
     /**
-     * Team members relationship (employees supervised by this employee)
-     */
-    public function teamMembers()
-    {
-        return $this->hasMany(self::class, 'supervisor_id');
-    }
-
-    /**
      * Get the approval hierarchy for this employee
-     * Returns array of approvers in order: Supervisor, Manager, HR
+     * Returns array of approvers in order: Manager, HR
      */
     public function getApprovalHierarchy()
     {
         $hierarchy = [];
         
-        // Level 1: Supervisor (if exists)
-        if ($this->supervisor_id && $this->supervisor) {
+        // Level 1: Manager (if exists)
+        if ($this->manager_id && $this->manager) {
             $hierarchy[] = [
                 'level' => 1,
-                'type' => 'supervisor',
-                'name' => 'Supervisor',
-                'employee_id' => $this->supervisor_id,
-                'user_id' => $this->supervisor->user_id,
-                'user_name' => $this->supervisor->user->name,
-            ];
-        }
-        
-        // Level 2: Manager (if exists and different from supervisor)
-        if ($this->manager_id && $this->manager && $this->manager_id !== $this->supervisor_id) {
-            $hierarchy[] = [
-                'level' => 2,
                 'type' => 'manager',
                 'name' => 'Manager',
                 'employee_id' => $this->manager_id,

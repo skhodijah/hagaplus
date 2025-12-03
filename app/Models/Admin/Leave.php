@@ -10,7 +10,6 @@ class Leave extends BaseModel
 
     protected $fillable = [
         'user_id',
-        'approval_request_id',
         'leave_type',
         'start_date',
         'end_date',
@@ -56,34 +55,5 @@ class Leave extends BaseModel
     public function hrd()
     {
         return $this->belongsTo(\App\Models\Core\User::class, 'hrd_id');
-    }
-
-    /**
-     * Get the approval request for this leave
-     */
-    public function approvalRequest()
-    {
-        return $this->morphOne(ApprovalRequest::class, 'approvable');
-    }
-    /**
-     * Called when the approval request is fully approved.
-     */
-    public function onApprovalComplete()
-    {
-        $this->update([
-            'status' => 'approved',
-            'approved_at' => now(),
-        ]);
-    }
-
-    /**
-     * Called when the approval request is rejected.
-     */
-    public function onApprovalRejected(string $reason)
-    {
-        $this->update([
-            'status' => 'rejected',
-            'rejected_reason' => $reason,
-        ]);
     }
 }

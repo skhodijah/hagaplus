@@ -8,6 +8,8 @@ export default defineConfig({
                 "resources/css/app.css",
                 "resources/js/app.js",
                 "resources/js/pages/attendance.js",
+                "resources/css/welcome.css",
+                "resources/js/welcome.js",
             ],
             refresh: true,
         }),

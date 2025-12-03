@@ -7,14 +7,73 @@
         activeTab: '{{ $activeTab }}',
         roleModalOpen: false,
         divisionModalOpen: false,
+        editRoleModalOpen: false,
+        editDivisionModalOpen: false,
+        currentRole: null,
+        currentDivision: null,
         changeTab(tab) {
             this.activeTab = tab;
             // Update URL without reloading
             const url = new URL(window.location);
             url.searchParams.set('tab', tab);
             window.history.pushState({}, '', url);
+        },
+        openEditRole(role) {
+            this.currentRole = role;
+            this.editRoleModalOpen = true;
+        },
+        openEditDivision(division) {
+            this.currentDivision = division;
+            this.editDivisionModalOpen = true;
         }
     }">
+
+        @if (session('success'))
+            <div class="mb-4 rounded-md bg-green-50 border-l-4 border-green-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle text-green-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-green-700">{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-4 rounded-md bg-red-50 border-l-4 border-red-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-circle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-red-700">{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-4 rounded-md bg-red-50 border-l-4 border-red-400 p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle text-red-400"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Terjadi kesalahan pada input:</h3>
+                        <div class="mt-2 text-sm text-red-700">
+                            <ul class="list-disc pl-5 space-y-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <!-- Tabs Navigation -->
         <div class="mb-6">
             <div class="sm:hidden">
@@ -159,9 +218,9 @@
                                                 <i class="fas fa-key"></i>
                                             </a>
                                             @if(!$role->is_default)
-                                                <a href="{{ route('admin.roles.edit', $role) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                                                <button type="button" @click="openEditRole({{ $role }})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                                                     <i class="fas fa-edit"></i>
-                                                </a>
+                                                </button>
                                                 <form action="{{ route('admin.roles.destroy', $role) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this role?')">
                                                     @csrf
                                                     @method('DELETE')
@@ -256,9 +315,9 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('admin.divisions.edit', $division) }}" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                                            <button type="button" @click="openEditDivision({{ $division }})" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
                                                 <i class="fas fa-edit"></i>
-                                            </a>
+                                            </button>
                                             <form action="{{ route('admin.divisions.destroy', $division) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this division?')">
                                                 @csrf
                                                 @method('DELETE')
@@ -676,10 +735,17 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="is_active" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
-                                </label>
+                                <span class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Status</span>
+                                <div class="flex items-center space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_active" value="1" class="form-radio h-4 w-4 text-blue-600" checked>
+                                        <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_active" value="0" class="form-radio h-4 w-4 text-blue-600">
+                                        <span class="ml-2 text-gray-700 dark:text-gray-300">Inactive</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -731,10 +797,17 @@
                             </div>
 
                             <div class="mb-4">
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" name="is_active" class="form-checkbox h-5 w-5 text-blue-600" checked>
-                                    <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
-                                </label>
+                                <span class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Status</span>
+                                <div class="flex items-center space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_active" value="1" class="form-radio h-4 w-4 text-blue-600" checked>
+                                        <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="is_active" value="0" class="form-radio h-4 w-4 text-blue-600">
+                                        <span class="ml-2 text-gray-700 dark:text-gray-300">Inactive</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                         <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -742,6 +815,144 @@
                                 Create Division
                             </button>
                             <button @click="divisionModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Role Modal -->
+        <div x-show="editRoleModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <form :action="currentRole ? '{{ url('/admin/roles') }}/' + currentRole.id : '#'" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Edit Role</h3>
+
+                            <template x-if="currentRole">
+                                <div>
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editRoleName">
+                                            Role Name
+                                        </label>
+                                        <input name="name" x-model="currentRole.name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editRoleName" type="text" required>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editSystemRole">
+                                            System Role Type
+                                        </label>
+                                        <select name="system_role_id" x-model="currentRole.system_role_id" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editSystemRole" required>
+                                            <option value="">Select System Role</option>
+                                            @foreach($systemRoles as $sysRole)
+                                                <option value="{{ $sysRole->id }}">{{ $sysRole->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editRoleDesc">
+                                            Description (Optional)
+                                        </label>
+                                        <textarea name="description" x-model="currentRole.description" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editRoleDesc" placeholder="Description..."></textarea>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <span class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Status</span>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="is_active" value="1" class="form-radio h-4 w-4 text-blue-600" :checked="currentRole && currentRole.is_active">
+                                                <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="is_active" value="0" class="form-radio h-4 w-4 text-blue-600" :checked="currentRole && !currentRole.is_active">
+                                                <span class="ml-2 text-gray-700 dark:text-gray-300">Inactive</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Update Role
+                            </button>
+                            <button @click="editRoleModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Division Modal -->
+        <div x-show="editDivisionModalOpen" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                    <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+                </div>
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+                <div class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                    <form :action="currentDivision ? '{{ url('/admin/divisions') }}/' + currentDivision.id : '#'" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Edit Division</h3>
+
+                            <template x-if="currentDivision">
+                                <div>
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editDivName">
+                                            Division Name
+                                        </label>
+                                        <input name="name" x-model="currentDivision.name" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editDivName" type="text" required>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editDivCode">
+                                            Division Code
+                                        </label>
+                                        <input name="code" x-model="currentDivision.code" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editDivCode" type="text" required pattern="[A-Z]+" title="Uppercase letters only">
+                                        <p class="text-xs text-gray-500 mt-1">Uppercase letters only (e.g., IT, HR, FIN)</p>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" for="editDivDesc">
+                                            Description (Optional)
+                                        </label>
+                                        <textarea name="description" x-model="currentDivision.description" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:text-gray-300 dark:bg-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="editDivDesc" placeholder="Description..."></textarea>
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <span class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Status</span>
+                                        <div class="flex items-center space-x-4">
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="is_active" value="1" class="form-radio h-4 w-4 text-blue-600" :checked="currentDivision && currentDivision.is_active">
+                                                <span class="ml-2 text-gray-700 dark:text-gray-300">Active</span>
+                                            </label>
+                                            <label class="inline-flex items-center">
+                                                <input type="radio" name="is_active" value="0" class="form-radio h-4 w-4 text-blue-600" :checked="currentDivision && !currentDivision.is_active">
+                                                <span class="ml-2 text-gray-700 dark:text-gray-300">Inactive</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-700 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                                Update Division
+                            </button>
+                            <button @click="editDivisionModalOpen = false" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
                                 Cancel
                             </button>
                         </div>

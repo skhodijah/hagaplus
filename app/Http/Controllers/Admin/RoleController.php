@@ -43,7 +43,7 @@ class RoleController extends Controller
             'name' => $request->name,
             'system_role_id' => $request->system_role_id,
             'description' => $request->description,
-            'is_active' => $request->has('is_active') ? true : false,
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('admin.organization.index', ['tab' => 'roles'])
@@ -98,7 +98,7 @@ class RoleController extends Controller
             'name' => $request->name,
             'system_role_id' => $request->system_role_id,
             'description' => $request->description,
-            'is_active' => $request->has('is_active') ? true : false,
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('admin.organization.index', ['tab' => 'roles'])

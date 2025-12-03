@@ -160,7 +160,6 @@ class EmployeeController extends Controller
             'department_id' => 'required|exists:departments,id',
             'position_id' => 'required|exists:positions,id',
             'branch_id' => 'nullable|exists:branches,id',
-            'supervisor_id' => 'nullable|exists:employees,id',
             'manager_id' => 'nullable|exists:employees,id',
             'status' => 'required|in:active,inactive,terminated',
             'status_karyawan' => 'required|in:tetap,kontrak,probation,magang',
@@ -251,7 +250,6 @@ class EmployeeController extends Controller
                 'position_id' => $request->position_id,
                 'department_id' => $request->department_id,
                 'manager_id' => $request->manager_id,
-                'supervisor_id' => $request->supervisor_id,
                 'attendance_policy_id' => $defaultPolicy ? $defaultPolicy->id : null, // Auto-assign default policy
                 // Employment
                 'status' => $request->status,
@@ -399,7 +397,6 @@ class EmployeeController extends Controller
             'department_id' => 'required|exists:departments,id',
             'position_id' => 'required|exists:positions,id',
             'branch_id' => 'nullable|exists:branches,id',
-            'supervisor_id' => 'nullable|exists:employees,id',
             'manager_id' => 'nullable|exists:employees,id',
             'status' => 'required|in:active,inactive,terminated',
             'status_karyawan' => 'required|in:tetap,kontrak,probation,magang',
@@ -447,7 +444,6 @@ class EmployeeController extends Controller
                 'branch_id' => $request->branch_id,
                 'division_id' => $request->division_id,
                 'manager_id' => $request->manager_id,
-                'supervisor_id' => $request->supervisor_id,
                 'employee_id' => $request->employee_id,
                 'position_id' => $request->position_id,
                 'department_id' => $request->department_id,

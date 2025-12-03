@@ -51,7 +51,7 @@ class DivisionController extends Controller
             'name' => $request->name,
             'code' => strtoupper($request->code),
             'description' => $request->description,
-            'is_active' => $request->has('is_active') ? true : false,
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
@@ -103,7 +103,7 @@ class DivisionController extends Controller
             'name' => $request->name,
             'code' => strtoupper($request->code),
             'description' => $request->description,
-            'is_active' => $request->has('is_active') ? true : false,
+            'is_active' => $request->boolean('is_active'),
         ]);
 
         return redirect()->route('admin.organization.index', ['tab' => 'divisions'])
